@@ -1,5 +1,9 @@
 # oracle.py
 
+
+# version 1
+
+
 """
 Oracle Module for SanctSim Phase 3.
 
