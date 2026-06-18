@@ -307,47 +307,33 @@ class Environment:
         Calculates the total payoffs for all agents after considering contributions,
         punishments, rewards, and updates their cumulative payoffs.
         """
-        # Update payoffs for agents in SI
-        for agent in self.si.members:
-            stage1_payoff = self.si.stage1_payoffs.get(agent.agent_id, 0)
-            stage2_payoff = agent.get_stage2_payoff()
+        # Update payoffs for all agents
+        for agent in self.agents:
+            # Determine institution-specific stage 1 payoff
+            if agent.institution_choice == 'SI':
+                stage1_payoff = self.si.stage1_payoffs.get(agent.agent_id, 0)
+                # Apply stage 1 results to wealth before calculating stage 2
+                agent.wealth += stage1_payoff
+                stage2_payoff = agent.get_stage2_payoff()
+            else:
+                stage1_payoff = self.sfi.stage1_payoffs.get(agent.agent_id, 0)
+                # Apply stage 1 results to wealth
+                agent.wealth += stage1_payoff
+                stage2_payoff = 0
+            
             subsidy = getattr(agent, 'last_subsidy', 0)
-            # LDF contributions are collected from the voluntary stage-1 choice;
-            # do not subtract them again here.
-            ldf_transfer = getattr(agent, 'ldf_payout_round', 0.0)
-            climate_damage = getattr(agent, 'climate_damage_taken_round', 0.0)
-
-            total_round_payoff = stage1_payoff + stage2_payoff + ldf_transfer - climate_damage
-            agent.update_payoff(total_round_payoff)
-            agent.wealth += total_round_payoff
+            ldf_transfer = self.current_shock.get('payouts', {}).get(agent.agent_id, 0.0)
+            climate_damage = self.current_shock.get('damages', {}).get(agent.agent_id, 0.0)
+            agent.ldf_payout_round = ldf_transfer
             agent.net_climate_transfer_round = ldf_transfer - climate_damage
+            
+            total_round_payoff = stage1_payoff + stage2_payoff + subsidy + ldf_transfer - climate_damage
+            agent.update_payoff(total_round_payoff)
+            agent.wealth += (stage2_payoff + subsidy + ldf_transfer - climate_damage)
 
             if parameters.VERBOSE:
-                print(
-                    f"Agent {agent.agent_id} in SI (Payoff: {agent.round_payoff:.2f} | "
-                    f"S1: {stage1_payoff:.1f}, S2: {stage2_payoff:.1f}, Sub: {subsidy}, "
-                    f"LDF: {ldf_transfer:.1f}, Damage: {climate_damage:.1f})"
-                )
-                print(f"  - LLM Reasoning: {agent.contribution_reasoning[:120]}...")
-
-        # Update payoffs for agents in SFI
-        for agent in self.sfi.members:
-            stage1_payoff = self.sfi.stage1_payoffs.get(agent.agent_id, 0)
-            # Phase 3: SFI agents get NO Stage 2 budget
-            stage2_payoff = 0
-            ldf_transfer = getattr(agent, 'ldf_payout_round', 0.0)
-            climate_damage = getattr(agent, 'climate_damage_taken_round', 0.0)
-
-            total_round_payoff = stage1_payoff + stage2_payoff + ldf_transfer - climate_damage
-            agent.update_payoff(total_round_payoff)
-            agent.wealth += total_round_payoff
-            agent.net_climate_transfer_round = ldf_transfer - climate_damage
-
-            if parameters.VERBOSE:
-                print(
-                    f"Agent {agent.agent_id} in SFI (Payoff: {agent.round_payoff:.2f} | "
-                    f"S1: {stage1_payoff:.1f}, LDF: {ldf_transfer:.1f}, Damage: {climate_damage:.1f})"
-                )
+                payoff_details = f"S1: {stage1_payoff:.1f}, S2: {stage2_payoff:.1f}, LDF: {ldf_transfer:.1f}, Damage: {climate_damage:.1f}"
+                print(f"Agent {agent.agent_id} in {agent.institution_choice} (Payoff: {agent.round_payoff:.2f} | {payoff_details})")
                 print(f"  - LLM Reasoning: {agent.contribution_reasoning[:120]}...")
 
     def _compute_gini(self, values):
