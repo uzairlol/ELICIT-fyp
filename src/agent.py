@@ -31,7 +31,7 @@ import random
 import parameters
 import os
 import json
-from utils import robust_json_loads
+from utils import robust_json_loads, uses_climate_budget
 
 from prompt_generator import (
     construct_institution_choice_prompt,
@@ -162,14 +162,7 @@ class Agent:
         self._ensure_pseudonyms_initialized()
 
     def _uses_climate_budget(self):
-        scenario_name = str(getattr(parameters, 'SCENARIO', '')).lower()
-        if scenario_name == 'climate':
-            scenario_name = 'ldf'
-        return (
-            scenario_name == 'ldf'
-            or bool(getattr(parameters, 'CLIMATE_SHOCK_ENABLED', False))
-            or bool(getattr(parameters, 'LDF_ENABLED', False))
-        )
+        return uses_climate_budget()
 
     def get_stage1_contribution_cap(self):
         if self._uses_climate_budget():

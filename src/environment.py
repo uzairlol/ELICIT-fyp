@@ -205,8 +205,7 @@ class Environment:
             subsidies = self.subsidy_module.compute_subsidies(self.agents, round_contributions)
             for agent_id, bonus in subsidies.items():
                 agent = next(a for a in self.agents if a.agent_id == agent_id)
-                agent.update_payoff(bonus, is_subsidy=True)
-                agent.wealth += bonus
+                agent.last_subsidy = bonus
                 if parameters.VERBOSE:
                     print(f"Agent {agent_id} received subsidy: +{bonus} tokens")
 
@@ -330,6 +329,7 @@ class Environment:
             total_round_payoff = stage1_payoff + stage2_payoff + subsidy + ldf_transfer - climate_damage
             agent.update_payoff(total_round_payoff)
             agent.wealth += (stage2_payoff + subsidy + ldf_transfer - climate_damage)
+            agent.wealth = max(0.0, agent.wealth)
 
             if parameters.VERBOSE:
                 payoff_details = f"S1: {stage1_payoff:.1f}, S2: {stage2_payoff:.1f}, LDF: {ldf_transfer:.1f}, Damage: {climate_damage:.1f}"

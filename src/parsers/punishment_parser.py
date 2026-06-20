@@ -26,7 +26,7 @@ def parse_punishment_response(response, group_state, agent):
             members = list((group_state or {}).get('members', []) or [])
             others = sorted([member for member in members if getattr(member, 'agent_id', None) != agent.agent_id], key=lambda member: member.agent_id)
             labels = []
-            use_anonymity = bool(getattr(parameters, 'ANONYMITY', True))
+            use_anonymity = bool(getattr(parameters, 'ANONYMITY', False))
             if str(getattr(parameters, 'SCENARIO', '')).lower() == 'climate':
                 use_anonymity = False
             if bool(getattr(parameters, 'CLIMATE_SHOCK_ENABLED', False)) or bool(getattr(parameters, 'LDF_ENABLED', False)):

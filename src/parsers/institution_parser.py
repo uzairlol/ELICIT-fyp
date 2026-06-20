@@ -1,4 +1,5 @@
 import re
+import random
 import parameters
 from response_parsing_utils import _unwrap_response_data, _make_parser_meta
 
@@ -41,7 +42,8 @@ def parse_institution_choice_response(response, agent_id):
                 if candidates:
                     recovered = candidates[-1]
                     return recovered, f"Recovered from free-text output. Raw: {raw_text[:100]}...", [], deepseek_think, _make_parser_meta(data, expected_keys, True, 'Recovered SI/SFI from free text')
-            return 'SFI', reasoning, facts_used, deepseek_think, _make_parser_meta(data, expected_keys, True, 'Missing/invalid institution choice')
+            fallback = random.choice(['SI', 'SFI'])
+            return fallback, reasoning, facts_used, deepseek_think, _make_parser_meta(data, expected_keys, True, 'Missing/invalid institution choice')
     except Exception as e:
         # Safety fallback: recover explicit SI/SFI from raw text when JSON parsing fails.
         raw_upper = str(response or "").upper()
@@ -58,4 +60,5 @@ def parse_institution_choice_response(response, agent_id):
             if recovered in ('SI', 'SFI'):
                 return recovered, f"Recovered from free-text output. Raw: {str(response)[:100]}...", [], '', _make_parser_meta({}, expected_keys, True, 'Recovered SI/SFI from text')
 
-        return 'SFI', f"Parsing error (Lazy Fallback SFI). Raw: {str(response)[:100]}...", [], '', _make_parser_meta({}, expected_keys, True, f'Institution parse exception: {e}')
+        fallback = random.choice(['SI', 'SFI'])
+        return fallback, f"Parsing error (Random Fallback {fallback}). Raw: {str(response)[:100]}...", [], '', _make_parser_meta({}, expected_keys, True, f'Institution parse exception: {e}')

@@ -116,10 +116,13 @@ class Oracle:
         new_val = proposal.get('new_value', None)
         old_val = getattr(parameters, rule, None)
 
-        if old_val is None or new_val is None or old_val == 0:
+        if old_val is None or new_val is None:
             return f"{rule}: Oracle has insufficient data to predict welfare impact."
 
-        change_pct = (new_val - old_val) / old_val  # Fractional change in rule value
+        if old_val == 0:
+            change_pct = float(new_val)
+        else:
+            change_pct = (new_val - old_val) / old_val
         fr = stats['freerider_rate']
         coop = stats['coop_rate']
 

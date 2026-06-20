@@ -1,6 +1,7 @@
 import re
 import parameters
 from response_parsing_utils import _unwrap_response_data, _parse_int_safe, _make_parser_meta
+from utils import uses_climate_budget
 
 
 def parse_contribution_response_v2(response, agent):
@@ -61,15 +62,7 @@ def parse_contribution_response_v2(response, agent):
             recovered_val = max(parameters.MIN_CONTRIBUTION, min(recovered_val, agent.get_stage1_contribution_cap()))
             return recovered_val, f"Recovered from non-JSON output. Raw: {raw_text[:100]}...", [], '', _make_parser_meta({}, expected_keys, True, 'Recovered contribution from text')
 
-        scenario_name = str(getattr(parameters, 'SCENARIO', '')).lower()
-        if scenario_name == 'climate':
-            scenario_name = 'ldf'
-        climate_mode = (
-            scenario_name == 'ldf'
-            or bool(getattr(parameters, 'CLIMATE_SHOCK_ENABLED', False))
-            or bool(getattr(parameters, 'LDF_ENABLED', False))
-        )
-        if climate_mode:
+        if uses_climate_budget():
             fallback_val = max(parameters.MIN_CONTRIBUTION, int(getattr(agent, 'wealth', parameters.ENDOWMENT_STAGE_1)) // 2)
         else:
             fallback_val = parameters.ENDOWMENT_STAGE_1 // 2

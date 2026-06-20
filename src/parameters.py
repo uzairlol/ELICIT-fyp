@@ -43,7 +43,7 @@ RULE_OF_LAW_ENABLED = False
 
 # --- Information Settings ---
 ANONYMITY = False              # Agents don't see others anonymously (identity tracking)
-DISPLAY_PAST_ACTIONS = 1       # Deprecated: only T-1 shown now; agents use belief_state instead
+DISPLAY_PAST_ACTIONS = 1       # Controls how many rounds of peer data history are kept (T-1 window); agents use belief_state for long-term memory
 
 # --- Belief Tracking (Working Memory / Scratchpad) ---
 BELIEF_TRACKING_ENABLED = True # Enable structured belief-state updates after each round
@@ -54,7 +54,7 @@ DEMOCRACY_ENABLED = True       # Enable democratic rule-changing every N rounds
 DEMOCRACY_INTERVAL = 5        # Rounds between constitutional votes
 
 GOSSIP_ENABLED = True          # Distribute negative ToM audits as social pressure
-GOSSIP_TRIGGER_SCORE = 8.0     # Only share gossip for trust scores <= this value
+GOSSIP_TRIGGER_SCORE = 7.0     # Only share gossip for trust scores <= this value
 MAX_GOSSIP_ITEMS = 5           # Prevent prompt bloat
 
 # --- Phase 3: Oracle Settings ---

@@ -3,6 +3,19 @@ import logging
 import re
 
 
+def uses_climate_budget():
+    """Shared check for whether the simulation is in climate/LDF budget mode."""
+    import parameters
+    scenario_name = str(getattr(parameters, 'SCENARIO', '')).lower()
+    if scenario_name == 'climate':
+        scenario_name = 'ldf'
+    return (
+        scenario_name == 'ldf'
+        or bool(getattr(parameters, 'CLIMATE_SHOCK_ENABLED', False))
+        or bool(getattr(parameters, 'LDF_ENABLED', False))
+    )
+
+
 def robust_json_loads(json_str):
     """
     Loads JSON robustly.

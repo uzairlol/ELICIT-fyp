@@ -2,17 +2,11 @@ import parameters
 from scenario_config import get_scenario_config
 from prompt_utils import _safe_int, _safe_float, _format_token_list, _format_recent_institutions
 from personas import _get_persona_block
+from utils import uses_climate_budget
 
 
 def _uses_climate_budget():
-    scenario_name = str(getattr(parameters, 'SCENARIO', '')).lower()
-    if scenario_name == 'climate':
-        scenario_name = 'ldf'
-    return (
-        scenario_name == 'ldf'
-        or bool(getattr(parameters, 'CLIMATE_SHOCK_ENABLED', False))
-        or bool(getattr(parameters, 'LDF_ENABLED', False))
-    )
+    return uses_climate_budget()
 
 
 def _contribution_budget(agent):
@@ -55,7 +49,7 @@ def _use_anonymity():
     if climate_mode:
         return False
 
-    return bool(getattr(parameters, 'ANONYMITY', True))
+    return bool(getattr(parameters, 'ANONYMITY', False))
 
 
 def _peer_label(observer_agent, actual_agent_id, fallback_number):
@@ -178,9 +172,16 @@ def _build_stage1_card(agent, group_state, sc):
     recent_institutions = _format_recent_institutions(agent)
     group_members = list((group_state or {}).get('members', []) or [])
     group_size = len(group_members)
-    stage1_average = 0.0
-    if group_members:
-        stage1_average = sum(_safe_int(getattr(member, 'contribution', 0)) for member in group_members) / group_size
+
+    prev_avg_str = "N/A (first round)"
+    if getattr(agent, 'anonymous_data_history', None):
+        latest = agent.anonymous_data_history[-1]
+        same_inst_contribs = [
+            entry['contribution'] for entry in latest.get('anonymous_data', [])
+            if entry.get('institution_choice') == getattr(agent, 'institution_choice', None)
+        ]
+        if same_inst_contribs:
+            prev_avg_str = f"{sum(same_inst_contribs) / len(same_inst_contribs):.2f} {sc['currency_name']}"
 
     return f"""
 **Decision Card — Stage 1 / Contribution**
@@ -189,7 +190,7 @@ def _build_stage1_card(agent, group_state, sc):
 - Minimum contribution: {parameters.MIN_CONTRIBUTION}
 - Maximum contribution: {budget}
 - Group size: {group_size}
-- Group average contribution this round: {stage1_average:.2f} {sc['currency_name']}
+- Previous round's group average contribution: {prev_avg_str}
 - Your recent contributions: {recent_contributions}
 - Your recent institution choices: {recent_institutions}
 

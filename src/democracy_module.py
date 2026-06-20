@@ -132,7 +132,7 @@ class DemocracyModule:
             'REWARD_EFFECT': 'Multiplier applied to target\'s payoff when rewarded.',
             'ENDOWMENT_STAGE_2': 'Number of tokens agents are given specifically for punishing/rewarding others.',
             'MAX_PUNISHMENT_TOKENS': 'Maximum number of punishment tokens one agent can assign to a single target.',
-            'SUBSIDY_FRACTION': 'Fraction of SFI stage 1 payoffs taxed to subsidize the SI.',
+            'SUBSIDY_FRACTION': 'Fraction of SI punishment costs pooled and redistributed to top SI contributors as a subsidy.',
             'SUBSIDY_TOP_N': 'Number of top contributors in the SI who share the subsidy pool.',
             'LDF_PAYOUT_DAMAGE_WEIGHT': 'How strongly direct damage affects LDF payouts after shocks.',
             'LDF_MAX_COVERAGE': 'Maximum fraction of an agent\'s climate damage covered by LDF payouts.',
