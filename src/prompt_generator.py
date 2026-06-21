@@ -60,8 +60,19 @@ def _peer_label(observer_agent, actual_agent_id, fallback_number):
     return str(actual_agent_id)
 
 
+def _received_tokens_from_effect(effect, effect_per_token):
+    """Convert stored payoff effect back to token count for prompt display."""
+    if effect_per_token <= 0:
+        return 0
+    return int(round(float(effect or 0) / effect_per_token))
 
 
+def _sort_peers_for_punishment(others):
+    """List peers worst free-rider first (lowest contribution), then by agent_id."""
+    return sorted(
+        others,
+        key=lambda member: (_safe_int(getattr(member, 'contribution', 0)), member.agent_id),
+    )
 
 def _json_response_block(stage_name):
     return f"""
@@ -209,13 +220,13 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
 
     if ordered_others is None:
         others = [member for member in members if member.agent_id != agent.agent_id]
-        # fallback sort: by agent_id to be deterministic
-        others = sorted(others, key=lambda member: member.agent_id)
+        others = _sort_peers_for_punishment(others)
     else:
         others = ordered_others
 
     total_contrib = sum(_safe_int(getattr(member, 'contribution', 0)) for member in members)
     avg_contrib = (total_contrib / len(members)) if members else 0.0
+    tom_scores = getattr(agent, 'tom_scores', {}) or {}
 
     rows = []
     target_labels = []
@@ -237,12 +248,23 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
 
         deviation = contribution - avg_contrib
         free_rider_tag = " [FREE-RIDER — contributed BELOW average]" if contribution < avg_contrib else ""
+        stated_reason = (getattr(member, 'contribution_reasoning', '') or 'No reasoning provided.').strip()
+        if len(stated_reason) > 180:
+            stated_reason = stated_reason[:180] + '...'
+
+        tom_suffix = ""
+        if parameters.TOM_ENABLED:
+            peer_score = tom_scores.get(member.agent_id)
+            if peer_score is not None:
+                tom_suffix = f", your trust score for them: {float(peer_score):.1f}/10"
+
         rows.append(
-            f"- {label}{group_type}{free_rider_tag}: "
+            f"- {label}{group_type}{free_rider_tag}{tom_suffix}: "
             f"budget/wealth={float(stage1_budget):.2f} {sc['currency_name']}, "
             f"contrib={contribution} {sc['currency_name']} (deviation from avg: {deviation:+.1f}), "
             f"kept={kept} {sc['currency_name']}, "
-            f"net_stage1_payoff={stage1_payoff:.2f} {sc['currency_name']}"
+            f"net_stage1_payoff={stage1_payoff:.2f} {sc['currency_name']}, "
+            f"stated intent: \"{stated_reason}\""
         )
 
     targets_block = "\n".join(rows) if rows else "- No other targets available."
@@ -261,11 +283,12 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
 - Reward effect / cost: +{parameters.REWARD_EFFECT} / {parameters.REWARD_COST} {sc['currency_name']} per token
 - Group average contribution this round: {avg_contrib:.2f} {sc['currency_name']} — agents below this are free-riding
 - Target labels (use exactly): {target_label_block}
+- Targets are listed worst free-rider first — prioritize punishing agents with the lowest contributions and mismatched stated intent.
 
 Current-round targets (agents marked [FREE-RIDER] contributed below the group average):
 {targets_block}
 
-Allocate integer token counts only. You MUST include every listed target exactly once in both "punishments" and "rewards" (use 0 for targets you do not act on).
+Allocate integer token counts only. Include every listed target exactly once in "punishments" (use 0 if not punishing). Rewards are optional.
 """
 
     return card, target_labels
@@ -286,13 +309,19 @@ def get_past_actions_string(agent):
         ar = entry.get('assigned_rewards', {})
         assigned_p_tokens = sum(ap.values()) if isinstance(ap, dict) else ap
         assigned_r_tokens = sum(ar.values()) if isinstance(ar, dict) else ar
+        received_p_tokens = _received_tokens_from_effect(
+            entry.get('received_punishments', 0), parameters.PUNISHMENT_EFFECT
+        )
+        received_r_tokens = _received_tokens_from_effect(
+            entry.get('received_rewards', 0), parameters.REWARD_EFFECT
+        )
         round_info = f"Round {entry['round_number']}: " \
                      f"Institution: {entry['institution_choice']}, " \
                      f"Contribution: {entry['contribution']}, " \
                      f"Assigned {punishment_name} tokens: {assigned_p_tokens}, " \
                      f"Assigned {reward_name} tokens: {assigned_r_tokens}, " \
-                     f"Received {punishment_name} tokens: {entry.get('received_punishments', 0)}, " \
-                     f"Received {reward_name} tokens: {entry.get('received_rewards', 0)}, " \
+                     f"Received {punishment_name} tokens: {received_p_tokens}, " \
+                     f"Received {reward_name} tokens: {received_r_tokens}, " \
                      f"Stage 1 Payoff: {entry.get('stage1_payoff', 0):.2f}, " \
                      f"Stage 2 Payoff: {entry.get('stage2_payoff', 0):.2f}, " \
                      f"Total Round Payoff: {entry.get('payoff', 0):.2f} {currency_name}, " \
@@ -350,13 +379,19 @@ def _append_belief_state(prompt, agent, sc):
                 continue
             label = _peer_label(agent, entry.get('actual_agent_id', -1), i + 1)
             country_str = f"Country type: {entry.get('agent_group', 'unknown')}, " if show_country_types else ""
+            received_p_tokens = _received_tokens_from_effect(
+                entry.get('received_punishments', 0), parameters.PUNISHMENT_EFFECT
+            )
+            received_r_tokens = _received_tokens_from_effect(
+                entry.get('received_rewards', 0), parameters.REWARD_EFFECT
+            )
             prompt += (
                 f"\nAgent {label}: {country_str}"
                 f"Institution: {entry.get('institution_choice', 'Unknown')}, "
                 f"Budget/Wealth: {entry.get('wealth', 0.0):.2f} {sc['currency_name']}, "
                 f"Contributed {entry['contribution']} {sc['currency_name']}, "
-                f"Received {sc['punishment_name']}s: {entry.get('received_punishments', 0)}, "
-                f"Received {sc['reward_name']}s: {entry.get('received_rewards', 0)}, "
+                f"Received {sc['punishment_name']} tokens: {received_p_tokens}, "
+                f"Received {sc['reward_name']} tokens: {received_r_tokens}, "
                 f"Total Round Payoff: {entry.get('total_round_payoff', 0):.2f}"
             )
         prompt += "\n\nUse your Internal Beliefs above for long-term context and the previous round data for immediate situational awareness."
@@ -470,79 +505,54 @@ def construct_punishment_prompt(agent, group_state):
     prompt = __build_prompt_prefix(agent, stage_text, agent.round_number, sc)
     prompt += _get_persona_block(agent)
     prompt = _append_climate_role_guidance(prompt, agent)
-    # Build a deterministic ordering of other members (by agent_id) and reuse the same labels
+
     members = list((group_state or {}).get('members', []) or [])
-    ordered_others = sorted([m for m in members if m.agent_id != agent.agent_id], key=lambda m: m.agent_id)
+    ordered_others = _sort_peers_for_punishment(
+        [m for m in members if m.agent_id != agent.agent_id]
+    )
     card_text, target_labels = _build_stage2_card(agent, group_state, sc, ordered_others=ordered_others)
     prompt += card_text
 
-    show_country_types = _should_broadcast_country_types()
-    use_anonymity = _use_anonymity()
-    # Inject belief state for long-term context
-    import json as _json
-    belief = getattr(agent, 'belief_state', None)
-    if belief:
-        prompt += f"\n\n**Your Internal Beliefs (Working Memory):**\n{_json.dumps(belief, indent=2)}"
+    prompt = _append_belief_state(prompt, agent, sc)
+    prompt = _append_gossip(prompt, agent)
 
-    # Show only the single most-recent round of historical peer data for Stage 2
-    show_country_types = _should_broadcast_country_types()
-    use_anonymity = _use_anonymity()
-    if agent.anonymous_data_history:
-        latest = agent.anonymous_data_history[-1]
-        round_num = latest['round_number']
-        anonymous_data_list = latest['anonymous_data']
-        prompt += f"\n\n**Historical Context (Previous Round {round_num} — secondary reference):**"
-        for entry in anonymous_data_list:
-            if use_anonymity and entry.get('actual_agent_id', -1) not in getattr(agent, 'pseudonym_mapping', {}):
-                continue
-            label = _peer_label(agent, entry.get('actual_agent_id', -1), -1)
-            country_str = f"Country type: {entry.get('agent_group', 'unknown')}, " if show_country_types else ""
-            prompt += (
-                f"\nAgent {label}: {country_str}"
-                f"Institution: {entry.get('institution_choice', 'Unknown')}, "
-                f"Contributed {entry['contribution']} {sc['currency_name']}, "
-                f"Stage 1 Payoff: {entry.get('stage1_payoff', 0):.2f}"
-            )
-        prompt += "\n\n**Important:** Prioritize current-round contributions (above) when deciding your actions. Use your Internal Beliefs for long-term patterns."
-    else:
-        prompt += "\n\nNo historical data about other agents is available from previous rounds."
+    if parameters.TOM_ENABLED:
+        prompt += f"\n\n**Your Peer Trust Rating (aggregate):** {agent.reputation:.1f}/10"
+        prompt += "\nUse per-target trust scores in the decision card together with current contributions and stated intent."
+
+    prompt += (
+        "\n\n**Important:** Prioritize current-round contributions and stated intent (above) when deciding punishments. "
+        "Use gossip, trust scores, and Internal Beliefs as secondary evidence."
+    )
 
     label_block = ", ".join(target_labels) if target_labels else ""
 
-    # Build a dynamic JSON template using the actual target labels so the LLM
-    # cannot anchor on hardcoded placeholder keys ("Agent 1", "Agent 2").
     def _json_kv(labels, value):
         return ",\n        ".join(f'"{lbl}": {value}' for lbl in labels)
 
-    punish_keys  = _json_kv(target_labels, 0)
-    reward_keys  = _json_kv(target_labels, 0)
-    justify_keys = _json_kv(target_labels, '"one sentence"')
+    punish_keys = _json_kv(target_labels, 0)
 
     prompt += f"""
 
 **Response Contract (Punishment and Reward Choice):**
 - Return exactly one JSON object and nothing else.
-- Every key in "punishments", "rewards", and "justifications" MUST be one of the target labels listed above — no others.
-- You MUST include ALL {len(target_labels)} target labels as keys in both "punishments" and "rewards". Use 0 for targets you are not acting on.
-- Use integer token counts only.
-- Your total spend (sum of all punishment tokens × {parameters.PUNISHMENT_COST} + sum of all reward tokens × {parameters.REWARD_COST}) MUST NOT exceed {s2_budget}.
+- "punishments" MUST include ALL {len(target_labels)} target labels as keys. Use 0 for targets you are not punishing.
+- "rewards" is OPTIONAL — omit it or use {{}} if you are not rewarding anyone. If present, only include targets with a positive amount.
+- "justifications" is OPTIONAL — if included, only justify targets you punish or reward with a positive amount.
+- Use integer token counts only (never negative).
+- Your total spend (punishment tokens × {parameters.PUNISHMENT_COST} + reward tokens × {parameters.REWARD_COST}) MUST NOT exceed {s2_budget}.
 - Do not include yourself in either object.
+- Focus punishments on free-riders: agents who contributed below the group average or whose stated intent does not match their action.
 
-**Target labels (ALL must appear as keys):** {label_block}
+**Target labels (ALL must appear as keys in punishments):** {label_block}
 
-**Required JSON shape — fill in ALL {len(target_labels)} targets:**
+**Required JSON shape:**
 {{
     "punishments": {{
         {punish_keys}
     }},
-    "rewards": {{
-        {reward_keys}
-    }},
     "reasoning": "One or two sentences explaining your overall strategy.",
-    "facts_used": ["Fact 1", "Fact 2"],
-    "justifications": {{
-        {justify_keys}
-    }}
+    "facts_used": ["Fact 1", "Fact 2"]
 }}
 
 - Keep `reasoning` to the point.

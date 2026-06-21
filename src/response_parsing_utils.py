@@ -76,6 +76,123 @@ def _parse_int_safe(val):
             return None
 
 
+def _parse_allocation_tokens(val):
+    """Parse a non-negative token count; negative values mean zero (never abs())."""
+    try:
+        parsed = int(val)
+    except Exception:
+        try:
+            parsed = int(float(val))
+        except Exception:
+            return None
+    return parsed if parsed > 0 else 0
+
+
+def _apply_stage2_allocations(punishments_map, rewards_map, agent, anonymized_id_mapping, group_state, budget, max_per_target):
+    """Apply punishments and rewards from one shared Stage 2 budget without order bias."""
+    members = group_state.get('members', []) or []
+    if members:
+        group_avg = sum(getattr(m, 'contribution', 0) for m in members) / len(members)
+    else:
+        group_avg = group_state.get('si_avg_contribution', parameters.ENDOWMENT_STAGE_1)
+
+    punishment_requests = {}
+    reward_requests = {}
+
+    for key, raw_tokens in list((punishments_map or {}).items()):
+        target_agent_id = _target_agent_id_from_key(key, anonymized_id_mapping)
+        if target_agent_id is None or target_agent_id == agent.agent_id:
+            continue
+
+        tokens = _parse_allocation_tokens(raw_tokens)
+        if not tokens:
+            continue
+
+        tokens = min(tokens, max_per_target)
+
+        target_contrib = None
+        for peer in members:
+            if getattr(peer, 'agent_id', None) == target_agent_id:
+                target_contrib = getattr(peer, 'contribution', None)
+                break
+
+        rol_enabled = bool(getattr(parameters, 'RULE_OF_LAW_ENABLED', False))
+        if rol_enabled and target_contrib is not None and target_contrib >= group_avg:
+            logger.warning(
+                f"RULE OF LAW BLOCKED: Agent {agent.agent_id} tried to punish Agent {target_agent_id}. "
+                f"Target gave {target_contrib} (Group Avg {group_avg:.2f}). Hallucinated Free-riding."
+            )
+            if hasattr(agent, 'rule_of_law_blocks'):
+                agent.rule_of_law_blocks += 1
+            continue
+
+        punishment_requests[target_agent_id] = tokens
+
+    for key, raw_tokens in list((rewards_map or {}).items()):
+        target_agent_id = _target_agent_id_from_key(key, anonymized_id_mapping)
+        if target_agent_id is None or target_agent_id == agent.agent_id:
+            continue
+
+        tokens = _parse_allocation_tokens(raw_tokens)
+        if not tokens:
+            continue
+
+        tokens = min(tokens, max_per_target)
+        reward_requests[target_agent_id] = tokens
+
+    def _total_cost(pun_dict, rew_dict):
+        return (
+            sum(pun_dict.values()) * parameters.PUNISHMENT_COST
+            + sum(rew_dict.values()) * parameters.REWARD_COST
+        )
+
+    total_cost = _total_cost(punishment_requests, reward_requests)
+    if total_cost > budget and total_cost > 0:
+        scale = budget / total_cost
+        scaled_punishments = {}
+        scaled_rewards = {}
+        for target_id, tokens in punishment_requests.items():
+            scaled = int(tokens * scale)
+            if scaled > 0:
+                scaled_punishments[target_id] = scaled
+        for target_id, tokens in reward_requests.items():
+            scaled = int(tokens * scale)
+            if scaled > 0:
+                scaled_rewards[target_id] = scaled
+
+        while _total_cost(scaled_punishments, scaled_rewards) > budget:
+            best_key = None
+            best_kind = None
+            best_cost = -1
+            for target_id, tokens in scaled_punishments.items():
+                cost = tokens * parameters.PUNISHMENT_COST
+                if cost > best_cost:
+                    best_cost = cost
+                    best_key = target_id
+                    best_kind = 'punishment'
+            for target_id, tokens in scaled_rewards.items():
+                cost = tokens * parameters.REWARD_COST
+                if cost > best_cost:
+                    best_cost = cost
+                    best_key = target_id
+                    best_kind = 'reward'
+            if best_key is None:
+                break
+            if best_kind == 'punishment':
+                scaled_punishments[best_key] -= 1
+                if scaled_punishments[best_key] <= 0:
+                    del scaled_punishments[best_key]
+            else:
+                scaled_rewards[best_key] -= 1
+                if scaled_rewards[best_key] <= 0:
+                    del scaled_rewards[best_key]
+
+        punishment_requests = scaled_punishments
+        reward_requests = scaled_rewards
+
+    return punishment_requests, reward_requests
+
+
 def _apply_allocations_helper(source_map, destination_map, tokens_remaining, cost_per_token, is_punishment, agent, anonymized_id_mapping, group_state, max_per_target):
     """Apply allocations from a source mapping (e.g., punishments or rewards) to destination_map.
 
@@ -94,8 +211,8 @@ def _apply_allocations_helper(source_map, destination_map, tokens_remaining, cos
         if target_agent_id is None or target_agent_id == agent.agent_id:
             continue
 
-        tokens = _parse_int_safe(raw_tokens)
-        if tokens is None or tokens <= 0:
+        tokens = _parse_allocation_tokens(raw_tokens)
+        if not tokens:
             continue
 
         tokens = min(tokens, max_per_target)

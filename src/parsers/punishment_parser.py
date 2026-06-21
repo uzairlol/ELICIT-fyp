@@ -1,7 +1,7 @@
 import logging
 import re
 import parameters
-from response_parsing_utils import _unwrap_response_data, _apply_allocations_helper, _make_parser_meta, deanonymize_reasoning
+from response_parsing_utils import _unwrap_response_data, _apply_stage2_allocations, _make_parser_meta, deanonymize_reasoning
 
 logger = logging.getLogger(__name__)
 
@@ -52,33 +52,19 @@ def parse_punishment_response(response, group_state, agent):
             if label not in punishments:
                 punishments[label] = 0
                 repaired_missing_targets = True
-            if label not in rewards:
-                rewards[label] = 0
-                repaired_missing_targets = True
-            if label not in justifications:
-                justifications[label] = ''
-                repaired_missing_targets = True
 
         # Deanonymize the reasoning for logging purposes
         deanonymized_reasoning = deanonymize_reasoning(reasoning, agent.anonymized_id_mapping)
 
-        punishment_allocations = {}
-        reward_allocations = {}
-        tokens_remaining = agent.get_stage2_budget() if hasattr(agent, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
+        budget = agent.get_stage2_budget() if hasattr(agent, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
         max_per_target = agent.get_max_punishment_tokens() if hasattr(agent, 'get_max_punishment_tokens') else int(getattr(parameters, 'MAX_PUNISHMENT_TOKENS', parameters.ENDOWMENT_STAGE_2))
 
-        # Apply allocations using shared helper (handles mapping, caps, affordability, and ROL)
-        punishment_allocations, tokens_remaining = _apply_allocations_helper(
-            punishments, punishment_allocations, tokens_remaining, parameters.PUNISHMENT_COST,
-            True, agent, agent.anonymized_id_mapping, group_state, max_per_target
-        )
-        reward_allocations, tokens_remaining = _apply_allocations_helper(
-            rewards, reward_allocations, tokens_remaining, parameters.REWARD_COST,
-            False, agent, agent.anonymized_id_mapping, group_state, max_per_target
+        punishment_allocations, reward_allocations = _apply_stage2_allocations(
+            punishments, rewards, agent, agent.anonymized_id_mapping, group_state, budget, max_per_target
         )
 
-        fallback_used = not bool(punishments or rewards)
-        fallback_reason = 'Missing punishments/rewards objects' if fallback_used else ''
+        fallback_used = not bool(punishments)
+        fallback_reason = 'Missing punishments object' if fallback_used else ''
         parser_meta = _make_parser_meta(data, expected_keys, fallback_used, fallback_reason)
         parser_meta['repaired_missing_targets'] = repaired_missing_targets
         parser_meta['expected_target_labels'] = expected_labels
