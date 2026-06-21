@@ -16,10 +16,20 @@ logger = logging.getLogger(__name__)
 
 def setup_logging():
     """Configure root logger with a timestamped format."""
+    log_dir = os.path.join(os.path.dirname(__file__), 'debug_logs')
+    os.makedirs(log_dir, exist_ok=True)
+    debug_log_path = os.path.join(log_dir, 'debug.log')
+    
+    fh, ch = logging.FileHandler(debug_log_path), logging.StreamHandler()
+    fh.setLevel(logging.DEBUG)
+    ch.setLevel(logging.INFO)
+    
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         datefmt="%H:%M:%S",
+        handlers=[fh, ch],
+        force=True
     )
 
 
