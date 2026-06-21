@@ -206,7 +206,7 @@ class Environment:
             for agent_id, bonus in subsidies.items():
                 agent = next(a for a in self.agents if a.agent_id == agent_id)
                 agent.last_subsidy = bonus
-                logger.info(f"Agent {agent_id} received subsidy: +{bonus} tokens")
+                logger.info(f"Agent {agent_id} received subsidy: +{bonus}")
 
         # Climate shocks and Loss & Damage Fund (optional; disabled by default).
         self._apply_climate_shock_and_ldf()
