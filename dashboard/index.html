@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SanctSim Visualizer — Simulation Dashboard</title>
+  <meta name="description" content="Interactive visualizer for SanctSim multi-agent climate risk-sharing simulation results." />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ApexCharts -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script>
+  <!-- Vis-Network (for sanction network graph) -->
+  <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/dist/vis-network.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/dist/dist/vis-network.min.css" />
+</head>
+<body>
+
+<!-- ── Loading Overlay ──────────────────────────────────────── -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div style="font-size:0.85rem;color:#64748b">Parsing simulation data…</div>
+</div>
+
+<div id="app-shell">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header id="site-header">
+    <div id="header-logo">
+      <div class="logo-icon">🌍</div>
+      <div>
+        <h1>SanctSim Visualizer <span class="logo-sub"> — Endogenous Institutions &amp; Climate Risk-Sharing</span></h1>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <span id="file-badge"></span>
+      <label for="file-input" style="cursor:pointer;font-size:0.75rem;color:#64748b;display:flex;align-items:center;gap:0.35rem;border:1px solid rgba(99,179,237,0.15);padding:0.3rem 0.75rem;border-radius:6px;transition:all 0.2s" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'">
+        📂 Load File
+        <input type="file" id="file-input" accept=".json" style="display:none" />
+      </label>
+    </div>
+  </header>
+
+  <div id="main-content">
+
+    <!-- ── Drop Zone ───────────────────────────────────────────── -->
+    <div id="drop-zone">
+      <span class="drop-icon">📊</span>
+      <h2>Drop your simulation JSON here</h2>
+      <p>or click to select a file from your <code>results/</code> folder</p>
+      <div class="file-types">
+        <span class="file-type-tag">.json</span>
+        <span class="file-type-tag">simulation_*.json</span>
+        <span class="file-type-tag">LDF / Abstract / Climate</span>
+      </div>
+    </div>
+
+    <!-- ── Dashboard UI (hidden until file loaded) ─────────────── -->
+    <div id="dashboard-ui" style="display:none">
+
+      <!-- KPI Strip -->
+      <div id="kpi-grid" class="kpi-grid"></div>
+
+      <!-- Nav Tabs -->
+      <nav id="nav-tabs">
+        <div class="nav-tab active" data-view="macro">📈 Macro Dynamics</div>
+        <div class="nav-tab" data-view="agents">🔍 Agent Deep Dive</div>
+        <div class="nav-tab" data-view="network">🕸️ Sanction Network</div>
+        <div class="nav-tab" data-view="ldf" id="tab-ldf" style="display:none">🌍 LDF Analysis</div>
+        <div class="nav-tab" data-view="democracy" id="tab-democracy" style="display:none">🗳️ Democracy</div>
+      </nav>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Macro Dynamics                                   -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-macro" class="view-section active">
+
+        <!-- Row 1: Cooperation + Membership -->
+        <div class="chart-grid chart-grid-2">
+          <div class="chart-card">
+            <div class="chart-title">📊 Cooperation Rate &amp; Wealth Inequality</div>
+            <div class="chart-subtitle">Cooperation % (left axis) and Gini coefficient (right axis, dashed). ⚡ = shock rounds.</div>
+            <div class="legend" style="margin-bottom:0.75rem">
+              <div class="legend-item"><div class="legend-line" style="background:#14b8a6"></div>Cooperation %</div>
+              <div class="legend-item"><div class="legend-line" style="background:#f59e0b;border-top:2px dashed #f59e0b;height:0"></div>Gini Index</div>
+            </div>
+            <div id="chart-coop"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🏛️ Institutional Membership</div>
+            <div class="chart-subtitle">Number of agents in SI (binding) vs SFI (non-binding) each round.</div>
+            <div class="legend" style="margin-bottom:0.75rem">
+              <div class="legend-item"><div class="legend-dot" style="background:#818cf8"></div>SI (Sanctioning)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>SFI (Free)</div>
+            </div>
+            <div id="chart-membership"></div>
+          </div>
+        </div>
+
+        <!-- Row 2: Contributions -->
+        <div class="chart-grid chart-grid-full" style="margin-top:1.25rem">
+          <div class="chart-card">
+            <div class="chart-title">💰 Total Contributions per Round</div>
+            <div class="chart-subtitle">Aggregate contributions from SI members (blue) vs SFI members (grey).</div>
+            <div id="chart-contrib"></div>
+          </div>
+        </div>
+
+        <!-- Row 3: Wealth Trajectories -->
+        <div class="chart-grid chart-grid-full" style="margin-top:1.25rem">
+          <div class="chart-card">
+            <div class="chart-title">💹 Wealth Trajectories</div>
+            <div class="chart-subtitle">Individual agent wealth over time. Bold lines = group averages. Blue = Developed, Green = Developing.</div>
+            <div class="legend" style="margin-bottom:0.75rem">
+              <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>Developed (avg)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Developing (avg)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(96,165,250,0.4)"></div>Individual agents</div>
+            </div>
+            <div id="chart-wealth"></div>
+          </div>
+        </div>
+
+        <!-- Row 4: Reputation -->
+        <div class="chart-grid chart-grid-full" style="margin-top:1.25rem">
+          <div class="chart-card">
+            <div class="chart-title">⭐ Reputation Trajectories</div>
+            <div class="chart-subtitle">Per-agent reputation scores over rounds. Blue = Developed, Green = Developing.</div>
+            <div id="chart-rep"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Agent Deep Dive                                  -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-agents" class="view-section">
+        <div id="agent-dive-grid">
+
+          <!-- Left: agent list -->
+          <div id="agent-list-panel">
+            <div class="panel-header">
+              <span>Agents</span>
+              <div style="display:flex;gap:0.4rem">
+                <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div><span style="font-size:0.65rem">Dev'd</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div><span style="font-size:0.65rem">Dev'g</span></div>
+              </div>
+            </div>
+            <input type="text" id="agent-search" placeholder="🔍 Search agents…" />
+            <div id="agent-list"></div>
+          </div>
+
+          <!-- Right: agent detail -->
+          <div id="agent-detail-panel">
+
+            <!-- Profile card -->
+            <div class="detail-card">
+              <div class="detail-card-header">👤 Agent Profile</div>
+              <div class="detail-card-body" id="agent-profile-content">
+                <div class="empty-state"><span class="empty-icon">👈</span><p>Select an agent from the list</p></div>
+              </div>
+            </div>
+
+            <!-- Wealth + contribution chart -->
+            <div class="detail-card">
+              <div class="detail-card-header">📈 Wealth, Payoff &amp; Contribution Over Time</div>
+              <div class="detail-card-body">
+                <div id="chart-agent-wealth"></div>
+              </div>
+            </div>
+
+            <!-- Sanctions summary -->
+            <div class="detail-card">
+              <div class="detail-card-header">⚖️ Total Punishments Given (all rounds)</div>
+              <div class="detail-card-body" id="agent-sanctions-content">
+                <div class="empty-state"><span class="empty-icon">🕊️</span><p>No punishments assigned.</p></div>
+              </div>
+            </div>
+
+            <!-- Round-by-round timeline -->
+            <div class="detail-card">
+              <div class="detail-card-header">🕐 Round-by-Round Decision Timeline</div>
+              <div class="detail-card-body" style="padding-right:0.5rem">
+                <div class="round-timeline" id="agent-timeline"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Sanction Network                                 -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-network" class="view-section">
+        <div id="network-container">
+          <div id="network-controls">
+            <div class="network-ctrl-group">
+              <label>Round</label>
+              <select class="ctrl-select" id="network-round-select"></select>
+            </div>
+            <div class="network-ctrl-group">
+              <label>Edge Type</label>
+              <select class="ctrl-select" id="network-edge-type">
+                <option value="punishments">⚖️ Punishments (red)</option>
+                <option value="rewards">🎁 Rewards (green)</option>
+              </select>
+            </div>
+            <div class="legend" style="margin-left:auto">
+              <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>Developed</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Developing</div>
+              <div class="legend-item"><span style="font-size:0.68rem">Solid border = SI · Dashed = SFI</span></div>
+              <div class="legend-item"><span style="font-size:0.68rem">Node size ∝ contribution</span></div>
+            </div>
+          </div>
+          <div id="network-canvas"></div>
+        </div>
+        <div style="margin-top:0.75rem;font-size:0.72rem;color:#64748b;text-align:center">
+          Click and drag nodes to rearrange · Scroll to zoom · Hover for agent details
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: LDF Analysis                                     -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-ldf" class="view-section">
+        <div id="ldf-view-content">
+          <div class="empty-state"><span class="empty-icon">🌍</span><p>Loading LDF data…</p></div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Democracy                                        -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-democracy" class="view-section">
+        <div id="democracy-view-content">
+          <div class="empty-state"><span class="empty-icon">🗳️</span><p>Loading democracy data…</p></div>
+        </div>
+      </section>
+
+    </div><!-- /dashboard-ui -->
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<script src="app.js"></script>
+</body>
+</html>
