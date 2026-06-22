@@ -16,8 +16,11 @@ future LLM prompts, closing the loop between social judgement and behaviour.
 
 import json
 import re
+import logging
 import parameters
 from scenario_config import get_scenario_config
+
+logger = logging.getLogger(__name__)
 
 
 class TomModule:
@@ -51,6 +54,7 @@ class TomModule:
                 round_number=round_number
             )
             scores[other_agent.agent_id] = {'score': score, 'reasoning': reasoning}
+            logger.debug(f"[ToM Audit] Agent {evaluating_agent.agent_id} scored Agent {other_agent.agent_id}: {score:.1f}/10 - \"{reasoning[:150]}...\"")
 
             # Optionally store the reasoning on the evaluator for logging
             if not hasattr(evaluating_agent, 'tom_audit_log'):
