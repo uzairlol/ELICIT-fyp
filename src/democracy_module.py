@@ -1,7 +1,7 @@
 # democracy_module.py
 
 """
-Democracy Module for SanctSim.
+Democracy Module for ELICIT (Emergent LLM Institutions for Climate and International Treaties).
 
 Every DEMOCRACY_INTERVAL rounds a "constitutional moment" is triggered:
 

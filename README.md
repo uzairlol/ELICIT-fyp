@@ -1,6 +1,6 @@
-# LLM Multi-Agent Public Goods and Climate Risk-Sharing Simulator
+# ELICIT: Emergent LLM Institutions for Climate and International Treaties
 
-This project is a multi-agent simulation framework for studying cooperation, sanctions, governance, and climate risk-sharing under repeated public goods interactions.
+**ELICIT** (Emergent LLM Institutions for Climate and International Treaties) is a multi-agent simulation framework for studying cooperation, sanctions, governance, and climate risk-sharing under repeated public goods interactions.
 
 Agents are LLM-driven and make decisions each round about:
 
@@ -299,4 +299,4 @@ Most important groups:
 
 ## Suggested GitHub description (optional)
 
-LLM-based multi-agent simulation of public goods cooperation with sanctions, reputation, constitutional voting, and climate loss-and-damage risk-sharing.
+ELICIT: LLM-based multi-agent simulation of public goods cooperation with sanctions, reputation, constitutional voting, and climate loss-and-damage risk-sharing.

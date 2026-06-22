@@ -579,7 +579,7 @@ def main():
         print(f"No JSON files found in {results_dir}")
         return
         
-    print("\n=== SanctSim Results Plotter ===")
+    print("\n=== ELICIT Results Plotter ===")
     print("Available simulation results:")
     for i, f in enumerate(json_files):
         print(f"[{i}] {f}")

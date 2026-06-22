@@ -1,7 +1,7 @@
 # tom_module.py
 
 """
-Theory of Mind (ToM) Module for SanctSim.
+Theory of Mind (ToM) Module for ELICIT (Emergent LLM Institutions for Climate and International Treaties).
 
 After each round, each agent silently "audits" every other agent for behavioural
 consistency (hypocrisy detection):

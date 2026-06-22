@@ -1,7 +1,7 @@
 # parameters.py
 
 """
-All constants and configuration settings for the SanctSim simulation.
+All constants and configuration settings for the ELICIT (Emergent LLM Institutions for Climate and International Treaties) simulation.
 """
 
 # --- Simulation Settings ---
@@ -19,7 +19,7 @@ TOTAL_RUNS = 0            # Total planned runs for progress reporting
 LLM_MODEL = "llama3.1:8b"
 LLM_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_REQUEST_TIMEOUT_SECONDS = 3000.0
-LLM_MAX_CONCURRENCY = 3
+LLM_MAX_CONCURRENCY = 2
 
 # --- Initial Endowments ---
 INITIAL_TOKENS = 1000    # Starting tokens per agent

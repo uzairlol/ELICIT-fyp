@@ -75,7 +75,7 @@ def _compute_total_runs(seeds, include_ablations, include_mixed, full_only=False
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(description="Run SanctSim experiment sweeps.")
+    parser = argparse.ArgumentParser(description="Run ELICIT experiment sweeps.")
     parser.add_argument("--seeds", type=int, nargs="+", default=MAIN_SEEDS,
                         help="List of random seeds for the main runs")
     parser.add_argument("--num-rounds", type=int, default=MAIN_NUM_ROUNDS,
