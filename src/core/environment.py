@@ -126,6 +126,18 @@ class Environment:
             for a in self.agents
         )
         logger.info(f"[ToM] Reputations after Round {round_number}: [{rep_str}]")
+
+        if getattr(parameters, 'TOM_VERBOSE', False):
+            for agent in self.agents:
+                if not agent.tom_scores:
+                    continue
+                published = ", ".join(
+                    f"Agent {tid}: {score:.1f}"
+                    for tid, score in sorted(agent.tom_scores.items())
+                )
+                logger.info(
+                    f"[ToM] Agent {agent.agent_id} published trust scores → [{published}]"
+                )
         
         if self.gossip_module and self.gossip_module.gossip_bulletin:
             logger.info(f"{'='*20} SOCIAL GOSSIP BULLETIN {'='*20}")

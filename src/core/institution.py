@@ -163,7 +163,15 @@ class SanctioningInstitution(Institution):
                         self.reward_matrix[rewarded_agent_id] = {}
                     self.reward_matrix[rewarded_agent_id][agent.agent_id] = tokens
 
-                logger.info(f"Agent {agent.agent_id} assigned punishments: {punishment_allocations}. Reasoning: \"{agent.punishment_reasoning[:150]}...\"")
+                just_snippet = ""
+                justifications = getattr(agent, 'punishment_justifications', {}) or {}
+                active_just = [f"{k}: {str(v)[:60]}" for k, v in justifications.items() if str(v).strip()]
+                if active_just:
+                    just_snippet = f" Justifications: {'; '.join(active_just[:4])}"
+                logger.info(
+                    f"Agent {agent.agent_id} assigned punishments: {punishment_allocations}. "
+                    f"Reasoning: \"{agent.punishment_reasoning[:150]}...\"{just_snippet}"
+                )
 
     def apply_punishments_and_rewards(self):
         """

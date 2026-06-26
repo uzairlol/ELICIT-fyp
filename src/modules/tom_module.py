@@ -85,10 +85,16 @@ class TomModule:
             entry = scores.get(target.agent_id, {'score': 5.0, 'reasoning': 'Missing score.'})
             score = entry['score']
             reasoning = entry['reasoning']
-            logger.debug(
-                f"[ToM Audit] Agent {evaluating_agent.agent_id} scored Agent {target.agent_id}: "
-                f"{score:.1f}/10 - \"{reasoning[:150]}...\""
-            )
+            if getattr(parameters, 'TOM_VERBOSE', False):
+                logger.info(
+                    f"[ToM] Agent {evaluating_agent.agent_id} scored Agent {target.agent_id}: "
+                    f"{score:.1f}/10 - \"{reasoning[:150]}{'...' if len(reasoning) > 150 else ''}\""
+                )
+            else:
+                logger.debug(
+                    f"[ToM Audit] Agent {evaluating_agent.agent_id} scored Agent {target.agent_id}: "
+                    f"{score:.1f}/10 - \"{reasoning[:150]}...\""
+                )
             evaluating_agent.tom_audit_log.append({
                 'round': round_number,
                 'target_agent': target.agent_id,

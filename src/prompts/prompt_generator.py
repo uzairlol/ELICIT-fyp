@@ -240,9 +240,9 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
         target_labels.append(label)
         agent.anonymized_id_mapping[label_id] = member.agent_id
 
-        stage1_budget = member.get_stage1_contribution_cap() if hasattr(member, 'get_stage1_contribution_cap') else parameters.ENDOWMENT_STAGE_1
+        stage1_budget = _safe_int(_contribution_budget(member))
         contribution = _safe_int(getattr(member, 'contribution', 0))
-        kept = max(0, _safe_int(stage1_budget) - contribution)
+        kept = max(0, stage1_budget - contribution)
         stage1_payoff = _safe_float(stage1_payoffs.get(member.agent_id, 0.0))
         group_type = f", group={getattr(member, 'agent_group', 'unknown')}" if show_country_types else ""
 
@@ -258,12 +258,12 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
             if peer_score is not None:
                 tom_suffix = f", your trust score for them: {float(peer_score):.1f}/10"
 
+        unit_label = sc['currency_name'] if _uses_climate_budget() else "sanction-game tokens"
         rows.append(
             f"- {label}{group_type}{free_rider_tag}{tom_suffix}: "
-            f"budget/wealth={float(stage1_budget):.2f} {sc['currency_name']}, "
-            f"contrib={contribution} {sc['currency_name']} (deviation from avg: {deviation:+.1f}), "
-            f"kept={kept} {sc['currency_name']}, "
-            f"net_stage1_payoff={stage1_payoff:.2f} {sc['currency_name']}, "
+            f"contrib={contribution} / {stage1_budget} {unit_label} (deviation from avg: {deviation:+.1f}), "
+            f"kept={kept} {unit_label}, "
+            f"net_stage1_payoff={stage1_payoff:.2f}, "
             f"stated intent: \"{stated_reason}\""
         )
 
@@ -272,23 +272,45 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
 
     s2_budget = agent.get_stage2_budget() if hasattr(agent, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
     max_punishment = agent.get_max_punishment_tokens() if hasattr(agent, 'get_max_punishment_tokens') else parameters.MAX_PUNISHMENT_TOKENS
-    funding_info = " (funded directly from your wealth)" if _uses_climate_budget() else ""
+    currency = sc['currency_name']
+    climate_mode = _uses_climate_budget()
+    funding_info = " (costs deducted from your wealth in climate/LDF mode)" if climate_mode else ""
+
+    if climate_mode:
+        budget_line = (
+            f"- Sanction budget: {s2_budget:,.0f} {currency} TOTAL for this round "
+            f"({parameters.STAGE_2_WEALTH_FRACTION:.0%} of your wealth{funding_info})"
+        )
+        max_line = f"- Max sanction per target: {max_punishment:,.0f} {currency}"
+        amount_rule = (
+            f"Allocate integer {currency} amounts (0–{max_punishment:,.0f} per target, same scale as wealth and contributions). "
+            f"Include every listed target exactly once in \"punishments\" (use 0 if not punishing). Rewards are optional."
+        )
+        avg_line = f"- Group average contribution this round: {avg_contrib:,.2f} {currency} — agents below this are free-riding"
+    else:
+        budget_line = f"- Sanction token budget: {s2_budget} tokens TOTAL for this round"
+        max_line = f"- Max sanction tokens per target: {max_punishment} tokens"
+        amount_rule = (
+            f"Allocate integer sanction tokens only (0–{max_punishment} per target). "
+            f"Include every listed target exactly once in \"punishments\" (use 0 if not punishing). Rewards are optional."
+        )
+        avg_line = f"- Group average contribution this round: {avg_contrib:.2f} tokens — agents below this are free-riding"
 
     card = f"""
 **Decision Card — Stage 2 / Punishment & Reward Allocation**
 - Your institution: {getattr(agent, 'institution_choice', 'unknown')}
-- Stage 2 budget: {s2_budget} {sc['currency_name']} TOTAL across all targets combined (punishments + rewards share this pool){funding_info}
-- Max amount assignable to any single target: {max_punishment} {sc['currency_name']}
-- Punishment effect / cost: -{parameters.PUNISHMENT_EFFECT} / {parameters.PUNISHMENT_COST} {sc['currency_name']} per unit
-- Reward effect / cost: +{parameters.REWARD_EFFECT} / {parameters.REWARD_COST} {sc['currency_name']} per unit
-- Group average contribution this round: {avg_contrib:.2f} {sc['currency_name']} — agents below this are free-riding
+{budget_line}
+{max_line}
+- Punishment effect / cost: -{parameters.PUNISHMENT_EFFECT} payoff / {parameters.PUNISHMENT_COST} per unit assigned
+- Reward effect / cost: +{parameters.REWARD_EFFECT} payoff / {parameters.REWARD_COST} per unit assigned
+{avg_line}
 - Target labels (use exactly): {target_label_block}
 - Targets are listed worst free-rider first — prioritize punishing agents with the lowest contributions and mismatched stated intent.
 
 Current-round targets (agents marked [FREE-RIDER] contributed below the group average):
 {targets_block}
 
-Allocate integer amounts only. Include every listed target exactly once in "punishments" (use 0 if not punishing). Rewards are optional.
+{amount_rule}
 """
 
     return card, target_labels
@@ -531,31 +553,53 @@ def construct_punishment_prompt(agent, group_state):
         return ",\n        ".join(f'"{lbl}": {value}' for lbl in labels)
 
     punish_keys = _json_kv(target_labels, 0)
+    justify_keys = _json_kv(target_labels, '""')
+    max_punishment = agent.get_max_punishment_tokens() if hasattr(agent, 'get_max_punishment_tokens') else parameters.MAX_PUNISHMENT_TOKENS
+
+    if _uses_climate_budget():
+        amount_contract = (
+            f'- Amounts must be integers from 0 to {max_punishment:,.0f} {sc["currency_name"]} '
+            f'(wealth-scale, same units as contributions and your sanction budget).'
+        )
+        budget_contract = (
+            f'- Your total spend (punishment × {parameters.PUNISHMENT_COST} + reward × {parameters.REWARD_COST}) '
+            f'MUST NOT exceed {s2_budget:,.0f} {sc["currency_name"]}.'
+        )
+    else:
+        amount_contract = f'- Amounts must be integers from 0 to {max_punishment} only.'
+        budget_contract = (
+            f'- Your total spend (punishment tokens × {parameters.PUNISHMENT_COST} + reward tokens × {parameters.REWARD_COST}) '
+            f'MUST NOT exceed {s2_budget}.'
+        )
 
     prompt += f"""
 
 **Response Contract (Punishment and Reward Choice):**
 - Return exactly one JSON object and nothing else.
 - "punishments" MUST include ALL {len(target_labels)} target labels as keys. Use 0 for targets you are not punishing.
-- "rewards" is OPTIONAL — omit it or use {{}} if you are not rewarding anyone. If present, only include targets with a positive amount.
-- "justifications" is OPTIONAL — if included, only justify targets you punish or reward with a positive amount.
-- Use integer amounts only (never negative).
-- Your total spend (punishment amount × {parameters.PUNISHMENT_COST} + reward amount × {parameters.REWARD_COST}) MUST NOT exceed {s2_budget}.
+{amount_contract}
+- "rewards" is OPTIONAL — omit it or use {{}} if you are not rewarding anyone.
+- "justifications" MUST include every target label. Use "" for unpunished/unrewarded targets; one sentence per target you punish or reward with amount > 0.
+{budget_contract}
 - Do not include yourself in either object.
 - Focus punishments on free-riders: agents who contributed below the group average or whose stated intent does not match their action.
+- In "reasoning", list each Agent label you punish with amount > 0 and why. If you punish nobody, say explicitly that all amounts are 0.
 
-**Target labels (ALL must appear as keys in punishments):** {label_block}
+**Target labels (ALL must appear as keys in punishments and justifications):** {label_block}
 
 **Required JSON shape:**
 {{
     "punishments": {{
         {punish_keys}
     }},
-    "reasoning": "One or two sentences explaining your overall strategy.",
+    "justifications": {{
+        {justify_keys}
+    }},
+    "reasoning": "Agent X: N tokens because ...; Agent Y: 0 because ...",
     "facts_used": ["Fact 1", "Fact 2"]
 }}
 
-- Keep `reasoning` to the point.
+- Keep `reasoning` specific to named Agent labels and amounts.
 - Keep `facts_used` to the 2-3 most important facts only.
 - Do not add markdown, code fences, or commentary outside the JSON.
 """

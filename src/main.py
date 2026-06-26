@@ -106,7 +106,8 @@ def main():
     logger.info(f"Scenario: {parameters.SCENARIO}")
     logger.info(f"Agent Type: {parameters.AGENT_TYPE}")
     logger.info(
-        f"Modules: ToM={'[ON]' if parameters.TOM_ENABLED else '[OFF]'}, "
+        f"Modules: ToM={'[ON]' if parameters.TOM_ENABLED else '[OFF]'}"
+        f"{' (verbose)' if parameters.TOM_ENABLED and getattr(parameters, 'TOM_VERBOSE', False) else ''}, "
         f"Gossip={'[ON]' if parameters.GOSSIP_ENABLED else '[OFF]'}, "
         f"Voting={'[ON]' if parameters.DEMOCRACY_ENABLED else '[OFF]'}"
     )

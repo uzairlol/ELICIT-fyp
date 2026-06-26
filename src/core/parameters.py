@@ -32,6 +32,7 @@ OLLAMA_NUM_PARALLEL = 1
 INITIAL_TOKENS = 1000    # Starting tokens per agent
 ENDOWMENT_STAGE_1 = 20   # Tokens per agent per round (Stage 1 contribution)
 ENDOWMENT_STAGE_2 = 20   # Tokens per agent per round (Stage 2 sanctions)
+STAGE_2_WEALTH_FRACTION = 0.05  # Climate/LDF: stage-2 sanction budget = max(ENDOWMENT_STAGE_2, wealth * this)
 
 # --- Public Goods Game ---
 PUBLIC_GOOD_MULTIPLIER = 1.6   # Multiplication factor for group contributions
@@ -57,6 +58,7 @@ BELIEF_TRACKING_ENABLED = True # Enable structured belief-state updates after ea
 
 # --- Phase 2: Cognitive Modules ---
 TOM_ENABLED = True             # Enable Theory of Mind audits after each round
+TOM_VERBOSE = True             # Log each agent's published trust scores to the terminal
 DEMOCRACY_ENABLED = True       # Enable democratic rule-changing every N rounds
 DEMOCRACY_INTERVAL = 5        # Rounds between constitutional votes
 

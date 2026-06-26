@@ -59,11 +59,14 @@ def _target_agent_id_from_key(key, anonymized_id_mapping):
     if not match:
         return None
     agent_num = int(match.group())
-    # When anonymity is off the prompt uses real agent ids directly, so an
-    # empty mapping should not cause us to drop valid allocations.
     if not anonymized_id_mapping:
         return agent_num
-    return anonymized_id_mapping.get(agent_num)
+    mapped = anonymized_id_mapping.get(agent_num)
+    if mapped is not None:
+        return mapped
+    if agent_num in anonymized_id_mapping.values():
+        return agent_num
+    return None
 
 
 def _parse_int_safe(val):
@@ -74,6 +77,37 @@ def _parse_int_safe(val):
             return abs(int(float(val)))
         except Exception:
             return None
+
+
+def _normalize_label_key(key):
+    text = str(key).strip()
+    if text.lower().startswith('agent '):
+        return text
+    if text.isdigit():
+        return f'Agent {text}'
+    match = re.search(r'\d+', text)
+    if match:
+        return f'Agent {match.group()}'
+    return text
+
+
+def _normalize_allocation_map(raw_map, expected_labels):
+    """Map LLM keys onto expected Agent labels when possible."""
+    normalized = {}
+    expected = set(expected_labels)
+
+    for key, value in (raw_map or {}).items():
+        label = _normalize_label_key(key)
+        if label in expected:
+            normalized[label] = value
+            continue
+        # Keep unmapped keys for downstream id resolution attempts.
+        normalized[str(key)] = value
+
+    for label in expected_labels:
+        normalized.setdefault(label, 0)
+
+    return normalized
 
 
 def _parse_allocation_tokens(val):
@@ -148,49 +182,41 @@ def _apply_stage2_allocations(punishments_map, rewards_map, agent, anonymized_id
 
     total_cost = _total_cost(punishment_requests, reward_requests)
     if total_cost > budget and total_cost > 0:
-        scale = budget / total_cost
-        scaled_punishments = {}
-        scaled_rewards = {}
-        for target_id, tokens in punishment_requests.items():
-            scaled = int(tokens * scale)
-            if scaled > 0:
-                scaled_punishments[target_id] = scaled
-        for target_id, tokens in reward_requests.items():
-            scaled = int(tokens * scale)
-            if scaled > 0:
-                scaled_rewards[target_id] = scaled
-
-        while _total_cost(scaled_punishments, scaled_rewards) > budget:
-            best_key = None
-            best_kind = None
-            best_cost = -1
-            for target_id, tokens in scaled_punishments.items():
-                cost = tokens * parameters.PUNISHMENT_COST
-                if cost > best_cost:
-                    best_cost = cost
-                    best_key = target_id
-                    best_kind = 'punishment'
-            for target_id, tokens in scaled_rewards.items():
-                cost = tokens * parameters.REWARD_COST
-                if cost > best_cost:
-                    best_cost = cost
-                    best_key = target_id
-                    best_kind = 'reward'
-            if best_key is None:
-                break
-            if best_kind == 'punishment':
-                scaled_punishments[best_key] -= 1
-                if scaled_punishments[best_key] <= 0:
-                    del scaled_punishments[best_key]
-            else:
-                scaled_rewards[best_key] -= 1
-                if scaled_rewards[best_key] <= 0:
-                    del scaled_rewards[best_key]
-
-        punishment_requests = scaled_punishments
-        reward_requests = scaled_rewards
+        punishment_requests, reward_requests = _fit_allocations_to_budget(
+            punishment_requests, reward_requests, budget, members
+        )
 
     return punishment_requests, reward_requests
+
+
+def _fit_allocations_to_budget(punishment_requests, reward_requests, budget, members):
+    """Trim allocations to budget without zeroing everything via bad proportional rounding."""
+
+    def _contrib(target_id):
+        for member in members:
+            if getattr(member, 'agent_id', None) == target_id:
+                return getattr(member, 'contribution', 0)
+        return 0
+
+    remaining = budget
+    fitted_punishments = {}
+    fitted_rewards = {}
+
+    for target_id, tokens in sorted(punishment_requests.items(), key=lambda item: (_contrib(item[0]), item[0])):
+        cost = parameters.PUNISHMENT_COST
+        affordable = min(tokens, remaining // cost) if cost > 0 else tokens
+        if affordable > 0:
+            fitted_punishments[target_id] = affordable
+            remaining -= affordable * cost
+
+    for target_id, tokens in sorted(reward_requests.items(), key=lambda item: item[0]):
+        cost = parameters.REWARD_COST
+        affordable = min(tokens, remaining // cost) if cost > 0 else tokens
+        if affordable > 0:
+            fitted_rewards[target_id] = affordable
+            remaining -= affordable * cost
+
+    return fitted_punishments, fitted_rewards
 
 
 def _apply_allocations_helper(source_map, destination_map, tokens_remaining, cost_per_token, is_punishment, agent, anonymized_id_mapping, group_state, max_per_target):

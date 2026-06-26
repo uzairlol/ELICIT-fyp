@@ -58,6 +58,45 @@ def _schema_repair_prompt(base_prompt, stage_name):
         "No markdown, no code fences, no extra text."
     )
 
+
+def _zero_punishment_retry_prompt(base_prompt, group_state, agent):
+    members = list((group_state or {}).get('members', []) or [])
+    avg = (sum(getattr(m, 'contribution', 0) for m in members) / len(members)) if members else 0.0
+    free_riders = sorted(
+        [
+            m for m in members
+            if m.agent_id != agent.agent_id and getattr(m, 'contribution', 0) < avg
+        ],
+        key=lambda m: (getattr(m, 'contribution', 0), m.agent_id),
+    )
+    rider_lines = [
+        f"- Agent {m.agent_id}: contrib={getattr(m, 'contribution', 0)} (group avg {avg:.1f})"
+        for m in free_riders[:8]
+    ]
+    riders_block = "\n".join(rider_lines) if rider_lines else "- none"
+    max_punishment = agent.get_max_punishment_tokens() if hasattr(agent, 'get_max_punishment_tokens') else parameters.MAX_PUNISHMENT_TOKENS
+    return (
+        f"{base_prompt}\n\n"
+        "IMPORTANT RETRY (Punishment and Reward Choice): Your previous JSON had all punishment amounts set to 0, "
+        f"but free-riders exist this round. Either assign integer sanction amounts (1–{max_punishment}) to specific free-riders "
+        "in \"punishments\", or set reasoning to explicitly state why every amount is 0.\n"
+        "Do not write generic punishment talk if all amounts stay 0. Fill \"justifications\" for every target.\n"
+        f"Free-riders below group average:\n{riders_block}\n"
+        "Return ONLY one valid JSON object. No markdown or extra text."
+    )
+
+
+def _group_has_free_riders(group_state, agent):
+    members = list((group_state or {}).get('members', []) or [])
+    if len(members) < 2:
+        return False
+    avg = sum(getattr(m, 'contribution', 0) for m in members) / len(members)
+    return any(
+        getattr(m, 'contribution', 0) < avg
+        for m in members
+        if m.agent_id != agent.agent_id
+    )
+
 class Agent:
     def __init__(self, agent_id, api_client):
         """
@@ -312,6 +351,30 @@ class Agent:
                 justifications, facts_used, deepseek_think = retry_just, retry_facts, retry_deepseek
                 parser_meta = retry_meta
 
+        if (
+            not punishment_allocations
+            and not reward_allocations
+            and parser_meta.get('all_zero_punishments')
+            and _group_has_free_riders(group_state, self)
+        ):
+            mismatch_response = self.api_client.send_request(
+                model_name=self.api_client.deployment_name,
+                prompt=_zero_punishment_retry_prompt(prompt, group_state, self),
+                response_format={"type": "json_object"},
+                max_tokens=2250,
+                temperature=temperature,
+                top_p=top_p
+            )
+            retry_vals = parse_punishment_response(mismatch_response, group_state, self)
+            retry_pun, retry_rew, retry_reason, retry_deanon, retry_just, retry_facts, retry_deepseek, retry_meta = retry_vals
+            if retry_pun or retry_rew or not retry_meta.get('all_zero_punishments'):
+                response = mismatch_response
+                punishment_allocations, reward_allocations = retry_pun, retry_rew
+                reasoning, deanonymized = retry_reason, retry_deanon
+                justifications, facts_used, deepseek_think = retry_just, retry_facts, retry_deepseek
+                parser_meta = retry_meta
+                parser_meta['zero_allocation_retry'] = True
+
         if parser_meta.get('fallback_used', False):
             self.parsing_failures += 1
         
@@ -559,22 +622,20 @@ Respond ONLY with a valid JSON object in this exact format:
 
     def get_stage2_budget(self):
         """
-        Get the Stage 2 budget dynamically.
-        In climate mode, it is 5% of their wealth (capped at least at ENDOWMENT_STAGE_2).
-        In standard mode, it is ENDOWMENT_STAGE_2.
+        Sanction budget for stage 2.
+        Abstract mode: fixed ENDOWMENT_STAGE_2 game tokens.
+        Climate/LDF mode: 5% of current wealth (same scale as contributions), with a floor.
         """
         if self._uses_climate_budget():
-            return max(parameters.ENDOWMENT_STAGE_2, int(self.wealth * 0.05))
+            scaled = int(self.wealth * parameters.STAGE_2_WEALTH_FRACTION)
+            return max(parameters.ENDOWMENT_STAGE_2, scaled)
         return parameters.ENDOWMENT_STAGE_2
 
     def get_max_punishment_tokens(self):
-        """
-        Get the maximum punishment tokens assignable to a single target dynamically.
-        In climate mode, it is 5% of their wealth (capped at least at MAX_PUNISHMENT_TOKENS).
-        In standard mode, it is MAX_PUNISHMENT_TOKENS.
-        """
+        """Max sanction amount assignable to a single peer in stage 2."""
         if self._uses_climate_budget():
-            return max(parameters.MAX_PUNISHMENT_TOKENS, int(self.wealth * 0.05))
+            scaled = int(self.wealth * parameters.STAGE_2_WEALTH_FRACTION)
+            return max(parameters.MAX_PUNISHMENT_TOKENS, scaled)
         return parameters.MAX_PUNISHMENT_TOKENS
 
     def get_stage2_payoff(self):
