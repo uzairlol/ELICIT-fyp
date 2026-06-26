@@ -5,7 +5,7 @@ import backoff
 import json
 import urllib.request
 from openai import OpenAI, OpenAIError
-import parameters
+from core import parameters
 
 
 def _is_reasoning_model(model_name):
