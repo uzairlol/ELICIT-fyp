@@ -583,6 +583,7 @@ def construct_punishment_prompt(agent, group_state):
 
 **Response Contract (Punishment and Reward Choice):**
 - Return exactly one JSON object and nothing else.
+- CRITICAL: Every punishment amount MUST be an integer in the "punishments" object. Do NOT put amounts only in reasoning.
 - "punishments" MUST include ALL {len(target_labels)} target labels as keys. Use 0 for targets you are not punishing.
 {amount_contract}
 - "rewards" is OPTIONAL — omit it or use {{}} if you are not rewarding anyone.
@@ -590,8 +591,8 @@ def construct_punishment_prompt(agent, group_state):
 {budget_contract}
 - Do not include yourself in either object.
 - Focus punishments on free-riders: agents who contributed below the group average or whose stated intent does not match their action.
-- In "reasoning", list EACH Agent label with its amount and why (e.g. "Agent 2: 50000 because ...; Agent 10: 0 because ...").
-- If you punish nobody, reasoning MUST explicitly say all amounts are 0.
+- "reasoning": one short summary sentence (optional per-agent detail, but amounts MUST still be in "punishments").
+- If you punish nobody, set all punishments to 0 and say so in reasoning.
 
 **Target labels (ALL must appear as keys in punishments and justifications):** {label_block}
 
@@ -603,11 +604,11 @@ def construct_punishment_prompt(agent, group_state):
     "justifications": {{
         {justify_keys}
     }},
-    "reasoning": "Agent X: N because ...; Agent Y: 0 because ...",
+    "reasoning": "Brief summary of your sanction strategy.",
     "facts_used": ["Fact 1", "Fact 2"]
 }}
 
-- Keep `reasoning` specific to named Agent labels and amounts.
+- Numeric amounts live in "punishments" only. "justifications" explains why (no amounts required there).
 - Keep `facts_used` to the 2-3 most important facts only.
 - Do not add markdown, code fences, or commentary outside the JSON.
 """

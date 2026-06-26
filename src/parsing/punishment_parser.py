@@ -40,18 +40,62 @@ def _expected_target_labels(group_state, agent):
     return labels
 
 
-def _punishment_labels_complete(raw_punishments, expected_labels):
-    if not isinstance(raw_punishments, dict):
-        return False
-    normalized_keys = {_normalize_label_key(key) for key in raw_punishments.keys()}
-    return all(label in normalized_keys for label in expected_labels)
+def _extract_agent_amounts_from_text(text):
+    """Recover Agent-label amounts when the model puts numbers in reasoning instead of punishments."""
+    amounts = {}
+    for match in re.finditer(
+        r'Agent\s+(\d+)\s*:\s*([\d,]+)',
+        str(text or ''),
+        flags=re.IGNORECASE,
+    ):
+        label = f'Agent {int(match.group(1))}'
+        try:
+            amounts[label] = int(match.group(2).replace(',', ''))
+        except ValueError:
+            continue
+    return amounts
 
 
-def _justifications_complete(raw_justifications, expected_labels):
-    if not isinstance(raw_justifications, dict):
-        return False
-    normalized_keys = {_normalize_label_key(key) for key in raw_justifications.keys()}
-    return all(label in normalized_keys for label in expected_labels)
+def _build_complete_punishments(raw_punishments, reasoning, expected_labels):
+    """Merge punishments JSON with amounts recovered from reasoning text."""
+    json_map = _normalize_allocation_map(
+        raw_punishments if isinstance(raw_punishments, dict) else {},
+        expected_labels,
+        fill_missing=False,
+    )
+    reasoning_amounts = _extract_agent_amounts_from_text(reasoning)
+
+    complete = {}
+    recovered_labels = []
+    for label in expected_labels:
+        json_val = _parse_allocation_tokens(json_map.get(label, 0)) or 0
+        reasoning_val = reasoning_amounts.get(label, 0) or 0
+        if json_val > 0:
+            complete[label] = json_val
+        elif reasoning_val > 0:
+            complete[label] = reasoning_val
+            recovered_labels.append(label)
+        else:
+            complete[label] = 0
+    return complete, recovered_labels
+
+
+def _normalize_justifications(raw_justifications, expected_labels):
+    justifications = {}
+    if isinstance(raw_justifications, dict):
+        for key, value in raw_justifications.items():
+            justifications[_normalize_label_key(key)] = value
+    for label in expected_labels:
+        justifications.setdefault(label, '')
+    return justifications
+
+
+def _justifications_mention_punishment(justifications):
+    for value in (justifications or {}).values():
+        text = str(value or '').lower()
+        if 'punish' in text or 'sanction' in text or 'penal' in text:
+            return True
+    return False
 
 
 def _reasoning_matches_zero_allocations(reasoning, punishments):
@@ -96,20 +140,24 @@ def parse_punishment_response(response, group_state, agent):
         if deepseek_thought:
             reasoning = f"<think>\n{deepseek_thought}\n</think>\n" + reasoning
         deepseek_think = data.get('deepseek_think', '')
-        justifications = raw_justifications if isinstance(raw_justifications, dict) else {}
         facts_used = data.get('facts_used', []) or []
 
         retry_reason = ''
-        if not isinstance(raw_punishments, dict):
-            retry_reason = 'Missing or invalid punishments object'
-        elif not _punishment_labels_complete(raw_punishments, expected_labels):
-            retry_reason = 'punishments missing one or more required target labels'
-        elif not _justifications_complete(raw_justifications, expected_labels):
-            retry_reason = 'justifications missing one or more required target labels'
+        if raw_punishments is not None and not isinstance(raw_punishments, dict):
+            retry_reason = 'punishments must be a JSON object'
         elif not str(reasoning or '').strip():
             retry_reason = 'missing reasoning'
 
-        punishments = _normalize_allocation_map(raw_punishments if isinstance(raw_punishments, dict) else {}, expected_labels)
+        punishments, recovered_from_reasoning = _build_complete_punishments(
+            raw_punishments if isinstance(raw_punishments, dict) else {},
+            reasoning,
+            expected_labels,
+        )
+        justifications = _normalize_justifications(raw_justifications, expected_labels)
+
+        if not retry_reason and raw_punishments is None and not any(punishments.values()):
+            retry_reason = 'missing punishments object'
+
         rewards = _normalize_allocation_map(rewards, [], fill_missing=False) if rewards else {}
 
         budget = agent.get_stage2_budget() if hasattr(agent, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
@@ -124,8 +172,11 @@ def parse_punishment_response(response, group_state, agent):
 
         all_zero_punishments = all(_parse_allocation_tokens(v) == 0 for v in punishments.values())
         semantic_retry = False
-        if not retry_reason and all_zero_punishments and not _reasoning_matches_zero_allocations(reasoning, punishments):
-            semantic_retry = True
+        if not retry_reason and all_zero_punishments:
+            if not _reasoning_matches_zero_allocations(reasoning, punishments):
+                semantic_retry = True
+            elif _justifications_mention_punishment(justifications):
+                semantic_retry = True
 
         if not retry_reason:
             for label in expected_labels:
@@ -142,12 +193,19 @@ def parse_punishment_response(response, group_state, agent):
         parser_meta['parsed_reward_labels'] = list(rewards.keys())
         parser_meta['all_zero_punishments'] = all_zero_punishments
         parser_meta['semantic_retry'] = semantic_retry
+        parser_meta['recovered_from_reasoning'] = recovered_from_reasoning
         parser_meta['raw_punishment_values'] = {k: _parse_allocation_tokens(v) for k, v in punishments.items()}
         parser_meta['total_spend'] = total_cost
         parser_meta['budget'] = budget
 
         if retry_reason:
             return {}, {}, reasoning, deanonymized_reasoning, justifications, facts_used, deepseek_think, parser_meta
+
+        if recovered_from_reasoning:
+            logger.info(
+                f"Agent {agent.agent_id}: recovered punishment amounts from reasoning for "
+                f"{recovered_from_reasoning}"
+            )
 
         return punishment_allocations, reward_allocations, reasoning, deanonymized_reasoning, justifications, facts_used, deepseek_think, parser_meta
 

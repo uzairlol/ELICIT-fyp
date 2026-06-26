@@ -63,9 +63,19 @@ def _semantic_repair_prompt(base_prompt, stage_name):
     return (
         f"{base_prompt}\n\n"
         f"IMPORTANT RETRY ({stage_name}): Your previous response was internally inconsistent. "
-        "Punishments, justifications, and reasoning must agree. "
-        "If all punishment amounts are 0, reasoning must explicitly state that. "
-        "If you punish anyone, set amounts > 0 and explain each target in justifications and reasoning. "
+        "Every numeric punishment amount MUST appear in the \"punishments\" object (not only in reasoning). "
+        "Use one short reasoning summary; put each target's integer amount under punishments. "
+        "If all amounts are 0, say so explicitly in reasoning. "
+        "Return ONLY one valid JSON object. No markdown, no code fences, no extra text."
+    )
+
+
+def _budget_repair_prompt(base_prompt, stage_name, budget, currency_name):
+    return (
+        f"{base_prompt}\n\n"
+        f"IMPORTANT RETRY ({stage_name}): Your previous punishments exceeded your budget of "
+        f"{budget:,.0f} {currency_name}. Keep the same targets but reduce amounts so total spend fits. "
+        "Put the final amounts in the \"punishments\" object. "
         "Return ONLY one valid JSON object. No markdown, no code fences, no extra text."
     )
 
@@ -314,9 +324,21 @@ class Agent:
 
         punishment_allocations, reward_allocations, reasoning, deanonymized, justifications, facts_used, deepseek_think, parser_meta = parse_punishment_response(response, group_state, self)
         if parser_meta.get('fallback_used', False):
+            retry_reason = str(parser_meta.get('fallback_reason', ''))
+            if 'exceeds budget' in retry_reason:
+                from core.scenario_config import get_scenario_config
+                sc = get_scenario_config(parameters.SCENARIO)
+                repair_prompt = _budget_repair_prompt(
+                    prompt,
+                    "Punishment and Reward Choice",
+                    parser_meta.get('budget', self.get_stage2_budget()),
+                    sc['currency_name'],
+                )
+            else:
+                repair_prompt = _schema_repair_prompt(prompt, "Punishment and Reward Choice")
             repair_response = self.api_client.send_request(
                 model_name=self.api_client.deployment_name,
-                prompt=_schema_repair_prompt(prompt, "Punishment and Reward Choice"),
+                prompt=repair_prompt,
                 response_format={"type": "json_object"},
                 max_tokens=2250,
                 temperature=temperature,
