@@ -23,7 +23,7 @@ LLM_MAX_CONCURRENCY = 2
 # Ollama runtime options forwarded on every request (native + OpenAI-compatible API).
 # num_gpu: model layers offloaded to GPU (Ollama option name is num_gpu).
 # num_ctx: KV-cache reservation — set close to your longest prompt, not higher than needed.
-OLLAMA_NUM_GPU = 1
+OLLAMA_NUM_GPU = -1
 OLLAMA_NUM_CTX = 4096
 # Parallel slots in the Ollama server process — set the same value when starting `ollama serve`.
 OLLAMA_NUM_PARALLEL = 1
