@@ -60,6 +60,7 @@ BELIEF_TRACKING_ENABLED = True # Enable structured belief-state updates after ea
 # --- Phase 2: Cognitive Modules ---
 TOM_ENABLED = True             # Enable Theory of Mind audits after each round
 TOM_VERBOSE = True             # Log each agent's published trust scores to the terminal
+TOM_MAX_ATTEMPTS = 2           # Total attempts per evaluator-target score
 DEMOCRACY_ENABLED = True       # Enable democratic rule-changing every N rounds
 DEMOCRACY_INTERVAL = 5        # Rounds between constitutional votes
 

@@ -20,6 +20,7 @@ import logging
 from core import parameters
 from core.scenario_config import get_scenario_config
 from core.utils import robust_json_loads
+from llm.retry import RetryExhaustedError, run_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -95,37 +96,43 @@ class TomModule:
 
     def _score_agent(self, evaluator, target, round_number):
         """Score one peer. Returns (score, reasoning) or (None, '') on failure."""
-        prompt = self._build_pair_prompt(evaluator, target, round_number)
-        response = self.api_client.send_request(
-            model_name=self.api_client.deployment_name,
-            prompt=prompt,
-            max_tokens=128,
-            temperature=0.3,
-            response_format={"type": "json_object"},
-        )
+        base_prompt = self._build_pair_prompt(evaluator, target, round_number)
+        label = f"ToM Agent {evaluator.agent_id} -> Agent {target.agent_id}"
 
-        score, parse_error = self._parse_score_response(response)
-        if parse_error:
-            repair_prompt = (
-                f"{prompt}\n\n"
-                "IMPORTANT RETRY (ToM Audit): Return ONLY one valid JSON object with "
-                '"trust_score" as an integer from 1 to 10. No extra text.'
-            )
-            repair_response = self.api_client.send_request(
+        def score_attempt(attempt):
+            prompt = base_prompt
+            if attempt > 1:
+                prompt += (
+                    "\n\nIMPORTANT RETRY (ToM Audit): Your previous response was "
+                    "invalid or incomplete. Return ONLY one valid JSON object with "
+                    '"trust_score" as an integer from 1 to 10. No extra text.'
+                )
+
+            response = self.api_client.send_request(
                 model_name=self.api_client.deployment_name,
-                prompt=repair_prompt,
+                prompt=prompt,
                 max_tokens=128,
                 temperature=0.3,
                 response_format={"type": "json_object"},
+                max_attempts=1,
+                request_label=label,
             )
-            score, parse_error = self._parse_score_response(repair_response)
-            if not parse_error:
-                response = repair_response
+            score, parse_error = self._parse_score_response(response)
+            if parse_error:
+                raise ValueError(parse_error)
+            return score
 
-        if parse_error:
+        try:
+            score = run_with_retries(
+                score_attempt,
+                max_attempts=getattr(parameters, 'TOM_MAX_ATTEMPTS', 2),
+                label=label,
+                logger=logger,
+            )
+        except RetryExhaustedError as exc:
             logger.warning(
                 f"[ToM] Agent {evaluator.agent_id} failed to score Agent {target.agent_id}: "
-                f"{parse_error}"
+                f"{exc.last_error}"
             )
             return None, ''
 
