@@ -14,16 +14,39 @@ from llm.ollama_client import OllamaClient
 logger = logging.getLogger(__name__)
 
 
+class EncodingSafeFormatter(logging.Formatter):
+    """Escape characters unsupported by the active console encoding."""
+
+    def __init__(self, *args, stream_encoding=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stream_encoding = stream_encoding or "ascii"
+
+    def format(self, record):
+        message = super().format(record)
+        return message.encode(
+            self.stream_encoding,
+            errors="backslashreplace",
+        ).decode(self.stream_encoding)
+
+
 def setup_logging():
     """Configure root logger with a timestamped format."""
     log_dir = os.path.join(os.path.dirname(__file__), 'debug_logs')
     os.makedirs(log_dir, exist_ok=True)
     debug_log_path = os.path.join(log_dir, 'debug.log')
     
-    fh, ch = logging.FileHandler(debug_log_path), logging.StreamHandler()
+    fh = logging.FileHandler(debug_log_path, encoding="utf-8")
+    ch = logging.StreamHandler()
     fh.setLevel(logging.INFO)
     ch.setLevel(logging.INFO)
-    
+    ch.setFormatter(
+        EncodingSafeFormatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
+            stream_encoding=getattr(ch.stream, "encoding", None),
+        )
+    )
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",

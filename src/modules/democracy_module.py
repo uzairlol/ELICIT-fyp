@@ -110,7 +110,7 @@ class DemocracyModule:
             applied = self._apply_rule(winning_proposal)
             if applied:
                 logger.info(
-                    f"Rule applied: {winning_proposal['rule']} → {winning_proposal['new_value']}"
+                    f"Rule applied: {winning_proposal['rule']} -> {winning_proposal['new_value']}"
                 )
 
         logger.info(f"--- End of Constitutional Session ---")
@@ -194,7 +194,7 @@ class DemocracyModule:
                     agent.explored_params.add(rule) # Mark as explored
                     logger.info(
                         f"Agent {agent.agent_id} proposes: "
-                        f"{rule} → {new_val}  (reason: {validated.get('reason','')[:60]})"
+                        f"{rule} -> {new_val}  (reason: {validated.get('reason','')[:60]})"
                     )
         return proposals
 
