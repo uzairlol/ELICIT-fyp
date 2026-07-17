@@ -25,6 +25,7 @@ import random
 import json
 import re
 from core.utils import robust_json_loads
+from llm.retry import request_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -254,14 +255,36 @@ Respond ONLY with valid JSON in this exact format:
   "reason": "<one sentence justification>"
 }}"""
 
-        response = self.api_client.send_request(
-            model_name=self.api_client.deployment_name,
-            prompt=prompt,
-            max_tokens=768,
-            temperature=0.5,
-            response_format={"type": "json_object"}
+        def validate_proposal(parsed):
+            validated = (
+                self._validate_proposal(dict(parsed))
+                if isinstance(parsed, dict)
+                else None
+            )
+            if validated:
+                return ''
+            return 'proposal must contain an allowed rule and valid numeric new_value'
+
+        _response, proposal = request_with_retries(
+            self.api_client,
+            base_prompt=prompt,
+            parse_response=self._parse_json_response,
+            validate_result=validate_proposal,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "max_tokens": 768,
+                "temperature": 0.5,
+                "response_format": {"type": "json_object"},
+            },
+            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            label=f"Agent {agent.agent_id} democracy proposal",
+            retry_prompt_factory=lambda base, _attempt, error: (
+                f"{base}\n\nIMPORTANT RETRY: {error}. Return ONLY one valid "
+                "JSON object matching the required format."
+            ),
+            logger=logger,
         )
-        return self._parse_json_response(response)
+        return proposal
 
     # ------------------------------------------------------------------
     # Phase B: Voting
@@ -312,23 +335,42 @@ Respond ONLY with valid JSON:
   "reason": "<one sentence>"
 }}"""
 
-        response = self.api_client.send_request(
-            model_name=self.api_client.deployment_name,
-            prompt=prompt,
-            max_tokens=768,
-            temperature=0.3,
-            response_format={"type": "json_object"}
-        )
-        parsed = self._parse_json_response(response)
-        if parsed:
+        def validate_vote(parsed):
+            if not isinstance(parsed, dict):
+                return 'vote response must be a JSON object'
             try:
                 idx = int(parsed.get('vote', -1))
-                reason = str(parsed.get('reason', '')).strip()
-                if 0 <= idx < num_proposals:
-                    return {"vote": idx, "reason": reason}
             except (ValueError, TypeError):
-                pass
-        return None
+                return 'vote must be an integer proposal index'
+            if not 0 <= idx < num_proposals:
+                return f'vote must be between 0 and {num_proposals - 1}'
+            if not str(parsed.get('reason', '')).strip():
+                return 'vote reason is required'
+            return ''
+
+        _response, parsed = request_with_retries(
+            self.api_client,
+            base_prompt=prompt,
+            parse_response=self._parse_json_response,
+            validate_result=validate_vote,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "max_tokens": 768,
+                "temperature": 0.3,
+                "response_format": {"type": "json_object"},
+            },
+            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            label=f"Agent {agent.agent_id} democracy vote",
+            retry_prompt_factory=lambda base, _attempt, error: (
+                f"{base}\n\nIMPORTANT RETRY: {error}. Return ONLY one valid "
+                "JSON object matching the required format."
+            ),
+            logger=logger,
+        )
+        return {
+            "vote": int(parsed['vote']),
+            "reason": str(parsed['reason']).strip(),
+        }
 
     # ------------------------------------------------------------------
     # Tallying and applying

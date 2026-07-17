@@ -59,3 +59,53 @@ def run_with_retries(
             time.sleep(delay)
 
     raise RetryExhaustedError(label, attempts, last_error)
+
+
+def request_with_retries(
+    api_client,
+    *,
+    base_prompt,
+    parse_response,
+    validate_result,
+    request_kwargs,
+    max_attempts,
+    label,
+    retry_prompt_factory=None,
+    logger=None,
+):
+    """
+    Send, parse, and validate an LLM response through one retry path.
+
+    ``validate_result`` returns an empty string for a valid parsed result or
+    a human-readable error for a response that must be retried.
+    """
+    state = {"last_error": ""}
+
+    def attempt_request(attempt):
+        prompt = base_prompt
+        if attempt > 1 and retry_prompt_factory is not None:
+            prompt = retry_prompt_factory(
+                base_prompt,
+                attempt,
+                state["last_error"],
+            )
+
+        response = api_client.send_request(
+            prompt=prompt,
+            max_attempts=1,
+            request_label=label,
+            **request_kwargs,
+        )
+        parsed = parse_response(response)
+        validation_error = str(validate_result(parsed) or "")
+        if validation_error:
+            state["last_error"] = validation_error
+            raise ValueError(validation_error)
+        return response, parsed
+
+    return run_with_retries(
+        attempt_request,
+        max_attempts=max_attempts,
+        label=label,
+        logger=logger,
+    )

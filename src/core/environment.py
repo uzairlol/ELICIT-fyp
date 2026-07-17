@@ -616,11 +616,7 @@ class Environment:
                     for agent in self.agents
                 }
                 for future in concurrent.futures.as_completed(futures):
-                    agent = futures[future]
-                    try:
-                        future.result()
-                    except Exception as e:
-                        logger.warning(f"[Belief Update] Agent {agent.agent_id} failed: {e}")
+                    future.result()
 
             # Snapshot the updated belief states into round_data for results JSON
             for agent in self.agents:

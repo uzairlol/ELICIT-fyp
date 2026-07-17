@@ -20,6 +20,7 @@ LLM_MODEL = "llama3.1:8b"
 LLM_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
 LLM_MAX_ATTEMPTS = 5           # Total transport attempts, including the first call
+LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for agent decisions
 LLM_MAX_CONCURRENCY = 2
 # Ollama runtime options forwarded on every request (native + OpenAI-compatible API).
 # num_gpu: model layers offloaded to GPU (Ollama option name is num_gpu).

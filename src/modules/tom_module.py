@@ -21,7 +21,7 @@ import time
 from core import parameters
 from core.scenario_config import get_scenario_config
 from core.utils import robust_json_loads
-from llm.retry import RetryExhaustedError, run_with_retries
+from llm.retry import request_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -119,58 +119,50 @@ class TomModule:
             int(getattr(parameters, 'TOM_MAX_ATTEMPTS', 2)),
         )
 
-        def score_attempt(attempt):
-            attempt_started = time.monotonic()
-            logger.info(
-                "[ToM] Starting %s (attempt %s/%s).",
-                label,
-                attempt,
-                max_attempts,
+        def retry_prompt(base, _attempt, _last_error):
+            return (
+                f"{base}\n\n"
+                "IMPORTANT RETRY (ToM Audit): Your previous response was "
+                "invalid or incomplete. Return ONLY one valid JSON object with "
+                '"trust_score" as an integer from 1 to 10. No extra text.'
             )
-            prompt = base_prompt
-            if attempt > 1:
-                prompt += (
-                    "\n\nIMPORTANT RETRY (ToM Audit): Your previous response was "
-                    "invalid or incomplete. Return ONLY one valid JSON object with "
-                    '"trust_score" as an integer from 1 to 10. No extra text.'
-                )
 
-            response = self.api_client.send_request(
-                model_name=self.api_client.deployment_name,
-                prompt=prompt,
-                max_tokens=128,
-                temperature=0.3,
-                response_format={"type": "json_object"},
-                max_attempts=1,
-                request_label=label,
-            )
-            score, parse_error = self._parse_score_response(response)
-            if parse_error:
-                raise ValueError(parse_error)
-            logger.info(
-                "[ToM] Completed %s with score %.1f/10 in %.1fs "
-                "(attempt %s/%s).",
-                label,
-                score,
-                time.monotonic() - attempt_started,
-                attempt,
-                max_attempts,
-            )
-            return score
+        def parse_score(response):
+            return self._parse_score_response(response)
 
-        try:
-            score = run_with_retries(
-                score_attempt,
-                max_attempts=max_attempts,
-                label=label,
-                logger=logger,
-            )
-        except RetryExhaustedError as exc:
-            logger.warning(
-                f"[ToM] Agent {evaluator.agent_id} failed to score Agent {target.agent_id}: "
-                f"{exc.last_error}"
-            )
-            return None, ''
+        def validate_score(parsed):
+            _score, parse_error = parsed
+            return parse_error
+
+        attempt_started = time.monotonic()
+        logger.info(
+            "[ToM] Starting %s (maximum %s attempts).",
+            label,
+            max_attempts,
+        )
+        _response, parsed = request_with_retries(
+            self.api_client,
+            base_prompt=base_prompt,
+            parse_response=parse_score,
+            validate_result=validate_score,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "max_tokens": 128,
+                "temperature": 0.3,
+                "response_format": {"type": "json_object"},
+            },
+            max_attempts=max_attempts,
+            label=label,
+            retry_prompt_factory=retry_prompt,
+            logger=logger,
+        )
+        score, _parse_error = parsed
+        logger.info(
+            "[ToM] Completed %s with score %.1f/10 in %.1fs.",
+            label,
+            score,
+            time.monotonic() - attempt_started,
+        )
 
         return score, ''
 

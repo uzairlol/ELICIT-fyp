@@ -32,6 +32,7 @@ from core import parameters
 import os
 import json
 from core.utils import robust_json_loads, uses_climate_budget
+from llm.retry import request_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -202,36 +203,35 @@ class Agent:
         prompt = construct_institution_choice_prompt(self, round_number)
         temperature, top_p = self._persona_sampling_profile("institution")
 
-        response = self.api_client.send_request(
-            model_name=self.api_client.deployment_name,
-            prompt=prompt,
-            response_format={"type": "json_object"},
-            max_tokens=768,
-            temperature=temperature,
-            top_p=top_p
+        def parse_choice(raw_response):
+            return parse_institution_choice_response(raw_response, self.agent_id)
+
+        def validate_choice(parsed):
+            choice, _reasoning, _facts, _think, meta = parsed
+            if meta.get('fallback_used', False) or choice not in ('SI', 'SFI'):
+                return meta.get('fallback_reason', 'invalid institution choice')
+            return ''
+
+        response, parsed = request_with_retries(
+            self.api_client,
+            base_prompt=prompt,
+            parse_response=parse_choice,
+            validate_result=validate_choice,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "response_format": {"type": "json_object"},
+                "max_tokens": 768,
+                "temperature": temperature,
+                "top_p": top_p,
+            },
+            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            label=f"Agent {self.agent_id} institution choice",
+            retry_prompt_factory=lambda base, _attempt, _error: (
+                _schema_repair_prompt(base, "Institution Choice")
+            ),
+            logger=logger,
         )
-
-        choice, reasoning, facts_used, deepseek_think, parser_meta = parse_institution_choice_response(response, self.agent_id)
-        if parser_meta.get('fallback_used', False):
-            repair_response = self.api_client.send_request(
-                model_name=self.api_client.deployment_name,
-                prompt=_schema_repair_prompt(prompt, "Institution Choice"),
-                response_format={"type": "json_object"},
-                max_tokens=768,
-                temperature=temperature,
-                top_p=top_p
-            )
-            retry_choice, retry_reasoning, retry_facts, retry_deepseek, retry_meta = parse_institution_choice_response(repair_response, self.agent_id)
-            if not retry_meta.get('fallback_used', False):
-                response = repair_response
-                choice, reasoning, facts_used, deepseek_think, parser_meta = retry_choice, retry_reasoning, retry_facts, retry_deepseek, retry_meta
-
-        if parser_meta.get('fallback_used', False) or choice not in ('SI', 'SFI'):
-            self.parsing_failures += 1
-            raise RuntimeError(
-                f"Agent {self.agent_id} institution choice parse failed after retry: "
-                f"{parser_meta.get('fallback_reason', 'unknown error')}"
-            )
+        choice, reasoning, facts_used, deepseek_think, parser_meta = parsed
 
         self.institution_choice = choice
         self.institution_reasoning = reasoning
@@ -265,35 +265,36 @@ class Agent:
         """
         prompt = construct_contribution_prompt(self, group_state)
         temperature, top_p = self._persona_sampling_profile("contribution")
-        response = self.api_client.send_request(
-            model_name=self.api_client.deployment_name,
-            prompt=prompt,
-            response_format={"type": "json_object"},
-            max_tokens=768,
-            temperature=temperature,
-            top_p=top_p
-        )
-        contribution, llm_reasoning, facts_used, deepseek_think, parser_meta = parse_contribution_response_v2(response, self)
-        if parser_meta.get('fallback_used', False):
-            repair_response = self.api_client.send_request(
-                model_name=self.api_client.deployment_name,
-                prompt=_schema_repair_prompt(prompt, "Contribution Choice"),
-                response_format={"type": "json_object"},
-                max_tokens=768,
-                temperature=temperature,
-                top_p=top_p
-            )
-            retry_contrib, retry_reasoning, retry_facts, retry_deepseek, retry_meta = parse_contribution_response_v2(repair_response, self)
-            if not retry_meta.get('fallback_used', False):
-                response = repair_response
-                contribution, llm_reasoning, facts_used, deepseek_think, parser_meta = retry_contrib, retry_reasoning, retry_facts, retry_deepseek, retry_meta
 
-        if parser_meta.get('fallback_used', False) or contribution is None:
-            self.parsing_failures += 1
-            raise RuntimeError(
-                f"Agent {self.agent_id} contribution parse failed after retry: "
-                f"{parser_meta.get('fallback_reason', 'unknown error')}"
-            )
+        def parse_contribution(raw_response):
+            return parse_contribution_response_v2(raw_response, self)
+
+        def validate_contribution(parsed):
+            contribution, _reasoning, _facts, _think, meta = parsed
+            if meta.get('fallback_used', False) or contribution is None:
+                return meta.get('fallback_reason', 'invalid contribution')
+            return ''
+
+        response, parsed = request_with_retries(
+            self.api_client,
+            base_prompt=prompt,
+            parse_response=parse_contribution,
+            validate_result=validate_contribution,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "response_format": {"type": "json_object"},
+                "max_tokens": 768,
+                "temperature": temperature,
+                "top_p": top_p,
+            },
+            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            label=f"Agent {self.agent_id} contribution choice",
+            retry_prompt_factory=lambda base, _attempt, _error: (
+                _schema_repair_prompt(base, "Contribution Choice")
+            ),
+            logger=logger,
+        )
+        contribution, llm_reasoning, facts_used, deepseek_think, parser_meta = parsed
 
         # Enforce bounds
         contribution = max(parameters.MIN_CONTRIBUTION, min(contribution, self.get_stage1_contribution_cap()))
@@ -313,70 +314,65 @@ class Agent:
         """
         prompt = construct_punishment_prompt(self, group_state)
         temperature, top_p = self._persona_sampling_profile("punishment")
-        response = self.api_client.send_request(
-            model_name=self.api_client.deployment_name,
-            prompt=prompt,
-            response_format={"type": "json_object"},
-            max_tokens=2250,
-            temperature=temperature,
-            top_p=top_p
-        )
 
-        punishment_allocations, reward_allocations, reasoning, deanonymized, justifications, facts_used, deepseek_think, parser_meta = parse_punishment_response(response, group_state, self)
-        if parser_meta.get('fallback_used', False):
-            retry_reason = str(parser_meta.get('fallback_reason', ''))
-            if 'exceeds budget' in retry_reason:
+        def parse_punishment(raw_response):
+            return parse_punishment_response(raw_response, group_state, self)
+
+        def validate_punishment(parsed):
+            meta = parsed[-1]
+            if meta.get('fallback_used', False):
+                return meta.get('fallback_reason', 'invalid punishment response')
+            if meta.get('semantic_retry', False):
+                return 'punishment response is internally inconsistent'
+            return ''
+
+        def punishment_retry_prompt(base, _attempt, last_error):
+            if 'exceeds budget' in last_error:
                 from core.scenario_config import get_scenario_config
                 sc = get_scenario_config(parameters.SCENARIO)
-                repair_prompt = _budget_repair_prompt(
-                    prompt,
+                return _budget_repair_prompt(
+                    base,
                     "Punishment and Reward Choice",
-                    parser_meta.get('budget', self.get_stage2_budget()),
+                    self.get_stage2_budget(),
                     sc['currency_name'],
                 )
-            else:
-                repair_prompt = _schema_repair_prompt(prompt, "Punishment and Reward Choice")
-            repair_response = self.api_client.send_request(
-                model_name=self.api_client.deployment_name,
-                prompt=repair_prompt,
-                response_format={"type": "json_object"},
-                max_tokens=2250,
-                temperature=temperature,
-                top_p=top_p
+            if 'internally inconsistent' in last_error:
+                return _semantic_repair_prompt(
+                    base,
+                    "Punishment and Reward Choice",
+                )
+            return _schema_repair_prompt(
+                base,
+                "Punishment and Reward Choice",
             )
-            retry_vals = parse_punishment_response(repair_response, group_state, self)
-            retry_pun, retry_rew, retry_reason, retry_deanon, retry_just, retry_facts, retry_deepseek, retry_meta = retry_vals
-            if not retry_meta.get('fallback_used', False):
-                response = repair_response
-                punishment_allocations, reward_allocations = retry_pun, retry_rew
-                reasoning, deanonymized = retry_reason, retry_deanon
-                justifications, facts_used, deepseek_think = retry_just, retry_facts, retry_deepseek
-                parser_meta = retry_meta
 
-        if parser_meta.get('semantic_retry', False) and not parser_meta.get('fallback_used', False):
-            semantic_response = self.api_client.send_request(
-                model_name=self.api_client.deployment_name,
-                prompt=_semantic_repair_prompt(prompt, "Punishment and Reward Choice"),
-                response_format={"type": "json_object"},
-                max_tokens=2250,
-                temperature=temperature,
-                top_p=top_p
-            )
-            retry_vals = parse_punishment_response(semantic_response, group_state, self)
-            retry_pun, retry_rew, retry_reason, retry_deanon, retry_just, retry_facts, retry_deepseek, retry_meta = retry_vals
-            if not retry_meta.get('fallback_used', False):
-                response = semantic_response
-                punishment_allocations, reward_allocations = retry_pun, retry_rew
-                reasoning, deanonymized = retry_reason, retry_deanon
-                justifications, facts_used, deepseek_think = retry_just, retry_facts, retry_deepseek
-                parser_meta = retry_meta
-
-        if parser_meta.get('fallback_used', False):
-            self.parsing_failures += 1
-            logger.warning(
-                f"Agent {self.agent_id} punishment parse failed after retries: "
-                f"{parser_meta.get('fallback_reason', 'unknown error')}"
-            )
+        response, parsed = request_with_retries(
+            self.api_client,
+            base_prompt=prompt,
+            parse_response=parse_punishment,
+            validate_result=validate_punishment,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "response_format": {"type": "json_object"},
+                "max_tokens": 2250,
+                "temperature": temperature,
+                "top_p": top_p,
+            },
+            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            label=f"Agent {self.agent_id} punishment choice",
+            retry_prompt_factory=punishment_retry_prompt,
+            logger=logger,
+        )
+        (
+            punishment_allocations,
+            reward_allocations,
+            reasoning,
+            deanonymized,
+            justifications,
+            facts_used,
+            deepseek_think,
+            parser_meta,
+        ) = parsed
         
         self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
 
@@ -501,37 +497,59 @@ Task: UPDATE your internal belief state based on what happened this round.
 - Return exactly ONE JSON object with keys trust_levels, institutional_strategy, observations.
 - No markdown, no code fences, no text outside the JSON."""
 
-        try:
-            response = self.api_client.send_request(
-                model_name=self.api_client.deployment_name,
-                prompt=prompt,
-                max_tokens=768,
-                temperature=0.2,
-                response_format={"type": "json_object"}
-            )
+        def parse_belief(raw_response):
+            return robust_json_loads(raw_response)
 
-            parsed = robust_json_loads(response)
-            if parsed and isinstance(parsed, dict):
-                # Validate required keys exist, otherwise keep old state
-                if 'trust_levels' in parsed and 'institutional_strategy' in parsed:
-                    self.belief_state = {
-                        'trust_levels': parsed.get('trust_levels', self.belief_state.get('trust_levels', {})),
-                        'institutional_strategy': str(parsed.get('institutional_strategy', self.belief_state.get('institutional_strategy', ''))),
-                        'observations': str(parsed.get('observations', self.belief_state.get('observations', '')))
-                    }
-            self.log_debug(round_feedback.get('round_number', 0), "belief_update", prompt, response)
-            round_number = round_feedback.get('round_number', '?')
-            strategy = self.belief_state.get('institutional_strategy', '')
-            trust_levels = self.belief_state.get('trust_levels', {}) or {}
-            trust_preview = ", ".join(sorted(map(str, trust_levels.keys()))[:3])
-            trust_suffix = f"; peers={trust_preview}" if trust_preview else ""
-            logger.debug(
-                f"[Belief Update] Agent {self.agent_id} round {round_number}: "
-                f"belief state updated (strategy={strategy!r}{trust_suffix})"
-            )
-        except Exception as e:
-            # On failure, keep the previous belief state unchanged
-            logger.warning(f"[Belief Update] Agent {self.agent_id} belief update failed: {e}")
+        def validate_belief(parsed):
+            if not isinstance(parsed, dict):
+                return 'belief response must be a JSON object'
+            required = ('trust_levels', 'institutional_strategy', 'observations')
+            missing = [key for key in required if key not in parsed]
+            if missing:
+                return f"belief response missing keys: {', '.join(missing)}"
+            if not isinstance(parsed.get('trust_levels'), dict):
+                return 'trust_levels must be a JSON object'
+            return ''
+
+        response, parsed = request_with_retries(
+            self.api_client,
+            base_prompt=prompt,
+            parse_response=parse_belief,
+            validate_result=validate_belief,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "max_tokens": 768,
+                "temperature": 0.2,
+                "response_format": {"type": "json_object"},
+            },
+            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            label=f"Agent {self.agent_id} belief update",
+            retry_prompt_factory=lambda base, _attempt, _error: (
+                _schema_repair_prompt(base, "Belief Update")
+            ),
+            logger=logger,
+        )
+
+        self.belief_state = {
+            'trust_levels': parsed['trust_levels'],
+            'institutional_strategy': str(parsed['institutional_strategy']),
+            'observations': str(parsed['observations']),
+        }
+        self.log_debug(
+            round_feedback.get('round_number', 0),
+            "belief_update",
+            prompt,
+            response,
+        )
+        round_number = round_feedback.get('round_number', '?')
+        strategy = self.belief_state.get('institutional_strategy', '')
+        trust_levels = self.belief_state.get('trust_levels', {}) or {}
+        trust_preview = ", ".join(sorted(map(str, trust_levels.keys()))[:3])
+        trust_suffix = f"; peers={trust_preview}" if trust_preview else ""
+        logger.debug(
+            f"[Belief Update] Agent {self.agent_id} round {round_number}: "
+            f"belief state updated (strategy={strategy!r}{trust_suffix})"
+        )
 
     def reset_for_new_round(self):
         """

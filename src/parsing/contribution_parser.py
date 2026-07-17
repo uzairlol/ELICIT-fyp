@@ -1,6 +1,6 @@
 import logging
 from core import parameters
-from parsing.response_parsing_utils import _unwrap_response_data, _parse_int_safe, _make_parser_meta
+from parsing.response_parsing_utils import _unwrap_response_data, _make_parser_meta
 
 logger = logging.getLogger(__name__)
 
@@ -10,18 +10,25 @@ def parse_contribution_response_v2(response, agent):
     Parse the LLM's response to extract BOTH contribution amount and reasoning.
     Returns: (contribution, reasoning, facts_used, deepseek_think, parser_meta)
     """
-    expected_keys = ['contribution', 'contribution_to_project', 'tokens_contributed', 'contribution_amount', 'reasoning', 'facts_used', 'deepseek_think', 'deepseek_thought']
+    expected_keys = ['contribution', 'reasoning', 'facts_used', 'deepseek_think', 'deepseek_thought']
     try:
         data = _unwrap_response_data(response)
 
-        contribution = None
-        for key in ('contribution', 'contribution_to_project', 'tokens_contributed', 'contribution_amount'):
-            if key in data:
-                contribution = _parse_int_safe(data.get(key))
-                break
-
-        if contribution is None:
-            raise ValueError('The response did not contain a contribution value.')
+        if 'contribution' not in data:
+            raise ValueError('The response did not contain the contribution key.')
+        raw_contribution = data['contribution']
+        if isinstance(raw_contribution, bool):
+            raise ValueError('Contribution must be an integer.')
+        numeric_contribution = float(raw_contribution)
+        if not numeric_contribution.is_integer():
+            raise ValueError('Contribution must be an integer.')
+        contribution = int(numeric_contribution)
+        contribution_cap = agent.get_stage1_contribution_cap()
+        if not parameters.MIN_CONTRIBUTION <= contribution <= contribution_cap:
+            raise ValueError(
+                f'Contribution must be between {parameters.MIN_CONTRIBUTION} '
+                f'and {contribution_cap}.'
+            )
 
         reasoning = data.get('reasoning', '')
         deepseek_thought = data.get('deepseek_thought', '')
