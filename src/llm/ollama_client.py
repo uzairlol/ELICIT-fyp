@@ -3,11 +3,11 @@
 import logging
 import os
 import threading
-import backoff
 import json
 import urllib.request
 from openai import OpenAI, OpenAIError
 from core import parameters
+from llm.retry import run_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -56,11 +56,52 @@ class OllamaClient:
 
         self._request_semaphore = threading.BoundedSemaphore(parallel)
 
-    @backoff.on_exception(backoff.expo, Exception, max_tries=5)
-    def send_request(self, model_name, prompt, max_tokens=768, temperature=0.7, top_p=1.0, response_format=None, **kwargs):
+    def send_request(
+        self,
+        model_name,
+        prompt,
+        max_tokens=768,
+        temperature=0.7,
+        top_p=1.0,
+        response_format=None,
+        max_attempts=None,
+        request_label="Ollama request",
+        **kwargs,
+    ):
         """
-        Send a prompt to the local Ollama instance.
+        Send a prompt through the shared bounded retry helper.
         """
+        attempts = (
+            int(max_attempts)
+            if max_attempts is not None
+            else int(getattr(parameters, 'LLM_MAX_ATTEMPTS', 5))
+        )
+        return run_with_retries(
+            lambda _attempt: self._send_request_once(
+                model_name=model_name,
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                response_format=response_format,
+                **kwargs,
+            ),
+            max_attempts=attempts,
+            label=request_label,
+            logger=logger,
+        )
+
+    def _send_request_once(
+        self,
+        model_name,
+        prompt,
+        max_tokens=768,
+        temperature=0.7,
+        top_p=1.0,
+        response_format=None,
+        **kwargs,
+    ):
+        """Perform exactly one transport attempt."""
         with self._request_semaphore:
             try:
                 if _is_reasoning_model(self.model_name):
