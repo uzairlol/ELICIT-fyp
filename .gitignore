@@ -26,3 +26,5 @@ assets/
 # Ad-hoc summary CSVs
 *_summary.csv
 *_dynamics.csv
+
+.VSCodeCounter/
