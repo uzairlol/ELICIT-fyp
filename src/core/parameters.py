@@ -28,6 +28,8 @@ OLLAMA_NUM_GPU = -1
 OLLAMA_NUM_CTX = 4096
 # Parallel slots in the Ollama server process — set the same value when starting `ollama serve`.
 OLLAMA_NUM_PARALLEL = 1
+OLLAMA_SOFT_RESET_EACH_ROUND = True  # Unload the model via API after each round
+OLLAMA_SOFT_RESET_TIMEOUT_SECONDS = 30.0
 
 # --- Initial Endowments ---
 INITIAL_TOKENS = 1000    # Starting tokens per agent

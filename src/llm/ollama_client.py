@@ -149,7 +149,6 @@ class OllamaClient:
         """
         Use Ollama's native HTTP API for reasoning models.
         """
-        url = parameters.LLM_BASE_URL.rstrip("/").replace("/v1", "") + "/api/chat"
         options = _ollama_runtime_options(max_tokens)
         options.update({
             "temperature": temperature,
@@ -162,16 +161,7 @@ class OllamaClient:
             "stream": False,
             "options": options,
         }
-
-        request = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        with urllib.request.urlopen(request, timeout=float(parameters.OLLAMA_REQUEST_TIMEOUT_SECONDS)) as response:
-            response_data = json.loads(response.read().decode("utf-8"))
+        response_data = self._post_native_json("/api/chat", payload)
 
         message = response_data.get("message", {}) if isinstance(response_data, dict) else {}
         content = (message.get("content") or response_data.get("response") or "").strip() if isinstance(response_data, dict) else ""
@@ -193,6 +183,57 @@ class OllamaClient:
         if reasoning:
             return f"<think>\n{reasoning}\n</think>"
         return content
+
+    def _post_native_json(self, endpoint, payload, timeout=None):
+        """POST JSON to an Ollama native API endpoint."""
+        base_url = parameters.LLM_BASE_URL.rstrip("/").removesuffix("/v1")
+        request = urllib.request.Request(
+            base_url + endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        request_timeout = (
+            float(timeout)
+            if timeout is not None
+            else float(parameters.OLLAMA_REQUEST_TIMEOUT_SECONDS)
+        )
+        with urllib.request.urlopen(request, timeout=request_timeout) as response:
+            body = response.read().decode("utf-8")
+        return json.loads(body) if body.strip() else {}
+
+    def soft_reset_model(self):
+        """
+        Unload the active model via Ollama's API.
+
+        Ollama does not expose an API that restarts ``ollama serve``. Sending
+        ``keep_alive: 0`` safely releases the model; the next request reloads it.
+        """
+        label = f"Ollama soft reset ({self.model_name})"
+
+        def unload_once(_attempt):
+            with self._request_semaphore:
+                return self._post_native_json(
+                    "/api/generate",
+                    {"model": self.model_name, "keep_alive": 0},
+                    timeout=getattr(
+                        parameters,
+                        'OLLAMA_SOFT_RESET_TIMEOUT_SECONDS',
+                        30.0,
+                    ),
+                )
+
+        run_with_retries(
+            unload_once,
+            max_attempts=2,
+            label=label,
+            logger=logger,
+            base_delay_seconds=1.0,
+        )
+        logger.info(
+            "Ollama model %s unloaded; the next request will reload it.",
+            self.model_name,
+        )
 
     def get_total_cost(self):
         """Return the total cost (always 0.0 for local runs)."""

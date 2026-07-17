@@ -76,6 +76,30 @@ class Environment:
                 if self.results:
                     self.results[-1]['constitutional_change'] = result
 
+            if getattr(parameters, 'OLLAMA_SOFT_RESET_EACH_ROUND', False):
+                self._soft_reset_ollama(round_number)
+
+    def _soft_reset_ollama(self, round_number):
+        """Unload the Ollama model after all LLM work for a round has finished."""
+        if not self.agents:
+            return
+        api_client = getattr(self.agents[0], 'api_client', None)
+        if not api_client or not hasattr(api_client, 'soft_reset_model'):
+            return
+        try:
+            logger.info(
+                "[Ollama] Soft-resetting model after Round %s via keep_alive=0.",
+                round_number,
+            )
+            api_client.soft_reset_model()
+        except Exception as exc:
+            logger.warning(
+                "[Ollama] Soft reset after Round %s failed; continuing without "
+                "terminating the server: %s",
+                round_number,
+                exc,
+            )
+
 
     def run_tom_audit(self, round_number):
         """
