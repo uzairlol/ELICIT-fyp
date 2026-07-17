@@ -286,10 +286,13 @@ Respond ONLY with valid JSON in this exact format:
         proposals_str = "\n".join(proposal_lines)
 
         for agent in agents:
-            vote = self._get_vote(agent, proposals_str, len(proposals), round_number)
-            if vote is not None:
-                votes[agent.agent_id] = vote
-                logger.info(f"Agent {agent.agent_id} votes for proposal [{vote}]")
+            vote_info = self._get_vote(agent, proposals_str, len(proposals), round_number)
+            if vote_info is not None:
+                votes[agent.agent_id] = vote_info
+                logger.info(
+                    f"Agent {agent.agent_id} votes for proposal [{vote_info['vote']}] "
+                    f"(reason: {vote_info.get('reason', '')[:60]})"
+                )
 
         return votes
 
@@ -320,8 +323,9 @@ Respond ONLY with valid JSON:
         if parsed:
             try:
                 idx = int(parsed.get('vote', -1))
+                reason = str(parsed.get('reason', '')).strip()
                 if 0 <= idx < num_proposals:
-                    return idx
+                    return {"vote": idx, "reason": reason}
             except (ValueError, TypeError):
                 pass
         return None
@@ -333,7 +337,8 @@ Respond ONLY with valid JSON:
     def _tally_votes(self, proposals, votes):
         """Return (winning_proposal, tally_dict)."""
         tally = {i: 0 for i in range(len(proposals))}
-        for vote_idx in votes.values():
+        for vote_info in votes.values():
+            vote_idx = vote_info['vote'] if isinstance(vote_info, dict) else vote_info
             if vote_idx in tally:
                 tally[vote_idx] += 1
 
