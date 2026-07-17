@@ -17,6 +17,7 @@ Audits are pairwise: one LLM call per evaluator-target pair.
 """
 
 import logging
+import time
 from core import parameters
 from core.scenario_config import get_scenario_config
 from core.utils import robust_json_loads
@@ -46,6 +47,14 @@ class TomModule:
             dict: {other_agent_id (int): {'score': float, 'reasoning': str}}
         """
         scores = {}
+        audit_started = time.monotonic()
+        target_count = max(0, len(all_agents) - 1)
+        logger.info(
+            "[ToM] Evaluator Agent %s starting %s pairwise score(s) for Round %s.",
+            evaluating_agent.agent_id,
+            target_count,
+            round_number,
+        )
         if not hasattr(evaluating_agent, 'tom_audit_log'):
             evaluating_agent.tom_audit_log = []
 
@@ -81,6 +90,13 @@ class TomModule:
                 'reasoning': reasoning,
             })
 
+        logger.info(
+            "[ToM] Evaluator Agent %s completed %s/%s score(s) in %.1fs.",
+            evaluating_agent.agent_id,
+            len(scores),
+            target_count,
+            time.monotonic() - audit_started,
+        )
         return scores
 
     # ------------------------------------------------------------------
@@ -98,8 +114,19 @@ class TomModule:
         """Score one peer. Returns (score, reasoning) or (None, '') on failure."""
         base_prompt = self._build_pair_prompt(evaluator, target, round_number)
         label = f"ToM Agent {evaluator.agent_id} -> Agent {target.agent_id}"
+        max_attempts = max(
+            1,
+            int(getattr(parameters, 'TOM_MAX_ATTEMPTS', 2)),
+        )
 
         def score_attempt(attempt):
+            attempt_started = time.monotonic()
+            logger.info(
+                "[ToM] Starting %s (attempt %s/%s).",
+                label,
+                attempt,
+                max_attempts,
+            )
             prompt = base_prompt
             if attempt > 1:
                 prompt += (
@@ -120,12 +147,21 @@ class TomModule:
             score, parse_error = self._parse_score_response(response)
             if parse_error:
                 raise ValueError(parse_error)
+            logger.info(
+                "[ToM] Completed %s with score %.1f/10 in %.1fs "
+                "(attempt %s/%s).",
+                label,
+                score,
+                time.monotonic() - attempt_started,
+                attempt,
+                max_attempts,
+            )
             return score
 
         try:
             score = run_with_retries(
                 score_attempt,
-                max_attempts=getattr(parameters, 'TOM_MAX_ATTEMPTS', 2),
+                max_attempts=max_attempts,
                 label=label,
                 logger=logger,
             )

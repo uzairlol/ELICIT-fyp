@@ -6,6 +6,7 @@ import os
 import logging
 import concurrent.futures
 import statistics
+import time
 from datetime import datetime
 from core import parameters
 
@@ -109,8 +110,23 @@ class Environment:
         Phase 2b: Gossip distributed to agents.
         """
         # Tally incoming trust scores for each agent: {agent_id: [scores...]}
+        audit_started = time.monotonic()
+        expected_scores = len(self.agents) * max(0, len(self.agents) - 1)
+        logger.info(
+            "[ToM] Round %s audit starting: %s pairwise score(s), "
+            "executor_workers=%s, ollama_parallel=%s.",
+            round_number,
+            expected_scores,
+            min(
+                len(self.agents),
+                max(1, int(parameters.LLM_MAX_CONCURRENCY)),
+            ),
+            max(1, int(parameters.OLLAMA_NUM_PARALLEL)),
+        )
         incoming_scores: dict = {a.agent_id: [] for a in self.agents}
         all_audits_this_round = []
+        completed_evaluators = 0
+        completed_scores = 0
 
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=min(len(self.agents), max(1, int(parameters.LLM_MAX_CONCURRENCY)))
@@ -119,6 +135,16 @@ class Environment:
             for future in concurrent.futures.as_completed(futures):
                 evaluator = futures[future]
                 scores = future.result()
+                completed_evaluators += 1
+                completed_scores += len(scores or {})
+                logger.info(
+                    "[ToM] Round %s progress: evaluators %s/%s, scores %s/%s.",
+                    round_number,
+                    completed_evaluators,
+                    len(self.agents),
+                    completed_scores,
+                    expected_scores,
+                )
                 if not scores:
                     continue
                 for target_id, data in scores.items():
@@ -152,6 +178,13 @@ class Environment:
             for a in self.agents
         )
         logger.info(f"[ToM] Reputations after Round {round_number}: [{rep_str}]")
+        logger.info(
+            "[ToM] Round %s audit finished: %s/%s scores in %.1fs.",
+            round_number,
+            completed_scores,
+            expected_scores,
+            time.monotonic() - audit_started,
+        )
 
         if getattr(parameters, 'TOM_VERBOSE', False):
             for agent in self.agents:
