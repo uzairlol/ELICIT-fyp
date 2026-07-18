@@ -46,11 +46,28 @@ class OllamaClient:
         self.total_cost = 0.0
 
         parallel = max(1, int(getattr(parameters, 'OLLAMA_NUM_PARALLEL', 1)))
+        general_concurrency = max(1, int(getattr(parameters, 'LLM_MAX_CONCURRENCY', 1)))
+        tom_concurrency = max(1, int(getattr(parameters, 'TOM_MAX_CONCURRENCY', general_concurrency)))
+        required_parallel = max(parallel, general_concurrency, tom_concurrency)
+        if required_parallel > parallel:
+            logger.warning(
+                "OLLAMA_NUM_PARALLEL=%s is below max concurrency "
+                "(LLM=%s, ToM=%s); raising client semaphore to %s. "
+                "Restart `ollama serve` with OLLAMA_NUM_PARALLEL=%s for full effect.",
+                parallel,
+                general_concurrency,
+                tom_concurrency,
+                required_parallel,
+                required_parallel,
+            )
+            parallel = required_parallel
         os.environ.setdefault("OLLAMA_NUM_PARALLEL", str(parallel))
         logger.info(
             f"Ollama GPU options: num_gpu={getattr(parameters, 'OLLAMA_NUM_GPU', 1)}, "
             f"num_ctx={getattr(parameters, 'OLLAMA_NUM_CTX', 4096)}, "
-            f"OLLAMA_NUM_PARALLEL={parallel} "
+            f"OLLAMA_NUM_PARALLEL={parallel}, "
+            f"LLM_MAX_CONCURRENCY={general_concurrency}, "
+            f"TOM_MAX_CONCURRENCY={tom_concurrency} "
             f"(restart the Ollama server if it was already running)"
         )
 

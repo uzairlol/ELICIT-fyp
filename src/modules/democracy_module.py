@@ -272,7 +272,7 @@ Respond ONLY with valid JSON in this exact format:
             validate_result=validate_proposal,
             request_kwargs={
                 "model_name": self.api_client.deployment_name,
-                "max_tokens": 768,
+                "max_tokens": 512,
                 "temperature": 0.5,
                 "response_format": {"type": "json_object"},
             },
@@ -285,6 +285,7 @@ Respond ONLY with valid JSON in this exact format:
             logger=logger,
         )
         return proposal
+
 
     # ------------------------------------------------------------------
     # Phase B: Voting

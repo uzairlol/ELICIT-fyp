@@ -112,16 +112,19 @@ class Environment:
         # Tally incoming trust scores for each agent: {agent_id: [scores...]}
         audit_started = time.monotonic()
         expected_scores = len(self.agents) * max(0, len(self.agents) - 1)
+        tom_workers = min(
+            len(self.agents),
+            max(1, int(getattr(parameters, 'TOM_MAX_CONCURRENCY', parameters.LLM_MAX_CONCURRENCY))),
+        )
         logger.info(
             "[ToM] Round %s audit starting: %s pairwise score(s), "
-            "executor_workers=%s, ollama_parallel=%s.",
+            "executor_workers=%s, ollama_parallel=%s "
+            "(general concurrency=%s).",
             round_number,
             expected_scores,
-            min(
-                len(self.agents),
-                max(1, int(parameters.LLM_MAX_CONCURRENCY)),
-            ),
+            tom_workers,
             max(1, int(parameters.OLLAMA_NUM_PARALLEL)),
+            max(1, int(parameters.LLM_MAX_CONCURRENCY)),
         )
         incoming_scores: dict = {a.agent_id: [] for a in self.agents}
         all_audits_this_round = []
@@ -129,7 +132,7 @@ class Environment:
         completed_scores = 0
 
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=min(len(self.agents), max(1, int(parameters.LLM_MAX_CONCURRENCY)))
+            max_workers=tom_workers
         ) as executor:
             futures = {executor.submit(self.tom_module.audit_round, evaluator, self.agents, round_number): evaluator for evaluator in self.agents}
             for future in concurrent.futures.as_completed(futures):

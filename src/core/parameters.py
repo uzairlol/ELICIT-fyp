@@ -21,14 +21,16 @@ LLM_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
 LLM_MAX_ATTEMPTS = 5           # Total transport attempts, including the first call
 LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for agent decisions
-LLM_MAX_CONCURRENCY = 2
+LLM_MAX_CONCURRENCY = 2        # Thread-pool workers for institution/contribution/punishment/beliefs
+TOM_MAX_CONCURRENCY = 4        # Thread-pool workers for pairwise ToM audits only
 # Ollama runtime options forwarded on every request (native + OpenAI-compatible API).
 # num_gpu: model layers offloaded to GPU (Ollama option name is num_gpu).
 # num_ctx: KV-cache reservation — set close to your longest prompt, not higher than needed.
 OLLAMA_NUM_GPU = -1
 OLLAMA_NUM_CTX = 8192
 # Parallel slots in the Ollama server process — set the same value when starting `ollama serve`.
-OLLAMA_NUM_PARALLEL = 1
+# Must be >= max(LLM_MAX_CONCURRENCY, TOM_MAX_CONCURRENCY) or the client semaphore will cap ToM.
+OLLAMA_NUM_PARALLEL = 4
 OLLAMA_SOFT_RESET_EACH_ROUND = True  # Unload the model via API after each round
 OLLAMA_SOFT_RESET_TIMEOUT_SECONDS = 30.0
 

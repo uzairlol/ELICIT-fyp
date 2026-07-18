@@ -124,7 +124,8 @@ class TomModule:
                 f"{base}\n\n"
                 "IMPORTANT RETRY (ToM Audit): Your previous response was "
                 "invalid or incomplete. Return ONLY one valid JSON object with "
-                '"trust_score" as an integer from 1 to 10. No extra text.'
+                '"trust_score" as an integer from 1 to 10 and a short '
+                '"reasoning" string. No extra text.'
             )
 
         def parse_score(response):
@@ -148,7 +149,7 @@ class TomModule:
             validate_result=validate_score,
             request_kwargs={
                 "model_name": self.api_client.deployment_name,
-                "max_tokens": 256,
+                "max_tokens": 96,
                 "temperature": 0.3,
                 "response_format": {"type": "json_object"},
             },

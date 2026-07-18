@@ -357,7 +357,7 @@ class Agent:
                 request_kwargs={
                     "model_name": self.api_client.deployment_name,
                     "response_format": {"type": "json_object"},
-                    "max_tokens": 2250,
+                    "max_tokens": 3000,
                     "temperature": temperature,
                     "top_p": top_p,
                 },
