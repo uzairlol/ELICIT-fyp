@@ -21,7 +21,7 @@ import time
 from core import parameters
 from core.scenario_config import get_scenario_config
 from core.utils import robust_json_loads
-from llm.retry import request_with_retries
+from llm.retry import build_failure_retry_prompt, request_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -119,13 +119,14 @@ class TomModule:
             int(getattr(parameters, 'TOM_MAX_ATTEMPTS', 2)),
         )
 
-        def retry_prompt(base, _attempt, _last_error):
-            return (
-                f"{base}\n\n"
-                "IMPORTANT RETRY (ToM Audit): Your previous response was "
-                "invalid or incomplete. Return ONLY one valid JSON object with "
-                '"trust_score" as an integer from 1 to 10 and a short '
-                '"reasoning" string. No extra text.'
+        def retry_prompt(base, _attempt, last_error):
+            return build_failure_retry_prompt(
+                base,
+                "ToM Audit",
+                last_error,
+                fix_guidance=(
+                    'Return {"trust_score": <integer 1-10>, "reasoning": "<max 2 sentences>"}.'
+                ),
             )
 
         def parse_score(response):

@@ -17,6 +17,36 @@ class RetryExhaustedError(RuntimeError):
         self.last_parsed = last_parsed  # last successfully-parsed (but invalid) result, if any
 
 
+def build_failure_retry_prompt(
+    base_prompt,
+    stage_name,
+    failure_reason,
+    fix_guidance="",
+):
+    """
+    Append a retry block that tells the model the previous attempt failed and why.
+
+    Changing the prompt text is required under a fixed Ollama seed; a bare
+    resend of the same prompt tends to reproduce the same invalid output.
+    """
+    failure = str(failure_reason or "unknown validation error").strip()
+    guidance = str(fix_guidance or "").strip()
+    lines = [
+        str(base_prompt).rstrip(),
+        "",
+        f"IMPORTANT RETRY ({stage_name}): Your previous response FAILED validation.",
+        f"Failure reason: {failure}",
+    ]
+    if guidance:
+        lines.append(f"How to fix: {guidance}")
+    lines.extend([
+        "Correct that exact problem.",
+        "Return ONLY one valid JSON object matching the Required JSON shape / response contract.",
+        "No markdown, no code fences, no text outside the JSON.",
+    ])
+    return "\n".join(lines)
+
+
 def run_with_retries(
     operation,
     *,
@@ -79,13 +109,21 @@ def request_with_retries(
 
     ``validate_result`` returns an empty string for a valid parsed result or
     a human-readable error for a response that must be retried.
+
+    If ``retry_prompt_factory`` is omitted, retries use
+    ``build_failure_retry_prompt`` with the validation failure reason.
     """
     state = {"last_error": "", "last_parsed": None}
 
+    def default_retry_prompt(prompt, _attempt, failure_reason):
+        return build_failure_retry_prompt(prompt, label, failure_reason)
+
+    repair = retry_prompt_factory or default_retry_prompt
+
     def attempt_request(attempt):
         prompt = base_prompt
-        if attempt > 1 and retry_prompt_factory is not None:
-            prompt = retry_prompt_factory(
+        if attempt > 1:
+            prompt = repair(
                 base_prompt,
                 attempt,
                 state["last_error"],

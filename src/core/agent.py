@@ -32,7 +32,11 @@ from core import parameters
 import os
 import json
 from core.utils import robust_json_loads, uses_climate_budget
-from llm.retry import request_with_retries, RetryExhaustedError
+from llm.retry import (
+    RetryExhaustedError,
+    build_failure_retry_prompt,
+    request_with_retries,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,33 +56,42 @@ from parsing import (
 from parsing.response_parsing_utils import _fit_allocations_to_budget
 
 
-def _schema_repair_prompt(base_prompt, stage_name):
-    return (
-        f"{base_prompt}\n\n"
-        f"IMPORTANT RETRY ({stage_name}): Your previous response was invalid or incomplete. "
-        "Return ONLY one JSON object matching the Required JSON shape exactly. "
-        "Use the exact key names shown. No markdown, no code fences, no extra text."
+def _schema_repair_prompt(base_prompt, stage_name, failure_reason=""):
+    return build_failure_retry_prompt(
+        base_prompt,
+        stage_name,
+        failure_reason,
+        fix_guidance=(
+            "Use the exact key names from the Required JSON shape. "
+            "Do not invent keys or omit required fields."
+        ),
     )
 
 
-def _semantic_repair_prompt(base_prompt, stage_name):
-    return (
-        f"{base_prompt}\n\n"
-        f"IMPORTANT RETRY ({stage_name}): Your previous response was internally inconsistent. "
-        "Every numeric punishment amount MUST appear in the \"punishments\" object (not only in reasoning). "
-        "Use one short reasoning summary; put each target's integer amount under punishments. "
-        "If all amounts are 0, say so explicitly in reasoning. "
-        "Return ONLY one valid JSON object. No markdown, no code fences, no extra text."
+def _semantic_repair_prompt(base_prompt, stage_name, failure_reason=""):
+    return build_failure_retry_prompt(
+        base_prompt,
+        stage_name,
+        failure_reason,
+        fix_guidance=(
+            "Every numeric punishment amount MUST appear in the \"punishments\" "
+            "object (not only in reasoning). Use one short reasoning summary; "
+            "put each target's integer amount under punishments. If all amounts "
+            "are 0, say so explicitly in reasoning."
+        ),
     )
 
 
-def _budget_repair_prompt(base_prompt, stage_name, budget, currency_name):
-    return (
-        f"{base_prompt}\n\n"
-        f"IMPORTANT RETRY ({stage_name}): Your previous punishments exceeded your budget of "
-        f"{budget:,.0f} {currency_name}. Keep the same targets but reduce amounts so total spend fits. "
-        "Put the final amounts in the \"punishments\" object. "
-        "Return ONLY one valid JSON object. No markdown, no code fences, no extra text."
+def _budget_repair_prompt(base_prompt, stage_name, budget, currency_name, failure_reason=""):
+    return build_failure_retry_prompt(
+        base_prompt,
+        stage_name,
+        failure_reason,
+        fix_guidance=(
+            f"Keep the same targets but reduce amounts so total spend fits within "
+            f"{budget:,.0f} {currency_name}. Put the final amounts in the "
+            "\"punishments\" object."
+        ),
     )
 
 class Agent:
@@ -227,8 +240,8 @@ class Agent:
             },
             max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
             label=f"Agent {self.agent_id} institution choice",
-            retry_prompt_factory=lambda base, _attempt, _error: (
-                _schema_repair_prompt(base, "Institution Choice")
+            retry_prompt_factory=lambda base, _attempt, error: (
+                _schema_repair_prompt(base, "Institution Choice", error)
             ),
             logger=logger,
         )
@@ -290,8 +303,12 @@ class Agent:
             },
             max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
             label=f"Agent {self.agent_id} contribution choice",
-            retry_prompt_factory=lambda base, _attempt, _error: (
-                _schema_repair_prompt(base, "Contribution Choice")
+            retry_prompt_factory=lambda base, _attempt, error: (
+                _schema_repair_prompt(
+                    base,
+                    "Contribution Choice",
+                    error,
+                )
             ),
             logger=logger,
         )
@@ -336,15 +353,18 @@ class Agent:
                     "Punishment and Reward Choice",
                     self.get_stage2_budget(),
                     sc['currency_name'],
+                    last_error,
                 )
             if 'internally inconsistent' in last_error:
                 return _semantic_repair_prompt(
                     base,
                     "Punishment and Reward Choice",
+                    last_error,
                 )
             return _schema_repair_prompt(
                 base,
                 "Punishment and Reward Choice",
+                last_error,
             )
 
         response = None  # may remain None if fallback path is taken
@@ -575,8 +595,8 @@ Task: UPDATE your internal belief state based on what happened this round.
             },
             max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
             label=f"Agent {self.agent_id} belief update",
-            retry_prompt_factory=lambda base, _attempt, _error: (
-                _schema_repair_prompt(base, "Belief Update")
+            retry_prompt_factory=lambda base, _attempt, error: (
+                _schema_repair_prompt(base, "Belief Update", error)
             ),
             logger=logger,
         )

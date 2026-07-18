@@ -26,8 +26,9 @@ def parse_contribution_response_v2(response, agent):
         contribution_cap = agent.get_stage1_contribution_cap()
         if not parameters.MIN_CONTRIBUTION <= contribution <= contribution_cap:
             raise ValueError(
-                f'Contribution must be between {parameters.MIN_CONTRIBUTION} '
-                f'and {contribution_cap}.'
+                f'You returned contribution={contribution}, which is outside the '
+                f'allowed range [{parameters.MIN_CONTRIBUTION}, {contribution_cap}]. '
+                f'Choose an integer in that range.'
             )
 
         reasoning = data.get('reasoning', '')

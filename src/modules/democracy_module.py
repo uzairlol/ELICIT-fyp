@@ -25,7 +25,7 @@ import random
 import json
 import re
 from core.utils import robust_json_loads
-from llm.retry import request_with_retries
+from llm.retry import build_failure_retry_prompt, request_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -279,8 +279,15 @@ Respond ONLY with valid JSON in this exact format:
             max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
             label=f"Agent {agent.agent_id} democracy proposal",
             retry_prompt_factory=lambda base, _attempt, error: (
-                f"{base}\n\nIMPORTANT RETRY: {error}. Return ONLY one valid "
-                "JSON object matching the required format."
+                build_failure_retry_prompt(
+                    base,
+                    "Democracy Proposal",
+                    error,
+                    fix_guidance=(
+                        'Return {"rule": "<exact parameter name>", '
+                        '"new_value": <number>, "reason": "<one sentence>"}.'
+                    ),
+                )
             ),
             logger=logger,
         )
@@ -363,8 +370,14 @@ Respond ONLY with valid JSON:
             max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
             label=f"Agent {agent.agent_id} democracy vote",
             retry_prompt_factory=lambda base, _attempt, error: (
-                f"{base}\n\nIMPORTANT RETRY: {error}. Return ONLY one valid "
-                "JSON object matching the required format."
+                build_failure_retry_prompt(
+                    base,
+                    "Democracy Vote",
+                    error,
+                    fix_guidance=(
+                        'Return {"vote": <integer index>, "reason": "<one sentence>"}.'
+                    ),
+                )
             ),
             logger=logger,
         )
