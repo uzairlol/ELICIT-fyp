@@ -130,8 +130,9 @@ class TomModule:
         def parse_score(response):
             return self._parse_score_response(response)
 
+
         def validate_score(parsed):
-            _score, parse_error = parsed
+            _score, _reasoning, parse_error = parsed
             return parse_error
 
         attempt_started = time.monotonic()
@@ -147,7 +148,7 @@ class TomModule:
             validate_result=validate_score,
             request_kwargs={
                 "model_name": self.api_client.deployment_name,
-                "max_tokens": 128,
+                "max_tokens": 256,
                 "temperature": 0.3,
                 "response_format": {"type": "json_object"},
             },
@@ -156,7 +157,7 @@ class TomModule:
             retry_prompt_factory=retry_prompt,
             logger=logger,
         )
-        score, _parse_error = parsed
+        score, reasoning, _parse_error = parsed
         logger.info(
             "[ToM] Completed %s with score %.1f/10 in %.1fs.",
             label,
@@ -164,7 +165,7 @@ class TomModule:
             time.monotonic() - attempt_started,
         )
 
-        return score, ''
+        return score, reasoning
 
     def _build_pair_prompt(self, evaluator, target, round_number):
         sc = get_scenario_config(parameters.SCENARIO)
@@ -194,21 +195,24 @@ Task: Score the behavioral consistency of Agent {target.agent_id} this round.
 
 **Required JSON shape:**
 {{
-  "trust_score": 5
+  "trust_score": 5,
+  "reasoning": "Brief explanation (max 2 sentences) of why you gave this score."
 }}
 
 **FINAL OUTPUT RULES:**
 - trust_score MUST be an integer from 1 to 10.
+- reasoning MUST be a short string (max 2 sentences).
 - Return exactly ONE JSON object. No other keys. No text outside the JSON."""
 
     def _parse_score_response(self, response):
-        """Parse a single trust score. Returns (score, error_message)."""
+        """Parse a single trust score. Returns (score, reasoning, error_message)."""
         try:
             data = robust_json_loads(response)
             if 'trust_score' not in data:
                 raise ValueError('Missing trust_score')
             score = float(data['trust_score'])
             score = max(1.0, min(10.0, score))
-            return score, ''
+            reasoning = str(data.get('reasoning', '') or '').strip()
+            return score, reasoning, ''
         except Exception as e:
-            return None, str(e)
+            return None, '', str(e)
