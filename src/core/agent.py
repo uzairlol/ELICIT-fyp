@@ -32,7 +32,7 @@ from core import parameters
 import os
 import json
 from core.utils import robust_json_loads, uses_climate_budget
-from llm.retry import request_with_retries
+from llm.retry import request_with_retries, RetryExhaustedError
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,7 @@ from parsing import (
     parse_punishment_response,
     deanonymize_reasoning
 )
+from parsing.response_parsing_utils import _fit_allocations_to_budget
 
 
 def _schema_repair_prompt(base_prompt, stage_name):
@@ -346,35 +347,85 @@ class Agent:
                 "Punishment and Reward Choice",
             )
 
-        response, parsed = request_with_retries(
-            self.api_client,
-            base_prompt=prompt,
-            parse_response=parse_punishment,
-            validate_result=validate_punishment,
-            request_kwargs={
-                "model_name": self.api_client.deployment_name,
-                "response_format": {"type": "json_object"},
-                "max_tokens": 2250,
-                "temperature": temperature,
-                "top_p": top_p,
-            },
-            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
-            label=f"Agent {self.agent_id} punishment choice",
-            retry_prompt_factory=punishment_retry_prompt,
-            logger=logger,
-        )
-        (
-            punishment_allocations,
-            reward_allocations,
-            reasoning,
-            deanonymized,
-            justifications,
-            facts_used,
-            deepseek_think,
-            parser_meta,
-        ) = parsed
+        response = None  # may remain None if fallback path is taken
+        try:
+            response, parsed = request_with_retries(
+                self.api_client,
+                base_prompt=prompt,
+                parse_response=parse_punishment,
+                validate_result=validate_punishment,
+                request_kwargs={
+                    "model_name": self.api_client.deployment_name,
+                    "response_format": {"type": "json_object"},
+                    "max_tokens": 2250,
+                    "temperature": temperature,
+                    "top_p": top_p,
+                },
+                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+                label=f"Agent {self.agent_id} punishment choice",
+                retry_prompt_factory=punishment_retry_prompt,
+                logger=logger,
+            )
+            (
+                punishment_allocations,
+                reward_allocations,
+                reasoning,
+                deanonymized,
+                justifications,
+                facts_used,
+                deepseek_think,
+                parser_meta,
+            ) = parsed
+        except RetryExhaustedError as exc:
+            last_err = str(exc.last_error or '')
+            if 'exceeds budget' in last_err:
+                # The LLM produced parseable allocations that overran the budget on every
+                # attempt.  Rather than crashing, trim the last parsed allocation to the
+                # agent's budget and continue — the simulation must not halt for this.
+                budget = self.get_stage2_budget() if hasattr(self, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
+                members = list((group_state or {}).get('members', []) or [])
+
+                # exc.last_parsed is set by request_with_retries before re-raising.
+                # It is the full 8-tuple returned by parse_punishment_response.
+                # last_p[0] / last_p[1] are {} on retry, so we read the actual
+                # over-budget amounts from parser_meta (last_p[7]).
+                last_p = exc.last_parsed
+                if last_p is not None and len(last_p) >= 8:
+                    meta = last_p[7] or {}
+                    raw_punishments = dict(meta.get('raw_punishment_allocations') or {})
+                    raw_rewards = dict(meta.get('raw_reward_allocations') or {})
+                    reasoning = last_p[2] if len(last_p) > 2 else ''
+                    deanonymized = last_p[3] if len(last_p) > 3 else ''
+                    justifications = last_p[4] if len(last_p) > 4 else {}
+                    facts_used = last_p[5] if len(last_p) > 5 else []
+                    deepseek_think = last_p[6] if len(last_p) > 6 else ''
+                else:
+                    raw_punishments = {}
+                    raw_rewards = {}
+                    reasoning = ''
+                    deanonymized = ''
+                    justifications = {}
+                    facts_used = []
+                    deepseek_think = ''
+
+                punishment_allocations, reward_allocations = _fit_allocations_to_budget(
+                    raw_punishments, raw_rewards, budget, members
+                )
+                logger.warning(
+                    "Agent %s punishment retries exhausted (budget overrun). "
+                    "Fitted allocations to budget %s. "
+                    "Punishments: %s, Rewards: %s.",
+                    self.agent_id, budget, punishment_allocations, reward_allocations
+                )
+                parser_meta = {
+                    'fallback_used': True,
+                    'fallback_reason': f'budget overrun fitted after retries: {last_err}',
+                }
+            else:
+                raise
         
-        self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
+        if response is not None:
+            self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
 
         self.punishment_reasoning = reasoning
         self.deanonymized_punishment_reasoning = deanonymized

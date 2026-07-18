@@ -7,13 +7,14 @@ import time
 class RetryExhaustedError(RuntimeError):
     """Raised when an LLM operation fails all configured attempts."""
 
-    def __init__(self, label, attempts, last_error):
+    def __init__(self, label, attempts, last_error, last_parsed=None):
         super().__init__(
             f"{label} failed after {attempts} attempt(s): {last_error}"
         )
         self.label = label
         self.attempts = attempts
         self.last_error = last_error
+        self.last_parsed = last_parsed  # last successfully-parsed (but invalid) result, if any
 
 
 def run_with_retries(
@@ -79,7 +80,7 @@ def request_with_retries(
     ``validate_result`` returns an empty string for a valid parsed result or
     a human-readable error for a response that must be retried.
     """
-    state = {"last_error": ""}
+    state = {"last_error": "", "last_parsed": None}
 
     def attempt_request(attempt):
         prompt = base_prompt
@@ -97,15 +98,20 @@ def request_with_retries(
             **request_kwargs,
         )
         parsed = parse_response(response)
+        state["last_parsed"] = parsed  # preserve even if validation fails
         validation_error = str(validate_result(parsed) or "")
         if validation_error:
             state["last_error"] = validation_error
             raise ValueError(validation_error)
         return response, parsed
 
-    return run_with_retries(
-        attempt_request,
-        max_attempts=max_attempts,
-        label=label,
-        logger=logger,
-    )
+    try:
+        return run_with_retries(
+            attempt_request,
+            max_attempts=max_attempts,
+            label=label,
+            logger=logger,
+        )
+    except RetryExhaustedError as exc:
+        exc.last_parsed = state["last_parsed"]
+        raise

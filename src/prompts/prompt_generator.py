@@ -632,8 +632,9 @@ def construct_punishment_prompt(agent, group_state):
             f'- Amounts must be integers in {sc["currency_name"]} on the same scale as contributions and wealth (no arbitrary caps).'
         )
         budget_contract = (
-            f'- Your total spend (punishment × {parameters.PUNISHMENT_COST} + reward × {parameters.REWARD_COST}) '
-            f'MUST NOT exceed {s2_budget:,.0f} {sc["currency_name"]}.'
+            f'- **BUDGET LIMIT:** Your total spend (punishment × {parameters.PUNISHMENT_COST} + reward × {parameters.REWARD_COST}) '
+            f'MUST NOT exceed {s2_budget:,.0f} {sc["currency_name"]}. '
+            f'Before finalising, mentally sum all punishment and reward amounts and verify the total is ≤ {s2_budget:,.0f}.'
         )
         justify_contract = (
             '- "justifications" MUST include every target label. Use "" only for targets with amount 0; '
@@ -646,8 +647,9 @@ def construct_punishment_prompt(agent, group_state):
     else:
         amount_contract = f'- Amounts must be integers from 0 to {max_punishment} only.'
         budget_contract = (
-            f'- Your total spend (punishment tokens × {parameters.PUNISHMENT_COST} + reward tokens × {parameters.REWARD_COST}) '
-            f'MUST NOT exceed {s2_budget}.'
+            f'- **BUDGET LIMIT:** Your total spend (punishment tokens × {parameters.PUNISHMENT_COST} + reward tokens × {parameters.REWARD_COST}) '
+            f'MUST NOT exceed {s2_budget}. '
+            f'Before finalising, mentally sum all punishment and reward amounts and verify the total is ≤ {s2_budget}.'
         )
         justify_contract = (
             '- "justifications" MUST include every target label. Use "" only for targets with amount 0; '
@@ -661,11 +663,11 @@ def construct_punishment_prompt(agent, group_state):
 
 **Response Contract (Punishment and Reward Choice):**
 - CRITICAL: Every punishment amount MUST be an integer in the "punishments" object. Do NOT put amounts only in reasoning.
+{budget_contract}
 - "punishments" MUST include ALL {len(target_labels)} target labels as keys. Use 0 for targets you are not punishing.
 {amount_contract}
 - "rewards" is OPTIONAL — omit it or use {{}} if you are not rewarding anyone.
 {justify_contract}
-{budget_contract}
 - Do not include yourself in either object.
 - Focus punishments on free-riders: agents who contributed below the group average or whose stated intent does not match their action.
 {reasoning_contract}

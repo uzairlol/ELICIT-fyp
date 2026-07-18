@@ -194,6 +194,8 @@ def parse_punishment_response(response, group_state, agent):
         parser_meta['raw_punishment_values'] = dict(punishments)
         parser_meta['total_spend'] = total_cost
         parser_meta['budget'] = budget
+        parser_meta['raw_punishment_allocations'] = dict(punishment_allocations)
+        parser_meta['raw_reward_allocations'] = dict(reward_allocations)
 
         if retry_reason:
             return {}, {}, reasoning, deanonymized_reasoning, justifications, facts_used, deepseek_think, parser_meta
