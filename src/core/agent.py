@@ -226,26 +226,42 @@ class Agent:
                 return meta.get('fallback_reason', 'invalid institution choice')
             return ''
 
-        response, parsed = request_with_retries(
-            self.api_client,
-            base_prompt=prompt,
-            parse_response=parse_choice,
-            validate_result=validate_choice,
-            request_kwargs={
-                "model_name": self.api_client.deployment_name,
-                "response_format": {"type": "json_object"},
-                "max_tokens": 768,
-                "temperature": temperature,
-                "top_p": top_p,
-            },
-            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
-            label=f"Agent {self.agent_id} institution choice",
-            retry_prompt_factory=lambda base, _attempt, error: (
-                _schema_repair_prompt(base, "Institution Choice", error)
-            ),
-            logger=logger,
-        )
-        choice, reasoning, facts_used, deepseek_think, parser_meta = parsed
+        response = None
+        try:
+            response, parsed = request_with_retries(
+                self.api_client,
+                base_prompt=prompt,
+                parse_response=parse_choice,
+                validate_result=validate_choice,
+                request_kwargs={
+                    "model_name": self.api_client.deployment_name,
+                    "response_format": {"type": "json_object"},
+                    "max_tokens": 768,
+                    "temperature": temperature,
+                    "top_p": top_p,
+                },
+                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+                label=f"Agent {self.agent_id} institution choice",
+                retry_prompt_factory=lambda base, _attempt, error: (
+                    _schema_repair_prompt(base, "Institution Choice", error)
+                ),
+                logger=logger,
+            )
+            choice, reasoning, facts_used, deepseek_think, parser_meta = parsed
+        except RetryExhaustedError as exc:
+            last_err = str(exc.last_error or '')
+            logger.warning(
+                "Agent %s institution choice retries exhausted: %s. Falling back to SFI.",
+                self.agent_id, last_err
+            )
+            choice = 'SFI'
+            reasoning = f"Fallback institution choice due to retry exhaust: {last_err}"
+            facts_used = []
+            deepseek_think = ""
+            parser_meta = {
+                'fallback_used': True,
+                'fallback_reason': f'retries exhausted: {last_err}'
+            }
 
         self.institution_choice = choice
         self.institution_reasoning = reasoning
@@ -253,7 +269,8 @@ class Agent:
         self.institution_deepseek_think = deepseek_think
         self.institution_parser_meta = parser_meta
         
-        self.log_debug(round_number, "stage_0_institution", prompt, response)
+        if response is not None:
+            self.log_debug(round_number, "stage_0_institution", prompt, response)
 
     def _ensure_pseudonyms_initialized(self):
         """
@@ -289,30 +306,46 @@ class Agent:
                 return meta.get('fallback_reason', 'invalid contribution')
             return ''
 
-        response, parsed = request_with_retries(
-            self.api_client,
-            base_prompt=prompt,
-            parse_response=parse_contribution,
-            validate_result=validate_contribution,
-            request_kwargs={
-                "model_name": self.api_client.deployment_name,
-                "response_format": {"type": "json_object"},
-                "max_tokens": 768,
-                "temperature": temperature,
-                "top_p": top_p,
-            },
-            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
-            label=f"Agent {self.agent_id} contribution choice",
-            retry_prompt_factory=lambda base, _attempt, error: (
-                _schema_repair_prompt(
-                    base,
-                    "Contribution Choice",
-                    error,
-                )
-            ),
-            logger=logger,
-        )
-        contribution, llm_reasoning, facts_used, deepseek_think, parser_meta = parsed
+        response = None
+        try:
+            response, parsed = request_with_retries(
+                self.api_client,
+                base_prompt=prompt,
+                parse_response=parse_contribution,
+                validate_result=validate_contribution,
+                request_kwargs={
+                    "model_name": self.api_client.deployment_name,
+                    "response_format": {"type": "json_object"},
+                    "max_tokens": 768,
+                    "temperature": temperature,
+                    "top_p": top_p,
+                },
+                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+                label=f"Agent {self.agent_id} contribution choice",
+                retry_prompt_factory=lambda base, _attempt, error: (
+                    _schema_repair_prompt(
+                        base,
+                        "Contribution Choice",
+                        error,
+                    )
+                ),
+                logger=logger,
+            )
+            contribution, llm_reasoning, facts_used, deepseek_think, parser_meta = parsed
+        except RetryExhaustedError as exc:
+            last_err = str(exc.last_error or '')
+            logger.warning(
+                "Agent %s contribution choice retries exhausted: %s. Falling back to MIN_CONTRIBUTION.",
+                self.agent_id, last_err
+            )
+            contribution = parameters.MIN_CONTRIBUTION
+            llm_reasoning = f"Fallback contribution choice due to retry exhaust: {last_err}"
+            facts_used = []
+            deepseek_think = ""
+            parser_meta = {
+                'fallback_used': True,
+                'fallback_reason': f'retries exhausted: {last_err}'
+            }
 
         # Enforce bounds
         contribution = max(parameters.MIN_CONTRIBUTION, min(contribution, self.get_stage1_contribution_cap()))
@@ -323,7 +356,8 @@ class Agent:
         self.contribution_deepseek_think = deepseek_think
         self.contribution_parser_meta = parser_meta
 
-        self.log_debug(self.round_number, "stage_1_contribution", prompt, response)
+        if response is not None:
+            self.log_debug(self.round_number, "stage_1_contribution", prompt, response)
 
 
     def assign_punishment(self, group_state):
@@ -398,17 +432,16 @@ class Agent:
             ) = parsed
         except RetryExhaustedError as exc:
             last_err = str(exc.last_error or '')
-            if 'exceeds budget' in last_err:
-                # The LLM produced parseable allocations that overran the budget on every
-                # attempt.  Rather than crashing, trim the last parsed allocation to the
-                # agent's budget and continue — the simulation must not halt for this.
+            if 'exceeds budget' in last_err or 'justification' in last_err or 'justifications' in last_err:
+                # The LLM produced parseable allocations that overran the budget or had justification issues.
+                # Rather than crashing, fit/record the allocations to budget and continue.
                 budget = self.get_stage2_budget() if hasattr(self, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
                 members = list((group_state or {}).get('members', []) or [])
 
                 # exc.last_parsed is set by request_with_retries before re-raising.
                 # It is the full 8-tuple returned by parse_punishment_response.
                 # last_p[0] / last_p[1] are {} on retry, so we read the actual
-                # over-budget amounts from parser_meta (last_p[7]).
+                # amounts from parser_meta (last_p[7]).
                 last_p = exc.last_parsed
                 if last_p is not None and len(last_p) >= 8:
                     meta = last_p[7] or {}
@@ -431,15 +464,23 @@ class Agent:
                 punishment_allocations, reward_allocations = _fit_allocations_to_budget(
                     raw_punishments, raw_rewards, budget, members
                 )
-                logger.warning(
-                    "Agent %s punishment retries exhausted (budget overrun). "
-                    "Fitted allocations to budget %s. "
-                    "Punishments: %s, Rewards: %s.",
-                    self.agent_id, budget, punishment_allocations, reward_allocations
-                )
+                if 'exceeds budget' in last_err:
+                    logger.warning(
+                        "Agent %s punishment retries exhausted (budget overrun). "
+                        "Fitted allocations to budget %s. "
+                        "Punishments: %s, Rewards: %s.",
+                        self.agent_id, budget, punishment_allocations, reward_allocations
+                    )
+                else:
+                    logger.warning(
+                        "Agent %s punishment retries exhausted (justification issue: %s). "
+                        "Recording allocations as is (fitted to budget %s). "
+                        "Punishments: %s, Rewards: %s.",
+                        self.agent_id, last_err, budget, punishment_allocations, reward_allocations
+                    )
                 parser_meta = {
                     'fallback_used': True,
-                    'fallback_reason': f'budget overrun fitted after retries: {last_err}',
+                    'fallback_reason': f'budget overrun or justification issue resolved after retries: {last_err}',
                 }
             else:
                 raise
