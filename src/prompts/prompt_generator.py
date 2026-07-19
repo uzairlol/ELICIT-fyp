@@ -303,7 +303,6 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
 
         stage1_budget = _safe_int(_contribution_budget(member))
         contribution = _safe_int(getattr(member, 'contribution', 0))
-        kept = max(0, stage1_budget - contribution)
         stage1_payoff = _safe_float(stage1_payoffs.get(member.agent_id, 0.0))
         group_type = f", group={getattr(member, 'agent_group', 'unknown')}" if show_country_types else ""
 
@@ -319,11 +318,24 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
             if peer_score is not None:
                 tom_suffix = f", your trust score for them: {float(peer_score):.1f}/10"
 
-        unit_label = sc['currency_name'] if _uses_climate_budget() else "sanction-game tokens"
+        if _uses_climate_budget():
+            unit_label = sc['currency_name']
+            # In climate mode 'kept' is meaningless — show net S1 payoff directly
+            contribution_line = (
+                f"contrib={contribution} {unit_label} / budget {stage1_budget} {unit_label} "
+                f"(deviation from avg: {deviation:+.1f})"
+            )
+        else:
+            unit_label = "sanction-game tokens"
+            kept = max(0, stage1_budget - contribution)
+            contribution_line = (
+                f"contrib={contribution} / {stage1_budget} {unit_label} "
+                f"(deviation from avg: {deviation:+.1f}), kept={kept} {unit_label}"
+            )
+
         rows.append(
             f"- {label}{group_type}{free_rider_tag}{tom_suffix}: "
-            f"contrib={contribution} / {stage1_budget} {unit_label} (deviation from avg: {deviation:+.1f}), "
-            f"kept={kept} {unit_label}, "
+            f"{contribution_line}, "
             f"net_stage1_payoff={stage1_payoff:.2f}, "
             f"stated intent: \"{stated_reason}\""
         )
@@ -344,16 +356,16 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
         )
         max_line = f"- Max sanction per target: up to your full budget ({s2_budget:,.0f} {currency})"
         amount_rule = (
-            f"Allocate integer {currency} amounts (0 up to your budget, same scale as wealth and contributions). "
-            f"Include every listed target exactly once in \"punishments\" (use 0 if not punishing). Rewards are optional."
+            f"Only list targets you are punishing or rewarding (amounts > 0). "
+            f"Omitted targets automatically default to 0. Amounts in {currency}."
         )
         avg_line = f"- Group average contribution this round: {avg_contrib:,.2f} {currency} — agents below this are free-riding"
     else:
         budget_line = f"- Sanction token budget: {s2_budget} tokens TOTAL for this round"
         max_line = f"- Max sanction tokens per target: {max_punishment} tokens"
         amount_rule = (
-            f"Allocate integer sanction tokens only (0–{max_punishment} per target). "
-            f"Include every listed target exactly once in \"punishments\" (use 0 if not punishing). Rewards are optional."
+            f"Only list targets you are punishing or rewarding (amounts > 0, max {max_punishment} per target). "
+            f"Omitted targets automatically default to 0."
         )
         avg_line = f"- Group average contribution this round: {avg_contrib:.2f} tokens — agents below this are free-riding"
 
