@@ -52,20 +52,24 @@ def _parse_amount_map(raw_map, allowed_labels, field_name, require_all=False):
     if require_all:
         missing = sorted(allowed - keys)
         if missing:
-            raise ValueError(
-                f'{field_name} missing labels: {", ".join(missing)}'
+            logger.warning(
+                f'{field_name} missing labels: {", ".join(missing)}. Defaulting these to 0.'
             )
 
     parsed = {}
-    for label, raw_amount in raw_map.items():
-        if isinstance(raw_amount, bool):
-            raise ValueError(f'{field_name}[{label}] must be an integer')
-        numeric_amount = float(raw_amount)
-        if not numeric_amount.is_integer() or numeric_amount < 0:
-            raise ValueError(
-                f'{field_name}[{label}] must be a non-negative integer'
-            )
-        parsed[label] = int(numeric_amount)
+    for label in allowed_labels:
+        if label in raw_map:
+            raw_amount = raw_map[label]
+            if isinstance(raw_amount, bool):
+                raise ValueError(f'{field_name}[{label}] must be an integer')
+            numeric_amount = float(raw_amount)
+            if not numeric_amount.is_integer() or numeric_amount < 0:
+                raise ValueError(
+                    f'{field_name}[{label}] must be a non-negative integer'
+                )
+            parsed[label] = int(numeric_amount)
+        else:
+            parsed[label] = 0
     return parsed
 
 
@@ -74,16 +78,13 @@ def _parse_justifications(raw_justifications, expected_labels):
         raise ValueError('justifications must be a JSON object')
     expected = set(expected_labels)
     keys = set(raw_justifications.keys())
-    missing = sorted(expected - keys)
     unexpected = sorted(keys - expected)
-    if missing:
-        raise ValueError(f'justifications missing labels: {", ".join(missing)}')
     if unexpected:
         raise ValueError(
             f'justifications contains unexpected labels: {", ".join(unexpected)}'
         )
     return {
-        label: str(raw_justifications[label] or '').strip()
+        label: str(raw_justifications.get(label, '') or '').strip()
         for label in expected_labels
     }
 
@@ -131,10 +132,10 @@ def parse_punishment_response(response, group_state, agent):
         expected_labels = _expected_target_labels(group_state, agent)
 
         punishments = _parse_amount_map(
-            data.get('punishments'),
+            data.get('punishments', {}) or {},
             expected_labels,
             'punishments',
-            require_all=True,
+            require_all=False,
         )
         rewards = _parse_amount_map(
             data.get('rewards', {}) or {},
@@ -142,7 +143,7 @@ def parse_punishment_response(response, group_state, agent):
             'rewards',
         )
         justifications = _parse_justifications(
-            data.get('justifications'),
+            data.get('justifications', {}) or {},
             expected_labels,
         )
         reasoning = data.get('reasoning', '')

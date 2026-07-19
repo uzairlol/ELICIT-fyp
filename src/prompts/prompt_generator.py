@@ -637,8 +637,7 @@ def construct_punishment_prompt(agent, group_state):
             f'Before finalising, mentally sum all punishment and reward amounts and verify the total is ≤ {s2_budget:,.0f}.'
         )
         justify_contract = (
-            '- "justifications" MUST include every target label. Use "" only for targets with amount 0; '
-            'one sentence per target with punishment or reward amount > 0.'
+            '- "justifications" MUST include a short sentence explaining your action for each target you chose to punish or reward.'
         )
         reasoning_contract = (
             '- "reasoning": one short summary of your sanction strategy. '
@@ -652,8 +651,7 @@ def construct_punishment_prompt(agent, group_state):
             f'Before finalising, mentally sum all punishment and reward amounts and verify the total is ≤ {s2_budget}.'
         )
         justify_contract = (
-            '- "justifications" MUST include every target label. Use "" only for targets with amount 0; '
-            'one sentence per target with punishment or reward amount > 0.'
+            '- "justifications" MUST include a short sentence explaining your action for each target you chose to punish or reward.'
         )
         reasoning_contract = (
             '- "reasoning": one short summary. Amounts MUST be in "punishments", not in reasoning.'
@@ -664,24 +662,28 @@ def construct_punishment_prompt(agent, group_state):
 **Response Contract (Punishment and Reward Choice):**
 - CRITICAL: Every punishment amount MUST be an integer in the "punishments" object. Do NOT put amounts only in reasoning.
 {budget_contract}
-- "punishments" MUST include ALL {len(target_labels)} target labels as keys. Use 0 for targets you are not punishing.
+- "punishments": Only list target labels that you choose to punish (amounts > 0). If you punish nobody, use {{}} or omit this key. Any target omitted from this object automatically defaults to 0.
 {amount_contract}
-- "rewards" is OPTIONAL — omit it or use {{}} if you are not rewarding anyone.
+- "rewards": Only list target labels that you choose to reward (amounts > 0). If you reward nobody, use {{}} or omit this key. Any target omitted from this object automatically defaults to 0.
 {justify_contract}
 - Do not include yourself in either object.
 - Focus punishments on free-riders: agents who contributed below the group average or whose stated intent does not match their action.
 {reasoning_contract}
-- If you punish nobody, set all punishments to 0 and say so in reasoning.
+- If you punish nobody, set punishments to {{}} (or omit the key) and say so in reasoning.
 
-**Target labels (ALL must appear as keys in punishments and justifications):** {label_block}
+**Target labels (use exactly when assigning punishments/rewards):** {label_block}
 
-**Required JSON shape (fill in your amounts):**
+**Required JSON shape:**
 {{
     "punishments": {{
-        {punish_keys}
+        "Agent X": 2
+    }},
+    "rewards": {{
+        "Agent Y": 3
     }},
     "justifications": {{
-        {justify_keys}
+        "Agent X": "Contributed significantly below the group average.",
+        "Agent Y": "Generous contributor."
     }},
     "reasoning": "Brief summary of your sanction strategy.",
     "facts_used": ["Fact 1", "Fact 2"]
