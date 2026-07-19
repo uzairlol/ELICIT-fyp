@@ -1,5 +1,6 @@
 # prompt_generator.py
 
+import re
 from core import parameters
 from core.scenario_config import get_scenario_config
 from prompts.prompt_utils import (
@@ -451,13 +452,31 @@ def __build_prompt_prefix(agent, stage_text, round_number, sc):
 """
     return prompt
 
-def _append_belief_state(prompt, agent, sc):
-    """Inject the agent's structured belief-state scratchpad and T-1 peer data."""
+def _append_belief_state(prompt, agent, sc, allowed_peer_ids=None):
+    """Inject the agent's structured belief-state scratchpad and T-1 peer data.
+
+    If ``allowed_peer_ids`` is set (Stage 2 / SI sanctions), only peers in that
+    set appear — SFI agents are omitted so the model cannot invent their labels.
+    """
     import json as _json
 
+    allowed = None if allowed_peer_ids is None else {int(pid) for pid in allowed_peer_ids}
+
     belief = getattr(agent, 'belief_state', None)
-    if belief:
-        prompt += f"\n\n**Your Internal Beliefs (Working Memory):**\n{_json.dumps(belief, indent=2)}"
+    if belief and isinstance(belief, dict):
+        belief_view = dict(belief)
+        trust_levels = belief_view.get('trust_levels')
+        if allowed is not None and isinstance(trust_levels, dict):
+            filtered_trust = {}
+            for key, value in trust_levels.items():
+                try:
+                    peer_id = int(key)
+                except (TypeError, ValueError):
+                    continue
+                if peer_id in allowed:
+                    filtered_trust[str(peer_id)] = value
+            belief_view['trust_levels'] = filtered_trust
+        prompt += f"\n\n**Your Internal Beliefs (Working Memory):**\n{_json.dumps(belief_view, indent=2)}"
     else:
         prompt += "\n\n**Your Internal Beliefs (Working Memory):** No beliefs formed yet."
 
@@ -468,11 +487,21 @@ def _append_belief_state(prompt, agent, sc):
         round_num = latest['round_number']
         anonymous_data_list = latest['anonymous_data']
         heading = "Anonymous Data" if _use_anonymity() else "Peer Data"
+        if allowed is not None:
+            heading = f"SI {heading}"
         prompt += f"\n\n**{heading} from Previous Round (Round {round_num}):**"
+        shown = 0
         for i, entry in enumerate(anonymous_data_list):
-            if _use_anonymity() and entry.get('actual_agent_id', -1) not in getattr(agent, 'pseudonym_mapping', {}):
+            actual_id = entry.get('actual_agent_id', -1)
+            try:
+                actual_id = int(actual_id)
+            except (TypeError, ValueError):
+                actual_id = -1
+            if allowed is not None and actual_id not in allowed:
                 continue
-            label = _peer_label(agent, entry.get('actual_agent_id', -1), i + 1)
+            if _use_anonymity() and actual_id not in getattr(agent, 'pseudonym_mapping', {}):
+                continue
+            label = _peer_label(agent, actual_id, i + 1)
             country_str = f"Country type: {entry.get('agent_group', 'unknown')}, " if show_country_types else ""
             received_p_tokens = _received_tokens_from_effect(
                 entry.get('received_punishments', 0), parameters.PUNISHMENT_EFFECT
@@ -489,6 +518,9 @@ def _append_belief_state(prompt, agent, sc):
                 f"Received {sc['reward_name']}: {received_r_tokens}, "
                 f"Total Round Payoff: {entry.get('total_round_payoff', 0):.2f}"
             )
+            shown += 1
+        if shown == 0:
+            prompt += "\n(No SI peer observations from the previous round.)"
         prompt += "\n\nUse your Internal Beliefs above for long-term context and the previous round data for immediate situational awareness."
         prompt += (
             "\nWhen deciding, weigh evidence in this order: "
@@ -499,14 +531,46 @@ def _append_belief_state(prompt, agent, sc):
         prompt += "\n\nNo peer data from previous rounds is available yet."
     return prompt
 
-def _append_gossip(prompt, agent):
-    """Append prior-round gossip bulletin when available."""
-    if parameters.GOSSIP_ENABLED:
-        gossip_text = getattr(agent, 'recent_gossip', '')
-        if gossip_text:
-            prompt += "\n\nSocial Reputation Bulletin (from previous round):"
-            prompt += f"\n{gossip_text}"
-            prompt += "\n\nTreat this as soft social evidence and combine it with observed contributions and outcomes."
+
+def _append_gossip(prompt, agent, allowed_peer_ids=None):
+    """Append prior-round gossip bulletin when available.
+
+    If ``allowed_peer_ids`` is set, keep only gossip whose target is in that set
+    (Stage 2: SI peers only).
+    """
+    if not parameters.GOSSIP_ENABLED:
+        return prompt
+
+    gossip_text = getattr(agent, 'recent_gossip', '') or ''
+    if not gossip_text.strip():
+        return prompt
+
+    if allowed_peer_ids is None:
+        prompt += "\n\nSocial Reputation Bulletin (from previous round):"
+        prompt += f"\n{gossip_text}"
+        prompt += "\n\nTreat this as soft social evidence and combine it with observed contributions and outcomes."
+        return prompt
+
+    allowed = {int(pid) for pid in allowed_peer_ids}
+    kept_lines = []
+    for line in gossip_text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        # Lines look like: "- Agent X observed regarding Agent Y ..." or "... regarding YOU"
+        if 'regarding YOU' in stripped:
+            kept_lines.append(line)
+            continue
+        match = re.search(r'regarding Agent (\d+)', stripped)
+        if match and int(match.group(1)) in allowed:
+            kept_lines.append(line)
+
+    if not kept_lines:
+        return prompt
+
+    prompt += "\n\nSocial Reputation Bulletin (SI peers only, from previous round):"
+    prompt += "\n" + "\n".join(kept_lines)
+    prompt += "\n\nTreat this as soft social evidence and combine it with observed contributions and outcomes."
     return prompt
 
 
@@ -612,14 +676,15 @@ def construct_punishment_prompt(agent, group_state):
     prompt = _append_climate_role_guidance(prompt, agent)
 
     members = list((group_state or {}).get('members', []) or [])
-    ordered_others = _sort_peers_for_punishment(
-        [m for m in members if m.agent_id != agent.agent_id]
-    )
+    # Stage 2 is SI-only: never surface SFI peers as punishable (or as belief/gossip noise).
+    si_peers = [m for m in members if m.agent_id != agent.agent_id]
+    allowed_peer_ids = {m.agent_id for m in si_peers}
+    ordered_others = _sort_peers_for_punishment(si_peers)
     card_text, target_labels = _build_stage2_card(agent, group_state, sc, ordered_others=ordered_others)
     prompt += card_text
 
-    prompt = _append_belief_state(prompt, agent, sc)
-    prompt = _append_gossip(prompt, agent)
+    prompt = _append_belief_state(prompt, agent, sc, allowed_peer_ids=allowed_peer_ids)
+    prompt = _append_gossip(prompt, agent, allowed_peer_ids=allowed_peer_ids)
 
     if parameters.TOM_ENABLED:
         prompt += f"\n\n**Your Peer Trust Rating (aggregate):** {agent.reputation:.1f}/10"
@@ -629,14 +694,12 @@ def construct_punishment_prompt(agent, group_state):
         "\n\n**Decision priority:** Use (1) current-round contributions and stated intent in the decision card, "
         "then (2) per-target trust scores, (3) internal beliefs, (4) gossip."
     )
+    prompt += (
+        "\n**SI-only rule:** You may punish/reward ONLY the SI peers listed in the decision card. "
+        "Do NOT invent Agent IDs. Do NOT include SFI agents or anyone outside the target label list."
+    )
 
     label_block = ", ".join(target_labels) if target_labels else ""
-
-    def _json_kv(labels, value):
-        return ",\n        ".join(f'"{lbl}": {value}' for lbl in labels)
-
-    punish_keys = _json_kv(target_labels, 0)
-    justify_keys = _json_kv(target_labels, '""')
     max_punishment = agent.get_max_punishment_tokens() if hasattr(agent, 'get_max_punishment_tokens') else parameters.MAX_PUNISHMENT_TOKENS
 
     if _uses_climate_budget():
@@ -674,9 +737,11 @@ def construct_punishment_prompt(agent, group_state):
 **Response Contract (Punishment and Reward Choice):**
 - CRITICAL: Every punishment amount MUST be an integer in the "punishments" object. Do NOT put amounts only in reasoning.
 {budget_contract}
-- "punishments": Only list target labels that you choose to punish (amounts > 0). If you punish nobody, use {{}} or omit this key. Any target omitted from this object automatically defaults to 0.
+- "punishments": Only list SI target labels that you choose to punish (amounts > 0). If you punish nobody, use {{}} or omit this key. Any allowed target omitted from this object automatically defaults to 0.
+- Allowed SI punishment/reward labels ONLY: {label_block if label_block else "(none)"}
+- Forbidden: inventing Agent IDs, punishing SFI agents, or adding any label not listed above.
 {amount_contract}
-- "rewards": Only list target labels that you choose to reward (amounts > 0). If you reward nobody, use {{}} or omit this key. Any target omitted from this object automatically defaults to 0.
+- "rewards": Only list SI target labels that you choose to reward (amounts > 0). If you reward nobody, use {{}} or omit this key. Any allowed target omitted defaults to 0.
 {justify_contract}
 - Do not include yourself in either object.
 - Focus punishments on free-riders: agents who contributed below the group average or whose stated intent does not match their action.

@@ -46,8 +46,10 @@ def _parse_amount_map(raw_map, allowed_labels, field_name, require_all=False):
     keys = set(raw_map.keys())
     unexpected = sorted(keys - allowed)
     if unexpected:
+        allowed_list = ", ".join(sorted(allowed)) if allowed else "(none)"
         raise ValueError(
-            f'{field_name} contains unexpected labels: {", ".join(unexpected)}'
+            f'{field_name} contains unexpected labels: {", ".join(unexpected)}. '
+            f'Allowed labels only: {allowed_list}.'
         )
     if require_all:
         missing = sorted(allowed - keys)
@@ -80,8 +82,10 @@ def _parse_justifications(raw_justifications, expected_labels):
     keys = set(raw_justifications.keys())
     unexpected = sorted(keys - expected)
     if unexpected:
+        allowed_list = ", ".join(sorted(expected)) if expected else "(none)"
         raise ValueError(
-            f'justifications contains unexpected labels: {", ".join(unexpected)}'
+            f'justifications contains unexpected labels: {", ".join(unexpected)}. '
+            f'Allowed labels only: {allowed_list}.'
         )
     return {
         label: str(raw_justifications.get(label, '') or '').strip()

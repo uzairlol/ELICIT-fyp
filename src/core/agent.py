@@ -57,14 +57,20 @@ from parsing.response_parsing_utils import _fit_allocations_to_budget
 
 
 def _schema_repair_prompt(base_prompt, stage_name, failure_reason=""):
+    guidance = (
+        "Use the exact key names from the Required JSON shape. "
+        "Do not invent keys or omit required fields."
+    )
+    if 'unexpected labels' in str(failure_reason or '').lower():
+        guidance = (
+            "Remove every disallowed Agent label. Use ONLY the Allowed labels listed "
+            "in the failure reason / target label list. Do not invent SFI or other Agent IDs."
+        )
     return build_failure_retry_prompt(
         base_prompt,
         stage_name,
         failure_reason,
-        fix_guidance=(
-            "Use the exact key names from the Required JSON shape. "
-            "Do not invent keys or omit required fields."
-        ),
+        fix_guidance=guidance,
     )
 
 
