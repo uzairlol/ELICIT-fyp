@@ -28,3 +28,4 @@ assets/
 *_dynamics.csv
 
 .VSCodeCounter/
+.vscode/
