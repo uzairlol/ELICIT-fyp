@@ -322,9 +322,10 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
         if _uses_climate_budget():
             unit_label = sc['currency_name']
             # In climate mode 'kept' is meaningless — show net S1 payoff directly
+            # Format large numbers with commas for readability
             contribution_line = (
-                f"contrib={contribution} {unit_label} / budget {stage1_budget} {unit_label} "
-                f"(deviation from avg: {deviation:+.1f})"
+                f"contrib={contribution:,.0f} {unit_label} / budget {stage1_budget:,.0f} {unit_label} "
+                f"(deviation from avg: {deviation:+,.1f})"
             )
         else:
             unit_label = "sanction-game tokens"
@@ -361,6 +362,15 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
             f"Omitted targets automatically default to 0. Amounts in {currency}."
         )
         avg_line = f"- Group average contribution this round: {avg_contrib:,.2f} {currency} — agents below this are free-riding"
+        cost_explanation = (
+            f"\n- **Cost rules (CRITICAL — read carefully):**\n"
+            f"  • Each {currency} of punishment you assign costs you exactly 1 {currency} from your budget "
+            f"and reduces the target's payoff by {parameters.PUNISHMENT_EFFECT} {currency}.\n"
+            f"  • Each {currency} of reward you assign costs you exactly 1 {currency} from your budget "
+            f"and increases the target's payoff by {parameters.REWARD_EFFECT} {currency}.\n"
+            f"  • Example: assigning 500,000 {currency} punishment costs 500,000 {currency} from your budget, "
+            f"target loses 1,500,000 {currency} payoff."
+        )
     else:
         budget_line = f"- Sanction token budget: {s2_budget} tokens TOTAL for this round"
         max_line = f"- Max sanction tokens per target: {max_punishment} tokens"
@@ -369,6 +379,13 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
             f"Omitted targets automatically default to 0."
         )
         avg_line = f"- Group average contribution this round: {avg_contrib:.2f} tokens — agents below this are free-riding"
+        cost_explanation = (
+            f"\n- **Cost rules:**\n"
+            f"  • Each punishment token costs {parameters.PUNISHMENT_COST} token from your budget, "
+            f"target loses {parameters.PUNISHMENT_EFFECT} tokens payoff.\n"
+            f"  • Each reward token costs {parameters.REWARD_COST} token from your budget, "
+            f"target gains {parameters.REWARD_EFFECT} token payoff."
+        )
 
     card = f"""
 **Decision Card — Stage 2 / Punishment & Reward Allocation**
@@ -385,6 +402,7 @@ Current-round targets (agents marked [FREE-RIDER] contributed below the group av
 {targets_block}
 
 {amount_rule}
+{cost_explanation}
 """
 
     return card, target_labels
@@ -437,7 +455,7 @@ def get_past_actions_string(agent):
 def __build_prompt_prefix(agent, stage_text, round_number, sc):
     """Build the compact shared prompt prefix."""
     prompt = _build_common_snapshot(agent, round_number, sc, stage_text)
-    
+
     s2_budget = agent.get_stage2_budget() if hasattr(agent, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
     funding_info = " (funded directly from wealth, no free endowment)" if _uses_climate_budget() else " endowment"
 
@@ -446,10 +464,15 @@ def __build_prompt_prefix(agent, stage_text, round_number, sc):
 **Scenario Rules Snapshot:**
 - Stage 1 contribution uses your current budget: {_safe_int(agent.get_stage1_contribution_cap() if hasattr(agent, 'get_stage1_contribution_cap') else parameters.ENDOWMENT_STAGE_1)} {sc['currency_name']}
 {_format_mcpr_line()}
-- Stage 2 budget: {s2_budget} {sc['currency_name']}{funding_info} (SI members only — SFI members skip Stage 2 entirely)
+- Stage 2 budget: {s2_budget:,} {sc['currency_name']}{funding_info} (SI members only — SFI members skip Stage 2 entirely)
 - Punishment effect / cost (SI only): -{parameters.PUNISHMENT_EFFECT} / {parameters.PUNISHMENT_COST} {sc['currency_name']}
-- Reward effect / cost (SI only): +{parameters.REWARD_EFFECT} / {parameters.REWARD_COST} {sc['currency_name']}
-"""
+- Reward effect / cost (SI only): +{parameters.REWARD_EFFECT} / {parameters.REWARD_COST} {sc['currency_name']}"""
+    if _uses_climate_budget():
+        prompt += (
+            f"\n- **NOTE:** The wealth shown above ({agent.wealth:,.0f} {sc['currency_name']}) does NOT yet include "
+            f"your Stage 1 earnings from this round. Your Stage 2 budget ({s2_budget:,.0f} {sc['currency_name']}) "
+            f"was calculated from pre-Stage-1 wealth. After Stage 1, your actual wealth will be higher."
+        )
     return prompt
 
 def _append_belief_state(prompt, agent, sc, allowed_peer_ids=None):
@@ -711,6 +734,13 @@ def construct_punishment_prompt(agent, group_state):
             f'MUST NOT exceed {s2_budget:,.0f} {sc["currency_name"]}. '
             f'Before finalising, mentally sum all punishment and reward amounts and verify the total is ≤ {s2_budget:,.0f}.'
         )
+        # Explicit unit equivalence statement — the core fix for LLM confusion
+        unit_equivalence = (
+            f'- **CRITICAL UNIT EQUIVALENCE:** In climate mode, punishment and reward amounts ARE in {sc["currency_name"]}. '
+            f'Assigning X {sc["currency_name"]} of punishment costs you exactly X {sc["currency_name"]} from your budget '
+            f'(1:1 ratio). Assigning Y {sc["currency_name"]} of reward costs you exactly Y {sc["currency_name"]} from your budget. '
+            f'There is no separate "token" system — the numbers you enter are the actual million USD amounts.'
+        )
         justify_contract = (
             '- "justifications" MUST include a short sentence explaining your action for each target you chose to punish or reward.'
         )
@@ -731,12 +761,14 @@ def construct_punishment_prompt(agent, group_state):
         reasoning_contract = (
             '- "reasoning": one short summary. Amounts MUST be in "punishments", not in reasoning.'
         )
+        unit_equivalence = ''  # Not used in abstract mode
 
     prompt += f"""
 
 **Response Contract (Punishment and Reward Choice):**
 - CRITICAL: Every punishment amount MUST be an integer in the "punishments" object. Do NOT put amounts only in reasoning.
 {budget_contract}
+{unit_equivalence if _uses_climate_budget() else ''}
 - "punishments": Only list SI target labels that you choose to punish (amounts > 0). If you punish nobody, use {{}} or omit this key. Any allowed target omitted from this object automatically defaults to 0.
 - Allowed SI punishment/reward labels ONLY: {label_block if label_block else "(none)"}
 - Forbidden: inventing Agent IDs, punishing SFI agents, or adding any label not listed above.
