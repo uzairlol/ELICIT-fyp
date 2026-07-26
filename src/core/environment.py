@@ -270,7 +270,9 @@ class Environment:
                     self.sfi.add_member(agent)
                     agent.current_group = self.sfi
                 
-                logger.info(f"Agent {agent.agent_id} chose {agent.institution_choice}. Reasoning: \"{agent.institution_reasoning[:150]}...\"")
+                logger.info(f"Agent {agent.agent_id} chose {agent.institution_choice}. Reasoning: {agent.institution_reasoning}")
+                if agent.institution_deepseek_think:
+                    logger.info(f"  └─ [institution <think>]\n{agent.institution_deepseek_think}")
 
         # Collect contributions in each institution
         self.si.collect_contributions()
@@ -418,7 +420,14 @@ class Environment:
 
             payoff_details = f"S1: {stage1_payoff:.1f}, S2: {stage2_payoff:.1f}, LDF: {ldf_transfer:.1f}, Damage: {climate_damage:.1f}"
             logger.info(f"Agent {agent.agent_id} in {agent.institution_choice} (Payoff: {agent.round_payoff:.2f} | {payoff_details})")
-            logger.debug(f"  - LLM Reasoning: {agent.contribution_reasoning[:120]}...")
+            if agent.contribution_reasoning:
+                logger.info(f"  └─ [contribution reasoning]: {agent.contribution_reasoning}")
+            if agent.contribution_deepseek_think:
+                logger.info(f"  └─ [contribution <think>]\n{agent.contribution_deepseek_think}")
+            if agent.punishment_reasoning:
+                logger.info(f"  └─ [punishment reasoning]: {agent.punishment_reasoning}")
+            if agent.punishment_deepseek_think:
+                logger.info(f"  └─ [punishment <think>]\n{agent.punishment_deepseek_think}")
 
     def _compute_gini(self, values):
         """Gini coefficient for non-negative values."""

@@ -112,7 +112,7 @@ class OllamaClient:
         self,
         model_name,
         prompt,
-        max_tokens=768,
+        max_tokens=-1,
         temperature=0.7,
         top_p=1.0,
         response_format=None,
@@ -129,6 +129,12 @@ class OllamaClient:
                         top_p=top_p,
                         require_json=bool(response_format),
                     )
+
+                # ── instruct model path (OpenAI-compatible) ──────────────────
+                logger.info(
+                    "\n%s\n[PROMPT → %s]\n%s\n%s",
+                    "═" * 72, self.model_name, prompt, "═" * 72,
+                )
 
                 messages = [{"role": "user", "content": prompt}]
                 create_args = {
@@ -157,6 +163,10 @@ class OllamaClient:
                     reasoning_text = getattr(message, "reasoning_content", None) or ""
                     generated_text = reasoning_text.strip()
 
+                logger.info(
+                    "\n%s\n[RESPONSE ← %s]\n%s\n%s",
+                    "═" * 72, self.model_name, generated_text, "═" * 72,
+                )
                 return generated_text
 
             except OpenAIError as e:
@@ -166,6 +176,11 @@ class OllamaClient:
         """
         Use Ollama's native HTTP API for reasoning models.
         """
+        logger.info(
+            "\n%s\n[PROMPT → %s]\n%s\n%s",
+            "═" * 72, self.model_name, prompt, "═" * 72,
+        )
+
         options = _ollama_runtime_options(max_tokens)
         options.update({
             "temperature": temperature,
@@ -196,10 +211,17 @@ class OllamaClient:
         content = str(content).strip()
 
         if reasoning and content:
-            return f"<think>\n{reasoning}\n</think>\n{content}"
-        if reasoning:
-            return f"<think>\n{reasoning}\n</think>"
-        return content
+            result = f"<think>\n{reasoning}\n</think>\n{content}"
+        elif reasoning:
+            result = f"<think>\n{reasoning}\n</think>"
+        else:
+            result = content
+        
+        logger.info(
+            "\n%s\n[RESPONSE ← %s]\n%s\n%s",
+            "═" * 72, self.model_name, result, "═" * 72,
+        )
+        return result
 
     def _post_native_json(self, endpoint, payload, timeout=None):
         """POST JSON to an Ollama native API endpoint."""
