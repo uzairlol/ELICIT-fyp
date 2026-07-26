@@ -130,12 +130,6 @@ class OllamaClient:
                         require_json=bool(response_format),
                     )
 
-                # ── instruct model path (OpenAI-compatible) ──────────────────
-                logger.info(
-                    "\n%s\n[PROMPT → %s]\n%s\n%s",
-                    "═" * 72, self.model_name, prompt, "═" * 72,
-                )
-
                 messages = [{"role": "user", "content": prompt}]
                 create_args = {
                     "model": self.model_name,
@@ -176,11 +170,6 @@ class OllamaClient:
         """
         Use Ollama's native HTTP API for reasoning models.
         """
-        logger.info(
-            "\n%s\n[PROMPT → %s]\n%s\n%s",
-            "═" * 72, self.model_name, prompt, "═" * 72,
-        )
-
         options = _ollama_runtime_options(max_tokens)
         options.update({
             "temperature": temperature,
