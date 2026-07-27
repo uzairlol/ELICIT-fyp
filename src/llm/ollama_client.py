@@ -2,7 +2,9 @@
 
 import logging
 import os
+import subprocess
 import threading
+import time
 import json
 import urllib.request
 from openai import OpenAI, OpenAIError
@@ -25,6 +27,10 @@ def _ollama_runtime_options(max_tokens):
         "num_predict": int(max_tokens),
         "seed": int(getattr(parameters, 'SEED', 0)),
     }
+
+
+def _ollama_keep_alive():
+    return getattr(parameters, 'OLLAMA_KEEP_ALIVE', '2m')
 
 
 class OllamaClient:
@@ -66,6 +72,7 @@ class OllamaClient:
             f"Ollama GPU options: num_gpu={getattr(parameters, 'OLLAMA_NUM_GPU', 1)}, "
             f"num_ctx={getattr(parameters, 'OLLAMA_NUM_CTX', 4096)}, "
             f"OLLAMA_NUM_PARALLEL={parallel}, "
+            f"OLLAMA_KEEP_ALIVE={_ollama_keep_alive()}, "
             f"LLM_MAX_CONCURRENCY={general_concurrency}, "
             f"TOM_MAX_CONCURRENCY={tom_concurrency} "
             f"(restart the Ollama server if it was already running)"
@@ -141,6 +148,8 @@ class OllamaClient:
                     "seed": parameters.SEED,
                     "extra_body": {
                         "options": _ollama_runtime_options(max_tokens),
+                        # Prevents llama-server from staying loaded forever between calls.
+                        "keep_alive": _ollama_keep_alive(),
                     },
                 }
                 if response_format and not _is_reasoning_model(self.model_name):
@@ -180,6 +189,7 @@ class OllamaClient:
             "model": self.model_name,
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
+            "keep_alive": _ollama_keep_alive(),
             "options": options,
         }
         response_data = self._post_native_json("/api/chat", payload)
@@ -205,18 +215,20 @@ class OllamaClient:
             result = f"<think>\n{reasoning}\n</think>"
         else:
             result = content
-        
+
         logger.info(
             "\n%s\n[RESPONSE ← %s]\n%s\n%s",
             "═" * 72, self.model_name, result, "═" * 72,
         )
         return result
 
+    def _native_base_url(self):
+        return parameters.LLM_BASE_URL.rstrip("/").removesuffix("/v1")
+
     def _post_native_json(self, endpoint, payload, timeout=None):
         """POST JSON to an Ollama native API endpoint."""
-        base_url = parameters.LLM_BASE_URL.rstrip("/").removesuffix("/v1")
         request = urllib.request.Request(
-            base_url + endpoint,
+            self._native_base_url() + endpoint,
             data=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json"},
             method="POST",
@@ -230,52 +242,109 @@ class OllamaClient:
             body = response.read().decode("utf-8")
         return json.loads(body) if body.strip() else {}
 
+    def _list_loaded_models(self):
+        """Return model names currently held by Ollama runners (/api/ps)."""
+        request = urllib.request.Request(
+            self._native_base_url() + "/api/ps",
+            method="GET",
+        )
+        timeout = float(getattr(parameters, 'OLLAMA_SOFT_RESET_TIMEOUT_SECONDS', 30.0))
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8") or "{}")
+        names = set()
+        for entry in payload.get("models", []) or []:
+            name = entry.get("name") or entry.get("model")
+            if name:
+                names.add(str(name))
+        return names
+
+    @staticmethod
+    def _kill_leftover_runners():
+        """
+        On Windows, keep_alive=0 sometimes leaves llama-server.exe resident.
+        Kill only the runner processes — never ollama.exe / the app itself.
+        """
+        if os.name != "nt":
+            return []
+        runner_names = (
+            "llama-server.exe",
+            "ollama_llama_server.exe",
+        )
+        killed = []
+        for name in runner_names:
+            try:
+                completed = subprocess.run(
+                    ["taskkill", "/F", "/IM", name, "/T"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                output = (completed.stdout or "") + (completed.stderr or "")
+                if completed.returncode == 0 or "SUCCESS" in output.upper():
+                    killed.append(name)
+                    logger.info("Force-killed leftover runner process: %s", name)
+                elif "not found" not in output.lower() and completed.returncode not in (128, 1):
+                    logger.debug("taskkill %s: %s", name, output.strip())
+            except Exception as exc:
+                logger.warning("Failed to taskkill %s: %s", name, exc)
+        return killed
+
     def soft_reset_model(self):
         """
-        Unload loaded models via Ollama's API and release runner memory.
+        Unload loaded models via Ollama's API and release llama-server RAM.
 
-        Ollama does not expose an API that restarts ``ollama serve``. Sending
-        ``keep_alive: 0`` releases model weights/KV; the next request reloads.
+        Sends keep_alive: 0, waits until /api/ps is empty, then on Windows
+        force-kills any leftover llama-server.exe runner if still present.
         """
         label = f"Ollama soft reset ({self.model_name})"
+        timeout = float(getattr(parameters, 'OLLAMA_SOFT_RESET_TIMEOUT_SECONDS', 30.0))
 
         def unload_model(model_name):
             with self._request_semaphore:
                 return self._post_native_json(
                     "/api/generate",
                     {"model": model_name, "keep_alive": 0},
-                    timeout=getattr(
-                        parameters,
-                        'OLLAMA_SOFT_RESET_TIMEOUT_SECONDS',
-                        30.0,
-                    ),
+                    timeout=timeout,
                 )
 
         def unload_once(_attempt):
             models = {self.model_name}
             try:
-                base_url = parameters.LLM_BASE_URL.rstrip("/").removesuffix("/v1")
-                request = urllib.request.Request(
-                    base_url + "/api/ps",
-                    method="GET",
-                )
-                with urllib.request.urlopen(
-                    request,
-                    timeout=float(
-                        getattr(parameters, 'OLLAMA_SOFT_RESET_TIMEOUT_SECONDS', 30.0)
-                    ),
-                ) as response:
-                    payload = json.loads(response.read().decode("utf-8") or "{}")
-                for entry in payload.get("models", []) or []:
-                    name = entry.get("name") or entry.get("model")
-                    if name:
-                        models.add(str(name))
+                models |= self._list_loaded_models()
             except Exception as exc:
                 logger.debug("Could not list Ollama /api/ps models: %s", exc)
 
             for model_name in sorted(models):
                 unload_model(model_name)
-            return {"unloaded": sorted(models)}
+
+            # Wait briefly for runners to exit after unload.
+            deadline = time.monotonic() + min(10.0, timeout)
+            remaining = models
+            while time.monotonic() < deadline:
+                try:
+                    remaining = self._list_loaded_models()
+                except Exception:
+                    remaining = set()
+                    break
+                if not remaining:
+                    break
+                time.sleep(0.5)
+
+            killed = []
+            if getattr(parameters, 'OLLAMA_FORCE_KILL_RUNNER', True):
+                if remaining:
+                    logger.warning(
+                        "Models still listed in /api/ps after unload: %s. "
+                        "Force-killing llama-server runners.",
+                        sorted(remaining),
+                    )
+                killed = self._kill_leftover_runners()
+
+            return {
+                "unloaded": sorted(models),
+                "still_loaded": sorted(remaining),
+                "killed_runners": killed,
+            }
 
         result = run_with_retries(
             unload_once,
@@ -285,8 +354,10 @@ class OllamaClient:
             base_delay_seconds=1.0,
         )
         logger.info(
-            "Ollama soft reset complete; unloaded %s. Next request will reload.",
+            "Ollama soft reset complete; unloaded=%s still_loaded=%s killed_runners=%s.",
             result.get("unloaded", [self.model_name]),
+            result.get("still_loaded", []),
+            result.get("killed_runners", []),
         )
 
     def get_total_cost(self):

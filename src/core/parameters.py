@@ -25,14 +25,19 @@ LLM_MAX_CONCURRENCY = 2        # Thread-pool workers for institution/contributio
 TOM_MAX_CONCURRENCY = 4        # Thread-pool workers for pairwise ToM audits only
 # Ollama runtime options forwarded on every request (native + OpenAI-compatible API).
 # num_gpu: model layers offloaded to GPU (Ollama option name is num_gpu).
-# num_ctx: KV-cache reservation — set close to your longest prompt, not higher than needed.
+# num_ctx: KV-cache reservation per parallel slot — llama-server RAM scales with
+#          roughly OLLAMA_NUM_CTX * OLLAMA_NUM_PARALLEL. Keep this tight.
 OLLAMA_NUM_GPU = -1
-OLLAMA_NUM_CTX = 8192
+OLLAMA_NUM_CTX = 4096
 # Parallel slots in the Ollama server process — set the same value when starting `ollama serve`.
 # Must be >= max(LLM_MAX_CONCURRENCY, TOM_MAX_CONCURRENCY) or the client semaphore will cap ToM.
 OLLAMA_NUM_PARALLEL = 4
+# How long the runner stays loaded between requests (Ollama keep_alive).
+OLLAMA_KEEP_ALIVE = "2m"
 OLLAMA_SOFT_RESET_EACH_ROUND = True  # Unload the model via API after each round
 OLLAMA_SOFT_RESET_TIMEOUT_SECONDS = 30.0
+# After keep_alive=0, kill leftover Windows llama-server.exe if /api/ps is empty but RAM remains.
+OLLAMA_FORCE_KILL_RUNNER = True
 # Write full prompts/responses to debug_logs/*.json (very large; leave off for long runs).
 DEBUG_LLM_IO = False
 # Keep full round JSON on disk and only slim numeric/text summaries in RAM.
