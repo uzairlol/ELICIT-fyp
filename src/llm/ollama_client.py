@@ -232,18 +232,18 @@ class OllamaClient:
 
     def soft_reset_model(self):
         """
-        Unload the active model via Ollama's API.
+        Unload loaded models via Ollama's API and release runner memory.
 
         Ollama does not expose an API that restarts ``ollama serve``. Sending
-        ``keep_alive: 0`` safely releases the model; the next request reloads it.
+        ``keep_alive: 0`` releases model weights/KV; the next request reloads.
         """
         label = f"Ollama soft reset ({self.model_name})"
 
-        def unload_once(_attempt):
+        def unload_model(model_name):
             with self._request_semaphore:
                 return self._post_native_json(
                     "/api/generate",
-                    {"model": self.model_name, "keep_alive": 0},
+                    {"model": model_name, "keep_alive": 0},
                     timeout=getattr(
                         parameters,
                         'OLLAMA_SOFT_RESET_TIMEOUT_SECONDS',
@@ -251,7 +251,33 @@ class OllamaClient:
                     ),
                 )
 
-        run_with_retries(
+        def unload_once(_attempt):
+            models = {self.model_name}
+            try:
+                base_url = parameters.LLM_BASE_URL.rstrip("/").removesuffix("/v1")
+                request = urllib.request.Request(
+                    base_url + "/api/ps",
+                    method="GET",
+                )
+                with urllib.request.urlopen(
+                    request,
+                    timeout=float(
+                        getattr(parameters, 'OLLAMA_SOFT_RESET_TIMEOUT_SECONDS', 30.0)
+                    ),
+                ) as response:
+                    payload = json.loads(response.read().decode("utf-8") or "{}")
+                for entry in payload.get("models", []) or []:
+                    name = entry.get("name") or entry.get("model")
+                    if name:
+                        models.add(str(name))
+            except Exception as exc:
+                logger.debug("Could not list Ollama /api/ps models: %s", exc)
+
+            for model_name in sorted(models):
+                unload_model(model_name)
+            return {"unloaded": sorted(models)}
+
+        result = run_with_retries(
             unload_once,
             max_attempts=2,
             label=label,
@@ -259,8 +285,8 @@ class OllamaClient:
             base_delay_seconds=1.0,
         )
         logger.info(
-            "Ollama model %s unloaded; the next request will reload it.",
-            self.model_name,
+            "Ollama soft reset complete; unloaded %s. Next request will reload.",
+            result.get("unloaded", [self.model_name]),
         )
 
     def get_total_cost(self):

@@ -688,6 +688,8 @@ Task: UPDATE your internal belief state based on what happened this round.
         # Phase 4 Curiosity: snapshot choices BEFORE they are reset
         if self.institution_choice:
             self.history_institutions.append(self.institution_choice)
+            if len(self.history_institutions) > 10:
+                self.history_institutions.pop(0)
         self.history_contributions.append(self.contribution)
         if len(self.history_contributions) > 10:
             self.history_contributions.pop(0)
@@ -706,6 +708,10 @@ Task: UPDATE your internal belief state based on what happened this round.
         self.contribution_reasoning = ''
         self.punishment_reasoning = ''
         self.deanonymized_punishment_reasoning = ''
+        self.institution_facts_used = []
+        self.contribution_facts_used = []
+        self.punishment_facts_used = []
+        self.punishment_justifications = {}
         self.institution_deepseek_think = ''
         self.contribution_deepseek_think = ''
         self.punishment_deepseek_think = ''
@@ -718,6 +724,8 @@ Task: UPDATE your internal belief state based on what happened this round.
         self.institution_parser_meta = {}
         self.contribution_parser_meta = {}
         self.punishment_parser_meta = {}
+        if hasattr(self, 'tom_audit_log'):
+            self.tom_audit_log = []
 
     def receive_punishment(self, amount):
         """
@@ -806,10 +814,12 @@ Task: UPDATE your internal belief state based on what happened this round.
         return f"Agent({self.agent_id}, Cumulative Payoff: {self.cumulative_payoff})"
 
     def log_debug(self, round_num, stage_name, prompt, response):
-        """Helper to save LLM interactions for debugging."""
+        """Helper to save LLM interactions for debugging (opt-in; large on disk/RAM)."""
+        if not getattr(parameters, 'DEBUG_LLM_IO', False):
+            return
         log_dir = os.path.join(os.path.dirname(__file__), '..', 'debug_logs')
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         filename = f"agent_{self.agent_id}_round_{round_num}_{stage_name}.json"
-        with open(os.path.join(log_dir, filename), 'w') as f:
+        with open(os.path.join(log_dir, filename), 'w', encoding='utf-8') as f:
             json.dump({'prompt': prompt, 'response': response}, f, indent=2)

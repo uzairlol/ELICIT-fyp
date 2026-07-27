@@ -33,6 +33,10 @@ OLLAMA_NUM_CTX = 8192
 OLLAMA_NUM_PARALLEL = 4
 OLLAMA_SOFT_RESET_EACH_ROUND = True  # Unload the model via API after each round
 OLLAMA_SOFT_RESET_TIMEOUT_SECONDS = 30.0
+# Write full prompts/responses to debug_logs/*.json (very large; leave off for long runs).
+DEBUG_LLM_IO = False
+# Keep full round JSON on disk and only slim numeric/text summaries in RAM.
+RESULTS_SPILL_TO_DISK = True
 
 # --- Initial Endowments ---
 INITIAL_TOKENS = 1000    # Starting tokens per agent

@@ -3,6 +3,7 @@
 import random
 import json
 import os
+import gc
 import logging
 import concurrent.futures
 import statistics
@@ -22,6 +23,25 @@ from core.scenario_config import get_scenario_config
 if parameters.GOSSIP_ENABLED:
     from modules.gossip_module import GossipModule
 
+# Fat text fields that compound in RAM when every round is retained in-process.
+_FAT_AGENT_TEXT_KEYS = (
+    'institution_reasoning',
+    'institution_facts_used',
+    'institution_deepseek_think',
+    'institution_parser_meta',
+    'contribution_reasoning',
+    'contribution_facts_used',
+    'contribution_deepseek_think',
+    'contribution_parser_meta',
+    'punishment_reasoning',
+    'deanonymized_punishment_reasoning',
+    'punishment_facts_used',
+    'punishment_justifications',
+    'punishment_deepseek_think',
+    'punishment_parser_meta',
+)
+
+
 class Environment:
     def __init__(self, agents):
         self.agents = agents
@@ -38,6 +58,7 @@ class Environment:
             'payouts_total': 0.0,
             'pool_end': 0.0,
         }
+        self._results_spill_path = None
         random.seed(parameters.SEED)
 
         # Phase 2: shared module instances (use first agent's API client)
@@ -81,7 +102,7 @@ class Environment:
                 self._soft_reset_ollama(round_number)
 
     def _soft_reset_ollama(self, round_number):
-        """Unload the Ollama model after all LLM work for a round has finished."""
+        """Unload Ollama models and release Python refs after a round."""
         if not self.agents:
             return
         api_client = getattr(self.agents[0], 'api_client', None)
@@ -100,6 +121,8 @@ class Environment:
                 round_number,
                 exc,
             )
+        # Force Python to reclaim fat round / ToM objects after unload.
+        gc.collect()
 
 
     def run_tom_audit(self, round_number):
@@ -175,6 +198,12 @@ class Environment:
             self.gossip_module.compile_gossip(all_audits_this_round)
             for agent in self.agents:
                 agent.recent_gossip = self.gossip_module.get_gossip_for_agent(agent)
+
+        # Drop per-round ToM audit logs and local audit list — they compound at O(N^2).
+        for agent in self.agents:
+            if hasattr(agent, 'tom_audit_log'):
+                agent.tom_audit_log = []
+        all_audits_this_round.clear()
 
         rep_str = ", ".join(
             f"Agent {a.agent_id}: {a.reputation:.1f}"
@@ -634,18 +663,82 @@ class Environment:
             for agent in self.agents:
                 round_data['agents'][agent.agent_id]['belief_state'] = getattr(agent, 'belief_state', {})
 
-        # Append round data to environment history
-        self.history.append(round_data)
-
-        # Optionally, save data for analysis
+        # Spill full text to disk, slim the in-RAM copy, then retain one list only.
+        if getattr(parameters, 'RESULTS_SPILL_TO_DISK', True):
+            self._spill_round_and_slim(round_data)
         self.results.append(round_data)
+        self.history = self.results
+
+    def _ensure_results_spill_path(self):
+        if self._results_spill_path:
+            return self._results_spill_path
+        spill_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'results', '_spill')
+        os.makedirs(spill_dir, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        seed_val = getattr(parameters, 'SEED', 'noseed')
+        batch_name = getattr(parameters, 'BATCH_NAME', 'run')
+        self._results_spill_path = os.path.join(
+            spill_dir,
+            f"rounds_{batch_name}_seed{seed_val}_{stamp}.jsonl",
+        )
+        return self._results_spill_path
+
+    @staticmethod
+    def _slim_round_data_inplace(round_data):
+        """Strip fat LLM text from an in-memory round after it has been spilled to disk."""
+        agents = round_data.get('agents') or {}
+        for agent_data in agents.values():
+            if not isinstance(agent_data, dict):
+                continue
+            for key in _FAT_AGENT_TEXT_KEYS:
+                if key not in agent_data:
+                    continue
+                value = agent_data[key]
+                if key.endswith('_parser_meta') or key == 'punishment_justifications':
+                    agent_data[key] = {}
+                elif key.endswith('_facts_used'):
+                    agent_data[key] = []
+                elif isinstance(value, str):
+                    agent_data[key] = (value[:120] + '...') if len(value) > 120 else value
+            belief = agent_data.get('belief_state')
+            if isinstance(belief, dict):
+                for text_key in ('institutional_strategy', 'observations'):
+                    text = belief.get(text_key)
+                    if isinstance(text, str) and len(text) > 160:
+                        belief[text_key] = text[:160] + '...'
+
+    def _spill_round_and_slim(self, round_data):
+        """Persist the full round JSON, then slim the in-RAM copy."""
+        path = self._ensure_results_spill_path()
+        with open(path, 'a', encoding='utf-8') as handle:
+            handle.write(json.dumps(round_data, ensure_ascii=False))
+            handle.write('\n')
+        self._slim_round_data_inplace(round_data)
+        # agent.history may still hold old fat string refs via shallow feedback copies.
+        for agent in self.agents:
+            slim_row = (round_data.get('agents') or {}).get(agent.agent_id)
+            if isinstance(slim_row, dict):
+                feedback = dict(slim_row)
+                feedback['round_number'] = self.current_round
+                agent.history = [feedback]
+
+    def _load_spilled_results(self):
+        path = self._results_spill_path
+        if not path or not os.path.exists(path):
+            return None
+        rounds = []
+        with open(path, 'r', encoding='utf-8') as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    rounds.append(json.loads(line))
+        return rounds
 
     def save_results(self, model_name, num_agents, num_rounds):
         """
         Saves the simulation results to a timestamped JSON file inside a 'results/' subfolder.
-        Filename format: results/simulation_<model>_<N>agents_<R>rounds_<YYYYMMDD_HHMMSS>.json
+        Prefer the on-disk spill (full text) when available so RAM can stay slim mid-run.
         """
-        # Build the results directory next to this script
         results_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'results')
         os.makedirs(results_dir, exist_ok=True)
 
@@ -659,7 +752,24 @@ class Environment:
         )
         filepath = os.path.join(results_dir, filename)
 
-        with open(filepath, 'w') as f:
-            json.dump(self.results, f, indent=4)
+        payload = self._load_spilled_results()
+        if payload is None:
+            payload = self.results
+
+        # Attach late constitutional annotations that may exist only on slim in-RAM rows.
+        if payload and self.results and len(payload) == len(self.results):
+            for spilled, live in zip(payload, self.results):
+                if 'constitutional_change' in live and 'constitutional_change' not in spilled:
+                    spilled['constitutional_change'] = live['constitutional_change']
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=4)
 
         logger.info(f"Simulation results saved to '{filepath}'.")
+        if self._results_spill_path and os.path.exists(self._results_spill_path):
+            try:
+                os.remove(self._results_spill_path)
+            except OSError:
+                pass
+            self._results_spill_path = None
+        gc.collect()

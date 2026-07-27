@@ -12,6 +12,7 @@ env/
 src/debug_logs/
 *.log
 debug.log
+results/_spill/
 
 # Generated analysis outputs (plots, metrics CSVs, test runs)
 analysis_outputs/

@@ -63,6 +63,7 @@ def clear_debug_logs():
     log_dir = os.path.join(os.path.dirname(__file__), 'debug_logs')
     if os.path.exists(log_dir):
         files = glob.glob(os.path.join(log_dir, '*.json'))
+        files += glob.glob(os.path.join(log_dir, '*.log'))
         for f in files:
             try:
                 os.remove(f)

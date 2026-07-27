@@ -57,6 +57,9 @@ class TomModule:
         )
         if not hasattr(evaluating_agent, 'tom_audit_log'):
             evaluating_agent.tom_audit_log = []
+        else:
+            # Never accumulate across rounds — pairwise audits are O(N^2) per round.
+            evaluating_agent.tom_audit_log = []
 
         for target in all_agents:
             if target.agent_id == evaluating_agent.agent_id:
