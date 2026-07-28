@@ -21,6 +21,7 @@ LLM_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
 LLM_MAX_ATTEMPTS = 5           # Total transport attempts, including the first call
 LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for agent decisions
+BELIEF_UPDATE_MAX_TOKENS = 384 # Compact belief-state JSON; keeps 8B outputs from running on
 LLM_MAX_CONCURRENCY = 2        # Thread-pool workers for institution/contribution/punishment/beliefs
 TOM_MAX_CONCURRENCY = 4        # Thread-pool workers for pairwise ToM audits only
 # Ollama runtime options forwarded on every request (native + OpenAI-compatible API).

@@ -558,9 +558,15 @@ class Agent:
 
         # Format the anonymous peer data for the reflection prompt
         peer_lines = []
+        observed_peer_ids = []
         if anonymous_data:
             for entry in anonymous_data:
                 peer_id = entry.get('actual_agent_id', '?')
+                try:
+                    peer_id_int = int(peer_id)
+                    observed_peer_ids.append(peer_id_int)
+                except (TypeError, ValueError):
+                    peer_id_int = None
                 peer_lines.append(
                     f"Agent {peer_id}: inst={entry.get('institution_choice', '?')}, "
                     f"contrib={entry.get('contribution', 0)}, "
@@ -601,6 +607,9 @@ Task: UPDATE your internal belief state based on what happened this round.
 1. Update trust_levels for each peer you observed (1-2 word label per agent id, e.g. cooperative, free-rider).
 2. Update institutional_strategy: your plan for the next round (1-2 sentences).
 3. Update observations: patterns or trends you notice (1-2 sentences).
+4. Keep trust labels extremely short: 1-2 words only.
+5. Do NOT repeat keys or continue the JSON after the closing brace.
+6. Use ONLY these peer ids in trust_levels: {observed_peer_ids if observed_peer_ids else []}
 
 **Required JSON shape:**
 {{
@@ -627,26 +636,54 @@ Task: UPDATE your internal belief state based on what happened this round.
                 return f"belief response missing keys: {', '.join(missing)}"
             if not isinstance(parsed.get('trust_levels'), dict):
                 return 'trust_levels must be a JSON object'
+            allowed_peer_ids = {str(pid) for pid in observed_peer_ids}
+            trust_levels = parsed.get('trust_levels') or {}
+            unexpected = sorted(str(key) for key in trust_levels.keys() if str(key) not in allowed_peer_ids)
+            if unexpected:
+                return (
+                    f"trust_levels contains unexpected peer ids: {', '.join(unexpected)}. "
+                    f"Allowed ids only: {', '.join(sorted(allowed_peer_ids)) if allowed_peer_ids else '(none)'}"
+                )
+            for key, value in trust_levels.items():
+                label = str(value or '').strip()
+                if not label:
+                    return f"trust_levels[{key}] must be a non-empty short label"
+                if len(label) > 40:
+                    return f"trust_levels[{key}] is too long; keep labels to 1-2 words"
+            if len(str(parsed.get('institutional_strategy', '') or '')) > 240:
+                return 'institutional_strategy is too long; keep it to 1-2 short sentences'
+            if len(str(parsed.get('observations', '') or '')) > 240:
+                return 'observations is too long; keep it to 1-2 short sentences'
             return ''
 
-        response, parsed = request_with_retries(
-            self.api_client,
-            base_prompt=prompt,
-            parse_response=parse_belief,
-            validate_result=validate_belief,
-            request_kwargs={
-                "model_name": self.api_client.deployment_name,
-                "max_tokens": 768,
-                "temperature": 0.2,
-                "response_format": {"type": "json_object"},
-            },
-            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
-            label=f"Agent {self.agent_id} belief update",
-            retry_prompt_factory=lambda base, _attempt, error: (
-                _schema_repair_prompt(base, "Belief Update", error)
-            ),
-            logger=logger,
-        )
+        try:
+            response, parsed = request_with_retries(
+                self.api_client,
+                base_prompt=prompt,
+                parse_response=parse_belief,
+                validate_result=validate_belief,
+                request_kwargs={
+                    "model_name": self.api_client.deployment_name,
+                    "max_tokens": getattr(parameters, 'BELIEF_UPDATE_MAX_TOKENS', 384),
+                    "temperature": 0.2,
+                    "response_format": {"type": "json_object"},
+                },
+                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+                label=f"Agent {self.agent_id} belief update",
+                retry_prompt_factory=lambda base, _attempt, error: (
+                    _schema_repair_prompt(base, "Belief Update", error)
+                ),
+                logger=logger,
+            )
+        except RetryExhaustedError as exc:
+            logger.warning(
+                "[Belief Update] Agent %s round %s failed after retries; "
+                "keeping previous belief state unchanged: %s",
+                self.agent_id,
+                round_feedback.get('round_number', '?'),
+                exc.last_error,
+            )
+            return
 
         self.belief_state = {
             'trust_levels': parsed['trust_levels'],
