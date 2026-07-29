@@ -556,73 +556,74 @@ class Agent:
         from core.scenario_config import get_scenario_config
         sc = get_scenario_config(parameters.SCENARIO)
 
-        # Format the anonymous peer data for the reflection prompt
-        peer_lines = []
+        # Build a compact peer summary — keep prompt tokens well under num_ctx.
+        # Only include peers whose contribution differs significantly from average,
+        # capped at the top-N most notable. Full detail causes context overflow with 26+ agents.
         observed_peer_ids = []
+        compact_rows = []
         if anonymous_data:
+            contribs = [e.get('contribution', 0) for e in anonymous_data if e.get('contribution') is not None]
+            avg_c = (sum(contribs) / len(contribs)) if contribs else 0.0
             for entry in anonymous_data:
-                peer_id = entry.get('actual_agent_id', '?')
+                pid = entry.get('actual_agent_id', '?')
                 try:
-                    peer_id_int = int(peer_id)
-                    observed_peer_ids.append(peer_id_int)
+                    observed_peer_ids.append(int(pid))
                 except (TypeError, ValueError):
-                    peer_id_int = None
-                peer_lines.append(
-                    f"Agent {peer_id}: inst={entry.get('institution_choice', '?')}, "
-                    f"contrib={entry.get('contribution', 0)}, "
-                    f"group={entry.get('agent_group', 'unknown')}, "
-                    f"S1_payoff={entry.get('stage1_payoff', 0):.2f}, "
-                    f"S2_payoff={entry.get('stage2_payoff', 0):.2f}"
-                )
-        peer_block = "\n".join(peer_lines) if peer_lines else "No peer data."
+                    pass
+                c = entry.get('contribution', 0)
+                deviation = c - avg_c
+                tag = "high" if deviation > 0.15 * avg_c else ("low" if deviation < -0.15 * avg_c else "avg")
+                compact_rows.append((abs(deviation), pid, c, tag, entry.get('institution_choice', '?')))
+            # Sort most-notable first, limit to 10 rows to cap prompt size
+            compact_rows.sort(key=lambda r: r[0], reverse=True)
+            compact_rows = compact_rows[:10]
 
-        # Format the agent's own round summary
+        peer_lines = [
+            f"Agent {pid}: {tag}-contrib ({c}), inst={inst}"
+            for _, pid, c, tag, inst in compact_rows
+        ]
+        peer_block = "\n".join(peer_lines) if peer_lines else "No peer data."
+        n_omitted = max(0, len(observed_peer_ids) - len(compact_rows))
+        if n_omitted:
+            peer_block += f"\n({n_omitted} avg-contribution peers omitted for brevity)"
+
         own_summary = (
-            f"Institution: {round_feedback.get('institution_choice', '?')}, "
-            f"Contribution: {round_feedback.get('contribution', 0)}, "
-            f"Stage 1 Payoff: {round_feedback.get('stage1_payoff', 0):.2f}, "
-            f"Stage 2 Payoff: {round_feedback.get('stage2_payoff', 0):.2f}, "
-            f"Total Round Payoff: {round_feedback.get('payoff', 0):.2f}, "
-            f"Cumulative Payoff: {round_feedback.get('cumulative_payoff', 0):.2f}, "
-            f"Reputation: {round_feedback.get('reputation', 5.0):.1f}"
+            f"inst={round_feedback.get('institution_choice', '?')}, "
+            f"contrib={round_feedback.get('contribution', 0)}, "
+            f"payoff={round_feedback.get('payoff', 0):.1f}, "
+            f"cumulative={round_feedback.get('cumulative_payoff', 0):.1f}, "
+            f"rep={round_feedback.get('reputation', 5.0):.1f}"
         )
 
-        import json as _json
-        current_belief_str = _json.dumps(self.belief_state, indent=2)
+        # Keep the existing trust_levels from last round as a starting point;
+        # only show the keys (labels) to avoid re-serialising a large object.
+        prev_trust = self.belief_state.get('trust_levels') or {}
+        prev_trust_compact = ", ".join(
+            f"{k}:{v}" for k, v in list(prev_trust.items())[:8]
+        ) or "none"
 
-        prompt = f"""You are Agent {self.agent_id} in a {sc['game_name']}. Round {round_feedback.get('round_number', '?')} just ended.
+        allowed_ids_str = ", ".join(str(i) for i in sorted(observed_peer_ids))
 
-Task: UPDATE your internal belief state based on what happened this round.
-
-**Your current belief state (from before this round):**
-{current_belief_str}
-
-**Your own results this round:**
-{own_summary}
-
-**Peer actions this round:**
+        prompt = f"""Agent {self.agent_id} | Round {round_feedback.get('round_number', '?')} ended.
+Your results: {own_summary}
+Top notable peers this round (most-deviant contributions):
 {peer_block}
+Previous trust labels (sample): {prev_trust_compact}
 
-**Instructions:**
-1. Update trust_levels for each peer you observed (1-2 word label per agent id, e.g. cooperative, free-rider).
-2. Update institutional_strategy: your plan for the next round (1-2 sentences).
-3. Update observations: patterns or trends you notice (1-2 sentences).
-4. Keep trust labels extremely short: 1-2 words only.
-5. Do NOT repeat keys or continue the JSON after the closing brace.
-6. Use ONLY these peer ids in trust_levels: {observed_peer_ids if observed_peer_ids else []}
+Task: output an updated belief JSON. Be concise.
+Allowed peer ids for trust_levels: [{allowed_ids_str}]
+Rules:
+- trust label = 1-2 words only (e.g. cooperative, free-rider, defector)
+- institutional_strategy = 1 short sentence
+- observations = 1 short sentence
+- Do NOT repeat keys. Close the JSON after the last entry.
 
-**Required JSON shape:**
+Required JSON:
 {{
-  "trust_levels": {{
-    "<agent_id>": "<short trust label>"
-  }},
-  "institutional_strategy": "<1-2 sentences on your plan for the next round>",
-  "observations": "<1-2 sentences on patterns or trends you notice>"
-}}
-
-**FINAL OUTPUT RULES:**
-- Return exactly ONE JSON object with keys trust_levels, institutional_strategy, observations.
-- No markdown, no code fences, no text outside the JSON."""
+  "trust_levels": {{"<id>": "<label>", ...}},
+  "institutional_strategy": "<one sentence>",
+  "observations": "<one sentence>"
+}}"""
 
         def parse_belief(raw_response):
             return robust_json_loads(raw_response)
