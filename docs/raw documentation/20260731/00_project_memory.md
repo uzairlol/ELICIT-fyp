@@ -417,6 +417,12 @@ Rules:
 44. Simulation LDF deposit = Stage-1 contribution (dual-use); payouts developing-only; pool hidden from agents; redistribution formula family largely exogenous.
 45. Model lock for motivation section: `llama3.1:8b` via local Ollama (`run_experiments.DEFAULT_MODEL`).
 
+### Prompt 9 pack close
+
+46. Final blueprint: `synthesis/29_final_analysis_blueprint.md` (23-section narrative; no manuscript).
+47. Claim checklist: `synthesis/30_claim_verification_checklist.md` (verified / partially supported / interpretive / unsupported / unresolved).
+48. Pack complete for Prompts 0–9 on run `20260731_013853`; manuscript drafting is out of scope.
+
 ---
 
 ## Analysis decisions
@@ -441,6 +447,7 @@ Rules:
 | Separate norm vs cooperation-stability verdicts | Prompt 7 requires non-equivalence |
 | Cite only verified UNFCCC/UNEP/World Bank sources for real LDF | Prompt 8 forbids invented citations |
 | Defend small model methodologically, not via cost sympathy | Prompt 8 explicit rule |
+| Blueprint ≠ polished manuscript | Prompt 9 stop condition |
 
 ---
 
@@ -514,3 +521,16 @@ Prompt 7:
 - `docs/raw documentation/20260731/synthesis/22_cooperation_stability_assessment.md`
 - `docs/raw documentation/20260731/synthesis/23_evidence_matrix.md`
 - Tables: `norm_stability_round_series.csv`, `prompt7_numeric_summary.json`
+
+Prompt 8:
+
+- `docs/raw documentation/20260731/theory/24_behavioural_economics_interpretation.md`
+- `docs/raw documentation/20260731/theory/25_ostrom_governing_the_commons_mapping.md`
+- `docs/raw documentation/20260731/theory/26_ldf_context_and_multi_agent_motivation.md`
+- `docs/raw documentation/20260731/theory/27_small_instruct_model_motivation.md`
+- `docs/raw documentation/20260731/theory/28_external_sources.md`
+
+Prompt 9:
+
+- `docs/raw documentation/20260731/synthesis/29_final_analysis_blueprint.md`
+- `docs/raw documentation/20260731/synthesis/30_claim_verification_checklist.md`
