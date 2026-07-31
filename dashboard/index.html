@@ -67,6 +67,7 @@
         <div class="nav-tab" data-view="sanctions">⚖️ Sanctions &amp; Rewards</div>
         <div class="nav-tab" data-view="beliefs">🧠 Cognitive Beliefs</div>
         <div class="nav-tab" data-view="inequality">📊 Climate Inequality</div>
+        <div class="nav-tab" data-view="wordcloud">☁️ Wordcloud Analytics</div>
         <div class="nav-tab" data-view="network">🕸️ Sanction Network</div>
         <div class="nav-tab" data-view="ldf" id="tab-ldf" style="display:none">🌍 LDF Analysis</div>
         <div class="nav-tab" data-view="democracy" id="tab-democracy" style="display:none">🗳️ Democracy</div>
@@ -241,6 +242,53 @@
             <div class="chart-title">🌱 Cumulative Damage vs LDF Payout Compensation</div>
             <div class="chart-subtitle">Comparing total climate shock damage taken vs total LDF payout funds received.</div>
             <div id="chart-damage-comp"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Wordcloud Analytics                              -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-wordcloud" class="view-section">
+        <div id="wordcloud-container" class="chart-card">
+          <div style="display:flex; gap:1rem; align-items:center; border-bottom:1px solid var(--border); padding-bottom:1rem; margin-bottom:1.25rem; flex-wrap:wrap">
+            <div class="network-ctrl-group">
+              <label>Reasoning Field</label>
+              <select class="ctrl-select" id="wc-field-select">
+                <option value="aggregated">🌐 All Reasoning Combined</option>
+                <option value="contribution">💰 Contribution Reasoning</option>
+                <option value="institution">🏛️ Institutional Reasoning</option>
+                <option value="punishment">⚖️ Sanction/Punishment Reasoning</option>
+                <option value="belief">🧠 Beliefs &amp; Observations</option>
+              </select>
+            </div>
+            <div class="network-ctrl-group">
+              <label>Agent Filter</label>
+              <select class="ctrl-select" id="wc-agent-select">
+                <option value="all">👥 All Agents (Simulation-wide)</option>
+                <option value="developed">🏭 Developed Nations Only</option>
+                <option value="developing">🌿 Developing Nations Only</option>
+              </select>
+            </div>
+            <div class="network-ctrl-group">
+              <label>Scope</label>
+              <select class="ctrl-select" id="wc-round-select">
+                <option value="all">⌛ All Rounds Combined</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:1.5rem">
+            <div>
+              <div class="chart-title">☁️ Dynamic Text Frequency Wordcloud</div>
+              <div class="chart-subtitle">Sized proportional to word frequency across selected agent LLM reasoning prompts.</div>
+              <div id="wordcloud-canvas" style="min-height:380px; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:0.6rem; padding:1.5rem; background:var(--bg-surface); border:1px solid var(--border)"></div>
+            </div>
+            <div>
+              <div class="chart-title">📊 Top Word Frequencies</div>
+              <div class="chart-subtitle">Ranked frequency list for active filters</div>
+              <div id="wordcloud-freq-table" style="max-height:380px; overflow-y:auto"></div>
+            </div>
           </div>
         </div>
       </section>
