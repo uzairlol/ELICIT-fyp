@@ -1,70 +1,74 @@
 # 13 — Reasoning–Action Consistency (20260731)
 
-Checks alignment between contribution reasoning text and observed contribution / social-event context.
+**Opening claim.** Agents often talk about cooperation, peers, or credibility while choosing actions that do not match a plain reading of that talk — especially **cooperative/peer language paired with zero contribution**, and **free-ride language paired with positive contribution**. The mismatch is a finding about the LLM decision surface, not proof of human-style hypocrisy.
 
-Script flags: `tables/reasoning_action_flags.csv`  
-Motif table: `tables/reputation_motif_counts.csv`  
-Excerpts: `evidence/reputation_gossip_reasoning_excerpts.md`
+Flags: `tables/reasoning_action_flags.csv` (73 flagged rows in Prompt 4 summary).
 
 ---
 
-## Automated consistency flags
+## Quantitative backbone
 
-| Flag | Count | Meaning |
-|------|------:|---------|
-| `cooperative_language_zero_contrib` | 54 | Text mentions cooperate/contribute/support while contribution = 0 |
-| `free_ride_language_positive_contrib` | 16 | Free-ride / zero language while contribution > 0 |
-| `mentions_reputation_after_gossip` | 2–3 | Reputation/trust words in contribution text after gossip_prev |
-| `action_without_reasoning` | 0 | Empty contribution reasoning with positive contribution (none in this export) |
+| Pattern | How flagged | Role in pack |
+|---------|-------------|--------------|
+| `cooperative_language_zero_contrib` | 54 rows (39 SFI, 15 SI) | Language–action decoupling / warm-glow *candidate* |
+| `free_ride_language_positive_contrib` | present in flags | Talk of free-riding while still paying |
+| Reputation-after-gossip | rare | Explicit image management |
 
-[Evidence: `tables/reasoning_action_flags.csv` | run=20260731_013853 | round=varies | agent=varies | record=flags]
-
-**Finding:** The most common misalignment is **cooperative wording with zero contribution** (54 cases). Explicit reputation talk right after gossip is rare (2–3).
-
-These are string heuristics — not full semantic intent parsing.
+Theme rates on *all* zeros (doc 31): MCPR language 62%, free-ride 44%, coop lexicon only 7% — so many “cooperative_language_zero” flags are broad contribution-decision talk, not warm praise of cooperation.
 
 ---
 
-## Post-event language vs behaviour
+## Raw discourse — mismatches
 
-Among contribution reasonings after bad_rep/gossip exposure:
+### Zero action + peer/contribution narration
 
-- Opportunistic / free-ride / self-interest tokens: **29**
-- Reputation-management tokens: **3**
-- Explicit “gossip” token: **0**
+**Agent 0, SFI, R3** (`RB-03-A0-contribution`):
 
-Combined with Prompt 4 event study (mean Δ prop negative after events):
+> Given high peer contributions and no significant marginal return to me per unit contributed, I choose not to contribute.
 
-| Claim | Support |
-|-------|---------|
-| Agents systematically narrate image repair then raise contributions | **Weak / contrary** — rare repair language; average prop falls |
-| Agents sometimes use cooperative language without contributing | **Supported** (54 flags) |
-| Gossip bulletin is explicitly cited in contribution reasoning | **Not observed** in keyword scan |
+The sentence acknowledges high peer contributions *and* selects free-riding — consistent with conditional *defection*, inconsistent with “match the cooperators.”
+
+**Agent 0, SFI, R5:**
+
+> Given high contributions from SI members, I choose to free ride and contribute nothing.
+
+### Zero action + MCPR optimality (SI R6 bloc)
+
+**Agent 2, SI, R6:** “I choose to contribute nothing to maximize my payoff.”  
+**Agent 14, SI, R6:** “it is optimal for my payoff to contribute nothing.”
+
+Here language and action **match** (selfish zero). Consistency is high; cooperation is absent.
+
+### Positive action + free-ride vocabulary
+
+**Agent 2, SI, R20** (`RB-20-A2-contribution`):
+
+> I'll contribute a moderate amount to avoid free-riding and maintain credibility, based on my institution's typical strategy and high MCPR.
+
+**Agent 5, SI, R20:**
+
+> I'll contribute a moderate amount to avoid free-riding and maintain credibility…
+
+Action is positive; the word “free-riding” is something to *avoid*, so this is consistent anti-free-ride framing — still template-heavy.
+
+### Reputation minimum giving
+
+**Agent 4, SFI, R26:**
+
+> Maximize personal payoff by contributing at the minimum level to avoid free-rider reputation while being consistent with previous actions.
+
+Language admits payoff max subject to a reputation floor — a coherent (if thin) strategic story.
+
+[Evidence: `tables/reasoning_action_flags.csv` | run=20260731_013853 | round=3,5,6,20,26 | agent=0,2,4,5,14 | record=excerpt]
 
 ---
 
-## Illustrative paired examples
+## Counterexamples
 
-Full excerpts with context live in `evidence/reputation_gossip_reasoning_excerpts.md`.  
-When quoting in later synthesis, keep agent, round, contribution, institution, and event flags attached.
-
-Pattern classes observed in excerpts (**descriptive**):
-
-1. **High contribution + generic cooperation talk** — language matches direction of action.
-2. **Zero contribution + cooperation talk** — flagged inconsistency.
-3. **Post-gossip round without mentioning reputation** — common; cannot infer disregard vs unstated use (**open**).
+Many SI punishment blocks are **consistent**: “Punishing free-riders and rewarding cooperative agents…” paired with Stage-2 assignments (doc 17). Contribution-stage inconsistency is the sharper problem for norm claims.
 
 ---
 
-## Method limits
+## Limits
 
-1. Regex motifs miss paraphrase.
-2. LLM boilerplate can inflate “cooperative” tokens.
-3. Belief-state text not fully scored here for consistency with next-round contribution.
-4. Punishment reasoning consistency deferred (Stage-2 SI only).
-
----
-
-## Bottom line for later stages
-
-Reasoning and action are **imperfectly aligned**. Social events in this run are followed more often by contribution **decreases** than by narrated repair. Treat “reputation mechanism works as intended social pressure” as an open empirical claim, not a confirmed result.
+Flag regexes over-include. Short texts limit nuance. Confidence medium that decoupling is real; low that it equals warm-glow utility.

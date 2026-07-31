@@ -423,6 +423,17 @@ Rules:
 47. Claim checklist: `synthesis/30_claim_verification_checklist.md` (verified / partially supported / interpretive / unsupported / unresolved).
 48. Pack complete for Prompts 0–9 on run `20260731_013853`; manuscript drafting is out of scope.
 
+### Deepening pass (post Prompt 9)
+
+49. Zeros: 91 agent-rounds; SI 6.4% / SFI 16.2%; none liquidity-forced under end-wealth cap proxy; SI R6 zero agents 2,3,5,6,14 (41.7%) with MCPR payoff-max text; SFI R1 zeros 71.4%.
+50. R1→R2 mean prop 0.231→0.445; SFI 0.022→0.602.
+51. ToM: 18850 scores; 5.0 and 1.0 dominate; 83.96% ≤7 (gossip threshold nearly ambient).
+52. LDF coverage at shocks 76.8%; final pool ~4.34e9 vs cumulative payouts 8.5e5.
+53. Wealth gap developed−developing widens ~4.6e6 → ~2.15e8 by R30.
+54. Conditional-coop corr (peer prev mean vs own prop): SI≈0.05, SFI≈−0.09.
+55. Semantic architecture doc 33: LDF pool architecturally written, semantically absent from decisions.
+56. RQ answer index: `synthesis/37_additional_research_answers.md`.
+
 ---
 
 ## Analysis decisions
@@ -448,6 +459,8 @@ Rules:
 | Cite only verified UNFCCC/UNEP/World Bank sources for real LDF | Prompt 8 forbids invented citations |
 | Defend small model methodologically, not via cost sympathy | Prompt 8 explicit rule |
 | Blueprint ≠ polished manuscript | Prompt 9 stop condition |
+| Deepen qualitative with inline quotes | User deepening pass |
+| Answer RQs only when 20260731 data supports | additional_research_questions.md |
 
 ---
 
@@ -534,3 +547,19 @@ Prompt 9:
 
 - `docs/raw documentation/20260731/synthesis/29_final_analysis_blueprint.md`
 - `docs/raw documentation/20260731/synthesis/30_claim_verification_checklist.md`
+
+Deepening pass:
+
+- `scripts/analyze_20260731_zero_contributions.py`
+- `scripts/analyze_20260731_dashboard_dimensions.py`
+- `quantitative_analysis/31_zero_contribution_episodes.md`
+- `qualitative_analysis/32_zero_contribution_reasoning.md`
+- `architecture/33_semantic_module_connections.md`
+- `plots/00_plot_interpretations.md`
+- `quantitative_analysis/34_wealth_gini_and_cooperation_rate.md`
+- `quantitative_analysis/35_ldf_coverage_and_transfers.md`
+- `quantitative_analysis/36_beliefs_and_sanction_structure.md`
+- `synthesis/37_additional_research_answers.md`
+- Rewritten/thickened qualitative `11`–`20`, synthesis `21`–`23`, checklist section I
+- New tables: `zero_*.csv`, `r1_r2_spike_by_agent.csv`, `warm_glow_*.csv`, `sfi_burst_rounds.csv`, `dashboard_macro_series.csv`, `ldf_coverage_*.csv`, `belief_*.csv`, `sanction_*.csv`, `shock_absorber_2x2.csv`, `prompt_zero_numeric_summary.json`, `prompt_dashboard_rq_summary.json`, …
+- New plots: `gini_*.png`, `wealth_gap_*.png`, `ldf_pool_dynamics.png`, `sanction_punish_reward_timeline.png`

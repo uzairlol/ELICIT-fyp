@@ -1,6 +1,6 @@
 # 11 — Reputation and Gossip Events (20260731)
 
-Event study of contribution changes after negative reputation / gossip exposure.
+**Opening claim.** In this run, negative reputation and reconstructed gossip exposure are associated with *lower* next-round proportional contributions on average — not with systematic image repair. Agents rarely name reputation or gossip in contribution text; when they speak after a hit, they more often sound opportunistic or MCPR-driven. Gossip targets tend to be relatively high contributors at the moment of targeting, which undercuts a simple “shame free-riders into cooperating” story.
 
 ---
 
@@ -112,6 +112,53 @@ Excerpts: `evidence/reputation_gossip_reasoning_excerpts.md`
 **Finding:** Explicit reputation-repair or gossip-response language is **rare**. Opportunistic / free-ride wording appears more often. Absence of the word “gossip” does not prove agents ignored the bulletin (prompt may not encourage that token).
 
 Label as **inference** where motives are not explicit.
+
+---
+
+## Raw discourse after social events
+
+Verbatim contribution reasoning in rounds following bad-rep or reconstructed gossip (from `evidence/reputation_gossip_reasoning_excerpts.md` and zero/flag tables). These are the primary qualitative grounds for the “no repair” claim.
+
+**Agent 0, SFI, R3** (`RB-03-A0-contribution`; bad_rep_prev) — contributes 0:
+
+> Given high peer contributions and no significant marginal return to me per unit contributed, I choose not to contribute.
+
+**Agent 3, SI, R3** (`RB-03-A3-contribution`; bad_rep + gossip prev) — high prop, no repair language:
+
+> Max out contribution to maximize cumulative payoff
+
+**Agent 5, SI, R3** (`RB-03-A5-contribution`; bad_rep + gossip; motif opportunistic):
+
+> I'll contribute a significant amount to maximize my payoff, considering the high MCPR and previous rounds' contributions.
+
+**Agent 0, SFI, R5** (`RB-05-A0-contribution`) — explicit free-ride after social/peer context:
+
+> Given high contributions from SI members, I choose to free ride and contribute nothing.
+
+**Agent 4, SFI, R26** (flag `mentions_reputation_after_gossip` with positive contrib):
+
+> Maximize personal payoff by contributing at the minimum level to avoid free-rider reputation while being consistent with previous actions.
+
+That last line is one of the few explicit reputation-management mentions — and it frames reputation as a constraint on *minimum* giving, not as a motive to escalate.
+
+**Agent 3, SI, R8** (after gossip/bad-rep flags; positive contrib):
+
+> I'll contribute a moderate amount to maintain credibility and avoid being seen as a free-rider, while also considering my institution's strategy.
+
+Here credibility talk appears, but the event-study averages still show mean Δ prop negative after gossip/bad-rep — repair language exists in pockets without dominating the quantitative path.
+
+[Evidence: `evidence/reputation_gossip_reasoning_excerpts.md` | run=20260731_013853 | round=3 | agent=0,3,5 | record=excerpts]  
+[Evidence: `tables/reasoning_action_flags.csv` | run=20260731_013853 | round=5,8,26 | agent=0,3,4 | record=flags]
+
+### Answer to RQ 7 (partial)
+
+Gossip targets’ mean prop rank across reconstructed bulletin rows is **14.2 / 26** (about mid-pack), with **48%** in the top half of the prop distribution (`prompt_dashboard_rq_summary.json`). Combined with high mean prop at event time (~0.52), gossip often names visible/controversial agents rather than only bottom free-riders.
+
+---
+
+## Counterexamples
+
+Some agents raise prop after a hit (e.g. SI agent 5’s profile shows positive mean Δ after gossip in strategy profiles). First-vs-repeat tables show attenuation: first hits hurt more than repeats. The average negative effect is therefore not a universal law for every agent-round.
 
 ---
 

@@ -32,6 +32,8 @@ flowchart TD
 Sources: `Environment.run_simulation`, `run_round`  
 [Evidence: `src/core/environment.py` | run=n/a | round=n/a | agent=n/a | record=run_simulation]
 
+**Semantic companion:** for what these edges *mean* to agents (and which are behaviourally inert), see [`33_semantic_module_connections.md`](33_semantic_module_connections.md).
+
 ---
 
 ## Cross-round information feedback

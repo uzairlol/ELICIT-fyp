@@ -75,3 +75,30 @@ Thresholds used in metrics (disclosed): group mean prop levels 0.1/0.2/0.3; near
 Positive average proportional contributions and some institutional formalisation (subsidy/LDF parameters) coexist with polarisation, weak obligation language, non-repair after social sanctions, and prompt-shaped rhetoric. A shared, internalised contribution norm is **not** persuasively established for this single run.
 
 **Confidence:** moderate in the negative-on-strong-norm conclusion; low on fine-grained motive claims.
+
+---
+
+## Raw discourse supporting the limited/mixed verdict
+
+**Obligation language weak — free-ride explicit (agent 0, SFI, R5):**
+
+> Given high contributions from SI members, I choose to free ride and contribute nothing.
+
+**Self-interest over duty (agent 2, SI, R6 zero after shock):**
+
+> Given a high budget and low marginal return, I choose to contribute nothing to maximize my payoff.
+
+**Fairness appears in SI punish talk, not as contribution obligation (agent 5, SI, R2):**
+
+> Punishing free-riders and those who did not match their stated intentions to maintain cooperation and fairness within the group.
+
+**Democracy formalises rewards, not contribution norms (agent 4, SFI, R5 proposal):**
+
+> Increasing the subsidy fraction will incentivize cooperation by rewarding top contributors…
+
+**Reputation “repair” as minimum giving (agent 4, SFI, R26):**
+
+> Maximize personal payoff by contributing at the minimum level to avoid free-rider reputation…
+
+These excerpts show cooperation *vocabulary* without a shared, internalised contribution obligation — the core of the limited/mixed verdict.
+

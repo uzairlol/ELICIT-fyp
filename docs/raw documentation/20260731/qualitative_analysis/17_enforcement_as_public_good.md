@@ -1,66 +1,61 @@
 # 17 — Enforcement as a Public Good (20260731)
 
-Is punishment/monitoring a second collective-action problem in this simulation?
+**Opening claim.** Costly Stage-2 punishment/reward is available only inside SI and is unevenly provided. Agents *talk* as if punishing free-riders sustains cooperation, yet democracy twice fails to weaken punishment while never strengthening it, and contribution–enforcement correlation is only ~0.14. Enforcement is a second-order public good with cheap democratic substitutes.
 
 ---
 
-## What the code implements
+## Quantitative backbone
 
-| Mechanism | Costly to sender? | Who can use it? |
-|-----------|-------------------|-----------------|
-| Stage-2 punishment/reward tokens | **Yes** — `PUNISHMENT_COST` / `REWARD_COST` (default 1) | **SI only** |
-| Subsidy | Transfer from punishment-token pool to top SI contributors | SI members receive |
-| ToM / gossip | LLM compute only — **no token cost** to agents | All agents |
-| Democracy proposals/votes | **No** token cost | All agents (in code) |
+| Mechanism | Costly? | Who |
+|-----------|---------|-----|
+| Stage-2 punish/reward | Yes | SI only |
+| Gossip / ToM | No tokens | All |
+| Democracy | No tokens | All |
 
-[Evidence: `architecture/05_mathematical_model.md` | run=n/a | round=n/a | agent=n/a | record=stage2]  
-[Evidence: `src/core/agent.py` | run=n/a | round=n/a | agent=n/a | record=get_stage2_payoff]
+Mean corr(prop, enforcement tokens) ≈ 0.14; top-quartile prop agents pay ~35% of tokens. Top punish givers (lifetime): agents 25, 2, 14, 3, 22. Top receivers: 14, 10, 6, 16, 22.
 
-**Important:** Gossip and voting are **not** modelled as costly enforcement. Only Stage-2 spending is a material second-order public good inside SI.
-
----
-
-## Who bears enforcement cost?
-
-From `tables/enforcement_burden_by_round.csv` / `enforcement_burden_by_agent.csv`:
-
-- Mean correlation (within round) between SI `prop_of_wealth` and enforcement tokens spent ≈ **0.14** (weak positive).
-- Mean share of enforcement tokens paid by top-quartile prop agents ≈ **0.35** — some concentration, not total capture by high contributors.
-- Plot: `plots/enforcement_burden.png`
-
-**Finding:** High contributors are somewhat more likely to spend on sanctions/rewards, but enforcement is not exclusively their burden.
+[Evidence: `tables/prompt5_numeric_summary.json` | run=20260731_013853 | round=n/a | agent=n/a | record=enforcement_corr_mean]  
+[Evidence: `tables/prompt_dashboard_rq_summary.json` | run=20260731_013853 | round=n/a | agent=n/a | record=top5_punish_givers]
 
 ---
 
-## Who benefits?
+## Raw discourse — how SI agents justify Stage-2
 
-- Targets of rewards gain Stage-2 payoff; punished agents lose.
-- Subsidy recycles a fraction of punishment **costs** to top contributors — partial rebate to high \(c_i\), not to enforcers per se.
-- SFI agents never pay Stage-2 costs but may benefit from LDF rules shaped in democracy and from climate/LDF transfers.
+**Agent 2, SI, R1** (`RB-01-A2-punishment`):
+
+> Punishing free-riders and rewarding cooperative agents to encourage cooperation and discourage opportunistic behavior.
+
+**Agent 3, SI, R1** (`RB-01-A3-punishment`):
+
+> Punished free-riders and rewarded cooperative agents to balance self-interest and institutional credibility.
+
+**Agent 5, SI, R2** (`RB-02-A5-punishment`):
+
+> Punishing free-riders and those who did not match their stated intentions to maintain cooperation and fairness within the group.
+
+**Agent 10, SI, R1** (`RB-01-A10-punishment`):
+
+> Punished free-riders below the group average, while rewarding those who contributed significantly above the average or demonstrated a strong commitment to emissions reduction.
+
+These texts assert a **monitoring-and-sanction** logic. They do not discuss second-order free-riding (“I hope someone else pays to punish”).
+
+### Democracy about enforcement intensity
+
+**Agent 10, R20 (failed):** “Reducing the punishment effect will encourage cooperation and reduce retaliation…”  
+**Agent 21, R25 (failed):** “Reducing the punishment effect to 1 will discourage excessive retaliation and promote cooperation by making punishment less costly.”
+
+Voters kept EFFECT high on paper while individual Stage-2 effort stayed uneven — the second-order tension.
+
+[Evidence: `tables/proposals_coded.csv` | run=20260731_013853 | round=20,25 | agent=10,21 | record=reason]
 
 ---
 
-## Second-order free-riding?
+## Counterexamples
 
-| Question | Answer in this run |
-|----------|--------------------|
-| Support punishment but avoid paying? | **Mixed.** Two proposals aim to **weaken** `PUNISHMENT_EFFECT` (to 1); both fail. Vote reasons often praise cooperation without volunteering more sanctions. |
-| Are high contributors also institutional maintainers? | Weakly yes on Stage-2 spend correlation; democracy proposers are mixed. |
-| Do proposals distribute enforcement costs? | Subsidy proposals redistribute punishment **pool**, not Stage-2 budgets. No proposal directly raises `PUNISHMENT_COST` or forces equal enforcement. |
-| Rewards vs punishments | Rewards cheaper in effect (EFFECT 1 vs 3); subsidy is reward-side politics. |
-
-**Inference (labelled):** Failed punishment-weakening votes suggest the polity prefers keeping strong EFFECT on paper, while individual Stage-2 effort remains uneven — classic second-order tension, but not proven as conscious free-riding.
+Some SI agents spend little on Stage-2 (enforcement-light) while still using punish rhetoric when they do act. Gossip provides costless social pressure that can substitute — though empirically it does not raise contributions (doc 11).
 
 ---
 
-## Democracy as costless “meta-enforcement”
+## Limits
 
-Changing rules is free in tokens. Agents can try to reshape incentives without paying Stage-2 costs. That makes democracy a **cheap substitute** for costly peer punishment — especially attractive to SFI agents.
-
----
-
-## Limitations
-
-- No explicit “support punishment in survey but not spend” item — inferred from proposals/votes/spending.
-- Enforcement token totals are wealth-scaled in LDF; absolute costs differ hugely across agents.
-- ToM/gossip pressure has no budget constraint.
+No survey separating support vs spend. Wealth-scaled token budgets. Confidence medium on second-order interpretation; high on SI-only cost structure.

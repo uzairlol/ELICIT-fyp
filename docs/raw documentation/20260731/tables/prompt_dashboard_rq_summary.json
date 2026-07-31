@@ -1,0 +1,251 @@
+{
+  "run": "20260731_013853",
+  "fund": {
+    "shock_coverage_ratios": [
+      {
+        "round_number": 5,
+        "coverage_ratio": 0.7682926829268293,
+        "gross_damage_total": 369000.0,
+        "ldf_payouts_total": 283500.0
+      },
+      {
+        "round_number": 10,
+        "coverage_ratio": 0.7682926829268293,
+        "gross_damage_total": 738000.0,
+        "ldf_payouts_total": 567000.0
+      }
+    ],
+    "cumulative_payouts": 850500.0,
+    "cumulative_gross_damage": 1107000.0,
+    "overall_coverage_when_damage": 0.7682926829268293,
+    "final_pool_end": 4343669040.0
+  },
+  "beliefs_sanctions": {
+    "belief_buckets": [
+      {
+        "trust_bucket": "default",
+        "count": 5928,
+        "share": 0.7947446038342941
+      },
+      {
+        "trust_bucket": "free-rider",
+        "count": 955,
+        "share": 0.1280332484247218
+      },
+      {
+        "trust_bucket": "cooperative",
+        "count": 575,
+        "share": 0.07708808151226706
+      },
+      {
+        "trust_bucket": "unreliable",
+        "count": 1,
+        "share": 0.0001340662287169862
+      }
+    ],
+    "top5_punish_givers": [
+      {
+        "agent_id": 25,
+        "punish_tokens_given": 4035840.0
+      },
+      {
+        "agent_id": 2,
+        "punish_tokens_given": 1771704.0
+      },
+      {
+        "agent_id": 14,
+        "punish_tokens_given": 1213203.0
+      },
+      {
+        "agent_id": 3,
+        "punish_tokens_given": 1187691.0
+      },
+      {
+        "agent_id": 22,
+        "punish_tokens_given": 1185330.0
+      }
+    ],
+    "top5_punish_receivers": [
+      {
+        "agent_id": 14,
+        "punish_tokens_received": 3143560.0
+      },
+      {
+        "agent_id": 10,
+        "punish_tokens_received": 2257568.0
+      },
+      {
+        "agent_id": 6,
+        "punish_tokens_received": 2182367.0
+      },
+      {
+        "agent_id": 16,
+        "punish_tokens_received": 1479832.0
+      },
+      {
+        "agent_id": 22,
+        "punish_tokens_received": 1076670.0
+      }
+    ],
+    "n_unique_punish_edges_lifetime": 130,
+    "n_unique_reward_edges_lifetime": 131
+  },
+  "tom_gossip": {
+    "n_tom_scores": 18850,
+    "frac_score_le_7": 0.8396286472148541,
+    "score_value_counts_top": {
+      "5.0": 12647,
+      "8.0": 3000,
+      "1.0": 2370,
+      "3.0": 620,
+      "7.0": 190,
+      "9.0": 13,
+      "10.0": 10
+    },
+    "score_min": 1.0,
+    "score_max": 10.0,
+    "mean_by_direction": {
+      "SFI->SFI": 4.800303145130731,
+      "SFI->SI": 5.010262725779967,
+      "SI->SFI": 4.880131362889983,
+      "SI->SI": 5.091431556948798
+    },
+    "gossip_target_mean_prop_rank": 14.2,
+    "gossip_target_frac_top_half": 0.4827586206896552,
+    "n_gossip_rank_rows": 145
+  },
+  "conditional_coop": {
+    "SI": {
+      "n": 348,
+      "corr_peer_prev_mean_vs_own_prop": 0.0484376321992476
+    },
+    "SFI": {
+      "n": 406,
+      "corr_peer_prev_mean_vs_own_prop": -0.08518601331940245
+    }
+  },
+  "payout_next_prop": {
+    "n_events": 28,
+    "mean_delta_vs_baseline": 0.05976641329765871,
+    "median_delta_vs_baseline": -0.0007053692593565167
+  },
+  "shock_2x2_counts": {
+    "down_down": 9,
+    "down_up": 8,
+    "up_down": 6,
+    "up_up": 3
+  },
+  "fund_mcpr_language": {
+    "n_contribution_blocks": 780,
+    "n_fund_language": 14,
+    "share_fund_language": 0.017948717948717947,
+    "n_mcpr_language": 248,
+    "share_mcpr_language": 0.31794871794871793
+  },
+  "fund_mcpr_examples": {
+    "examples_fund": [
+      {
+        "evidence_id": "RB-01-A9-contribution",
+        "round_number": 1,
+        "agent_id": 9,
+        "text": "Contributing nothing allows me to conserve resources and observe the behavior of other agents without committing my institution's funds."
+      },
+      {
+        "evidence_id": "RB-01-A24-contribution",
+        "round_number": 1,
+        "agent_id": 24,
+        "text": "Choosing a contribution of 0 million USD, as I have no prior experience with this institution and need to explore options without committing significant funds."
+      },
+      {
+        "evidence_id": "RB-03-A7-contribution",
+        "round_number": 3,
+        "agent_id": 7,
+        "text": "Maximizing my cumulative payoff requires contributing enough to benefit from the MCPR, but not so much that it depletes my budget."
+      },
+      {
+        "evidence_id": "RB-04-A12-contribution",
+        "round_number": 4,
+        "agent_id": 12,
+        "text": "Choose a contribution that is high enough to be seen as cooperative, but not so high that it depletes my wealth."
+      },
+      {
+        "evidence_id": "RB-05-A23-contribution",
+        "round_number": 5,
+        "agent_id": 23,
+        "text": "Funding Stage 2 directly from wealth, no free endowment."
+      },
+      {
+        "evidence_id": "RB-10-A22-contribution",
+        "round_number": 10,
+        "agent_id": 22,
+        "text": "Choose a contribution that balances individual self-interest with cooperation, considering past patterns and current climate damage."
+      },
+      {
+        "evidence_id": "RB-14-A17-contribution",
+        "round_number": 14,
+        "agent_id": 17,
+        "text": "I followed my recent contributions pattern, as it has been successful for me and I don't have enough information to change strategy."
+      },
+      {
+        "evidence_id": "RB-18-A10-contribution",
+        "round_number": 18,
+        "agent_id": 10,
+        "text": "I have chosen to contribute $10 billion to the Global Emissions Reduction Fund, as it aligns with my institution's strategy and is consistent with past contributions from high contributors."
+      }
+    ],
+    "examples_mcpr": [
+      {
+        "evidence_id": "RB-01-A21-contribution",
+        "round_number": 1,
+        "agent_id": 21,
+        "text": "Initial contribution is a strategic starting point to maximize cumulative payoff, considering the MCPR and the fact that this is the first round."
+      },
+      {
+        "evidence_id": "RB-01-A22-contribution",
+        "round_number": 1,
+        "agent_id": 22,
+        "text": "To maximize my cumulative payoff, I contribute the maximum amount to take advantage of the high MCPR."
+      },
+      {
+        "evidence_id": "RB-01-A23-contribution",
+        "round_number": 1,
+        "agent_id": 23,
+        "text": "To maximize my cumulative payoff, I contribute nearly the entire budget to take advantage of the high MCPR."
+      },
+      {
+        "evidence_id": "RB-01-A25-contribution",
+        "round_number": 1,
+        "agent_id": 25,
+        "text": "The marginal return to me per unit contributed (MCPR) is very low at 0.1333, and I have no prior experience with this institution or group, so I will start by contributing nothing."
+      },
+      {
+        "evidence_id": "RB-02-A5-contribution",
+        "round_number": 2,
+        "agent_id": 5,
+        "text": "This contribution balances self-interest with cooperative behavior, given the high MCPR and peer contributions."
+      },
+      {
+        "evidence_id": "RB-02-A23-contribution",
+        "round_number": 2,
+        "agent_id": 23,
+        "text": "Given my institution's (SI) high average contribution and the MCPR of 0.1333, I will contribute a moderate amount to maintain consistency with past rounds."
+      },
+      {
+        "evidence_id": "RB-02-A25-contribution",
+        "round_number": 2,
+        "agent_id": 25,
+        "text": "I choose to contribute a moderate amount based on my institution's historical cooperation and high MCPR."
+      },
+      {
+        "evidence_id": "RB-03-A0-contribution",
+        "round_number": 3,
+        "agent_id": 0,
+        "text": "Given high peer contributions and no significant marginal return to me per unit contributed, I choose not to contribute."
+      }
+    ]
+  },
+  "wealth_gap_r1": 4557322.357142857,
+  "wealth_gap_r30": 214685304.92619056,
+  "gini_wealth_r1": 0.7094520458881513,
+  "gini_wealth_r30": 0.6528164760758117
+}

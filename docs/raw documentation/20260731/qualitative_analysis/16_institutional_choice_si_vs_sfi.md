@@ -1,73 +1,44 @@
-# 16 — Institutional Choice: SI vs SFI (20260731)
+# 16 — Institutional Choice SI vs SFI (20260731)
 
-How agents relate to institutions under LDF rules.
-
----
-
-## Critical mechanism fact
-
-In climate/LDF mode, membership is **forced**:
-
-- developed → **SI**
-- developing → **SFI**
-
-[Evidence: `architecture/04_system_architecture.md` | run=n/a | round=n/a | agent=n/a | record=forced_institution]
-
-Agents **cannot** strategically switch institutions. “Institutional choice” in this run means:
-
-1. Living under assigned SI/SFI rules, and  
-2. Using **democracy** to change **numeric parameters** (not SI↔SFI assignment).
+**Opening claim.** There is **no endogenous institutional choice** in this climate/LDF run. Developed agents are forced into SI; developing agents into SFI every round. Apparent “SI vs SFI behaviour” is therefore collinear with group, wealth, Stage-2 rights, and prompt role text. Treating mean prop gaps as causal institution effects is unsupported.
 
 ---
 
-## Do agents recognise that rules can change?
+## Quantitative backbone
 
-**Yes (prompted + observed):** democracy prompts ask for whitelist parameter changes; 14 proposals and 156 votes recorded.  
-Reasoning repeatedly frames changes as improving “cooperation,” “trust,” “sustainability.”
+12 SI / 14 SFI every round; 0 mismatches in extraction QC. Mean prop nearly identical (0.291 vs 0.296); distributions differ (SFI median 0.034, more zeros).
 
-[Evidence: `tables/proposals.csv` | run=20260731_013853 | round=5 | agent=4 | record=CC-R05-P0]
-
----
-
-## SI vs SFI use of democracy
-
-| | SI | SFI |
-|--|----|-----|
-| Proposals | 8 | 6 |
-| Can Stage-2 punish/reward | Yes | No |
-| Propose subsidy (SI mechanism) | Yes | Yes (incl. winning R5 proposer 4; R15 winner 24; R30 winner 15) |
-| Propose LDF equity/coverage | Yes | Yes |
-| Propose weaker punishment | Yes (10, 21) | No in this set |
-
-**Finding:** SFI agents actively reshape **SI subsidy** and **LDF** parameters even though they never pay Stage-2 enforcement costs. That is institutional politics across group lines, not exit/entry choice.
-
-Same-group voting rate ≈ **0.51** (`votes_parsed.csv`) — near population base rate; little evidence of bloc voting by institution in aggregate.
+[Evidence: `tables/prompt3_numeric_summary.json` | run=20260731_013853 | round=n/a | agent=n/a | record=si_sfi]  
+[Evidence: `src/core/environment.py` | run=n/a | round=n/a | agent=n/a | record=climate_mode_forced_institution]
 
 ---
 
-## Evidence checklist (Prompt 5 questions)
+## Raw discourse — forced routing in agents’ own institution text
 
-| Behaviour | Evidence |
-|-----------|----------|
-| Recognise rules can change | Strong (participation + reasons) |
-| Propose to alter incentives | Strong (subsidy↑, LDF weights, punishment↓ attempts) |
-| Vote strategically | Weak — templated reasons; plurality outcomes |
-| Adapt contributions after adoption | Mild positive mean Δ prop after most adoptions (`post_adoption_prop_changes.csv`); confounded |
-| Rely on institutions over reciprocity | Mixed — still large contribution heterogeneity |
-| Oppose constraining rules | Punishment-weakening proposals exist but lose |
-| Support enforcement while avoiding cost | See doc 17 — SI-only costs; SFI vote on SI rules without paying Stage 2 |
-| Use democracy to shift burdens | **Inference:** SFI-led subsidy wins shift SI reward pool; LDF equity shifts payout formula toward developing |
+**Developing / SFI agents, R1** (repeated across agents 0,1,4,…):
 
----
+> Climate/LDF mode defaults developing countries to the non-binding agreement.
 
-## What “institutional adaptation” is *not* here
+**Developed / SI agents** analogously cite binding-treaty routing. These strings are **scenario facts injected into reasoning**, not deliberative choice.
 
-- Not endogenous formation of SI vs SFI clubs.
-- Not exit from binding treaty.
-- Parameter drift inside a fixed membership partition.
+[Evidence: `tables/prompt6_numeric_summary.json` | run=20260731_013853 | round=1 | agent=0,1,4 | record=examples.SFI_damage_or_ldf]  
+[Evidence: `tables/reasoning_blocks.csv` | run=20260731_013853 | round=1 | agent=varies | record=kind=institution]
+
+Contribution-stage language still *uses* the institution label:
+
+**SI agent 2, R2:** “…considering previous round's group average and my internal beliefs about SI strategy.”  
+**SFI agent 1, R1:** “…balance immediate resilience needs with long-run cooperation incentives.”
+
+So agents *talk about* their assigned institution’s strategy, but they did not select it.
 
 ---
 
-## Limitations
+## Counterexamples / what would change the claim
 
-Forced routing is a design choice of the LDF scenario — limits external validity for “institutional choice” theories that require free entry/exit (e.g. classic Gürerk et al. SI/SFI experiments).
+An abstract (non-LDF) scenario with free Stage-0 choice would be required to study institutional preference. This pack’s Full LDF run cannot.
+
+---
+
+## Limits
+
+High confidence on forced routing. Null causal SI effect is a design fact, not a behavioural discovery.

@@ -130,4 +130,21 @@ Run lock: `20260731_013853` · Model: `llama3.1:8b` · Metric: `prop_of_wealth`.
 | Unsupported causal language removed | Pass (flagged unsupported above) |
 | Hallucinated citations | Pass (external list only verified sources) |
 
-**Pack status:** Prompts 0–9 complete for `20260731` analysis dump. Ready for manuscript drafting as a *separate* later task.
+**Pack status:** Prompts 0–9 complete; deepening pass added docs 31–37, semantic architecture 33, plot interpretations, dashboard dimensions, and RQ answer index.
+
+---
+
+## I. Deepening-pass claims
+
+| # | Claim | Status | Anchor |
+|---|-------|--------|--------|
+| I1 | 91 voluntary-approx zeros; 0 liquidity-forced under end-wealth proxy | verified | prompt_zero_numeric_summary |
+| I2 | SI R6 zero share 41.7% with MCPR payoff-max reasoning | verified | zero_si_r4_r7_window + quotes |
+| I3 | SFI R1 zero share 71.4%; R2 prop spike 0.022→0.602 | verified | prompt_zero |
+| I4 | ToM scores dominated by 5.0 and 1.0; 84% ≤7 | verified | prompt_dashboard_rq_summary |
+| I5 | LDF shock coverage ≈0.768; final pool ≫ cumulative payouts | verified | ldf_coverage_by_round |
+| I6 | Developed–developing wealth gap widens R1→R30 | verified | dashboard_macro_series |
+| I7 | Conditional-coop corr weak on full path (SI~0.05, SFI~−0.09) | verified | conditional_coop in summary |
+| I8 | Gossip threshold is informative rare filter | unsupported | 84% scores ≤7 |
+| I9 | LDF closes wealth gap in this run | unsupported | gap widens |
+| I10 | Semantic presence of LDF pool in decisions | unsupported | hidden + rare fund language |

@@ -1,0 +1,7 @@
+round_number,agent_id,institution_choice,contribution,prop_of_wealth,text_len,evidence_id,contribution_reasoning
+2,1,SFI,0.0,0.0,141,RB-02-A1-contribution,"Given our institution's history of minimal contribution and no cooperation incentives, it is rational to choose a zero-contribution strategy."
+2,4,SFI,0.0,0.0,106,RB-02-A4-contribution,"Given high vulnerability and limited budget, I choose to conserve wealth for potential future cooperation."
+4,8,SFI,0.0,0.0,124,RB-04-A8-contribution,"Given SFI's high contribution average and my institution's cooperative history, I choose to contribute minimally this round."
+3,15,SFI,0.0,0.0,93,RB-03-A15-contribution,"Given no cooperation incentives and a history of high defectors, I choose to conserve wealth."
+4,18,SFI,0.0,0.0,99,RB-04-A18-contribution,"Given SFI's history of low contributions and lack of cooperation, I choose to free-ride this round."
+1,19,SFI,0.0,0.0,150,RB-01-A19-contribution,"Contributing nothing allows me to conserve resources and observe the behavior of other agents, without immediately committing to a cooperative action."

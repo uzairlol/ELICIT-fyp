@@ -1,119 +1,76 @@
-# 19 — SI / SFI Language Comparison (20260731)
+# 19 — SI vs SFI Language Comparison (20260731)
 
-Comparable reasoning corpora and concept-coded differences. Wordclouds alone are insufficient; this report emphasises rates, keyness, and leave-one-agent-out stability.
+**Opening claim.** On shared decision kinds (excluding SI-only punishment blocks), SI and SFI agents write different lexical worlds: SI leans on **strategy / self-interest / follow / payoff**; SFI leans on **incentives / immediate / long-run / sfi**. Fairness and reciprocity are nearly absent. These are prompt-conditioned dialects more than proof of distinct social preferences — but they are real textual facts of the run.
 
-**Script:** `scripts/analyze_20260731_language.py`  
-**Primary contrast:** `SI_shared_kinds` vs `SFI_shared_kinds` (contribution + belief + institution; **excludes** SI-only punishment blocks).  
-**Also reported:** contribution-only and post-shock / post-gossip / post-badrep slices.
-
-[Evidence: `tables/language_corpus_stats.csv` | run=20260731_013853 | round=1-30 | agent=all | record=corpus_stats]
+Primary contrast: `SI_shared_kinds` vs `SFI_shared_kinds`.
 
 ---
 
-## Corpus construction
+## Quantitative backbone
 
-| Corpus | Blocks | Agents | Rounds | Tokens | Mean tokens/block |
-|--------|-------:|-------:|-------:|-------:|------------------:|
-| SI_all | 2168 | 12 | 30 | 16309 | 7.5 |
-| SFI_all | 1686 | 14 | 30 | 11162 | 6.6 |
-| SI_shared_kinds | 1440 | 12 | 30 | 9567 | 6.6 |
-| SFI_shared_kinds | 1680 | 14 | 30 | 11079 | 6.6 |
-| SI_contribution | 360 | 12 | 30 | 3702 | 10.3 |
-| SFI_contribution | 420 | 14 | 30 | 4196 | 10.0 |
-| SI_proposal_reason | 8 | 7 | 5 | 104 | 13.0 |
-| SFI_proposal_reason | 6 | 5 | 5 | 83 | 13.8 |
-| SI_post_shock (contrib) | 48 | 12 | 4 | 495 | 10.3 |
-| SFI_post_shock (contrib) | 56 | 14 | 4 | 568 | 10.1 |
-| SI_post_gossip | 35 | 11 | 18 | 367 | 10.5 |
-| SFI_post_gossip | 52 | 11 | 25 | 534 | 10.3 |
-| SI_post_badrep | 36 | 12 | 18 | 382 | 10.6 |
-| SFI_post_badrep | 68 | 14 | 24 | 707 | 10.4 |
+| Signal | SI | SFI |
+|--------|----|-----|
+| Top keyness unigrams | strategy, following, self-interest, payoff, maximize | sfi, incentives, highly, immediate, long-run |
+| Self-interest concept rate (shared) | 0.081 | 0.013 |
+| Fairness / reciprocity (shared) | ≈0 | ≈0 |
+| LOO Jaccard keyness | ~0.87 | 1.0 |
 
-Missing empty texts: **0** in these corpora.
-
-**Comparability notes:**
-- SI_all is inflated by 360 punishment blocks — do not use for head-to-head without exclusion.
-- Shared-kinds means are nearly identical (~6.6 tokens) — good balance.
-- Proposal corpora are tiny (n=8/6) — descriptive only.
-- Vote reasoning lives in `votes_parsed.csv`, not `reasoning_blocks.csv` (not merged into main TF corpora here).
-
-Processing: lowercasing; strip `Agent N` strings; drop stopwords/digits/len≤2; light lemma map; **retain** fairness/contribute/punish/cooperate/reputation/rule/loss/trust/future.
+[Evidence: `tables/prompt6_numeric_summary.json` | run=20260731_013853 | round=n/a | agent=n/a | record=top_SI_key_terms]
 
 ---
 
-## Concept-category rates (shared kinds)
+## Raw discourse — pasted examples (not paraphrases)
 
-Share of blocks with ≥1 regex hit (`tables/language_concept_rates.csv`):
+### SI contribution / strategy–self-interest
 
-| Concept | SI rate | SFI rate |
-|---------|--------:|---------:|
-| institutional_choice (SI/SFI/institution…) | 0.768 | 0.792 |
-| strategic_adaptation | **0.363** | 0.145 |
-| redistribution / LDF | 0.251 | 0.251 |
-| self_interest | **0.081** | 0.013 |
-| conformity | 0.026 | **0.039** |
-| reward | 0.044 | 0.024 |
-| reputation | 0.005 | 0.002 |
-| punishment | 0.003 | 0.002 |
-| group_welfare | 0.006 | 0.002 |
-| fairness | ≈0 | 0 |
-| reciprocity | 0 | 0 |
-| shocks (explicit) | ≈0 | 0 |
+**Agent 2, SI, R2** (`RB-02-A2-contribution`):
 
-**Contribution-only self_interest:** SI **0.303** vs SFI **0.050**.  
-**Post-shock contribution self_interest:** SI **0.479** vs SFI **0.054**.
+> Medium contribution to balance self-interest with cooperation, considering previous round's group average and my internal beliefs about SI strategy.
 
-[Evidence: `tables/language_concept_rates.csv` | run=20260731_013853 | round=n/a | agent=n/a | record=self_interest_rate]
+**Agent 3, SI, R2** (`RB-02-A3-contribution`):
 
-Plot: `plots/concept_rates_shared.png`
+> I'm choosing a moderate contribution to balance self-interest and cooperation, while also considering the historical emissions index of 1.50.
 
----
+**Agent 13, SI, R1** (`RB-01-A13-contribution`):
 
-## Keyness (log-odds z, shared kinds)
+> Choose a moderate contribution to balance between individual gain and group cooperation.
 
-SI-associated unigrams (highest z): `strategy`, `following`, `self-interest`, `follow`, `significant`, …  
-SFI-associated: `sfi`, `incentives`, `highly`, `immediate`, `long-run`, …
+### SFI contribution / incentives–horizon
 
-Contribution-only SI keys: `self-interest`, `significant`, `payoff`, `strategy`, `maximize`, `cumulative`  
-Contribution-only SFI keys: `immediate`, `long-run`, `incentives`, `sfi`, `recent`, `balance`
+**Agent 1, SFI, R1** (`RB-01-A1-contribution`):
 
-Distinctive bigrams (shared):  
-- SI: `contributors follow`, `follow strategy`, `high contribution`  
-- SFI: `peers contribute`, `cooperate incentives`, `contribute highly`
+> Choosing a moderate contribution to balance immediate resilience needs with long-run cooperation incentives.
 
-Tables: `language_logodds_shared_*.csv`, `language_logodds_contribution_unigrams.csv`  
-Plot: `plots/keyness_shared_unigrams.png`
+**Agent 18, SFI, R1** (`RB-01-A18-contribution`):
 
----
+> Maximizing my cumulative payoff requires a balance between immediate resilience needs and long-run cooperation incentives, so I choose a contribution that is substantial but not excessive.
 
-## Stability across agents
+**Agent 19, SFI, R1** (`RB-01-A19-contribution`):
 
-Leave-one-agent-out Jaccard on top-15 keyness terms:
+> Contributing nothing allows me to conserve resources and observe the behavior of other agents, without immediately committing to a cooperative action.
 
-- SI side mean Jaccard ≈ **0.87** (min still high)
-- SFI side mean Jaccard ≈ **1.0**
+### SI fairness language lives mainly in punishment blocks
 
-[Evidence: `tables/language_keyness_leave_one_out.csv` | run=20260731_013853 | round=n/a | agent=n/a | record=jaccard]
+**Agent 5, SI, R2** (`RB-02-A5-punishment`):
 
-**Finding:** SI/SFI lexical contrasts are **not** an artefact of a single verbose agent.
+> Punishing free-riders and those who did not match their stated intentions to maintain cooperation and fairness within the group.
+
+**Agent 3, SI, R4** (`RB-04-A3-punishment`):
+
+> Punished free-riders and rewarded generous contributors to promote fairness and cooperation within the institution.
+
+Prompt 6’s `SFI_fair` example list is **empty** — fairness talk is SI-sanction dialect, not a shared contribution norm language.
+
+[Evidence: `tables/prompt6_numeric_summary.json` | run=20260731_013853 | round=1-4 | agent=1,2,3,5,13,18,19 | record=examples]
 
 ---
 
-## Interpretation (bounded)
+## Counterexamples
 
-1. **SI language** more often frames **strategy / self-interest / payoff maximisation**, especially in contribution and post-shock slices.  
-2. **SFI language** more often names **SFI**, **incentives**, and **immediate vs long-run** tradeoffs (climate-role prompt residue possible).  
-3. Classic behavioural tokens (**fairness, reciprocity**) are almost **absent** in coded hits — do not claim strong fairness discourse from this run.  
-4. High `institutional_choice` rates partly reflect literal `SI`/`SFI` tokens in belief text (prompted structure), not deep constitutional theory.
-
-Example excerpts (from `prompt6_numeric_summary.json`): see accompanying doc 20 and evidence IDs there.
+Some SI texts omit “self-interest”; some SFI texts sound payoff-max without “immediate/long-run.” Keyness is distributional. Forced group confounds.
 
 ---
 
-## Limitations
+## Limits
 
-- Bag-of-words / regex concepts miss paraphrase.
-- Prompt templates push “cooperation/incentives” language.
-- Forced SI=developed / SFI=developing confound remains.
-- Punishment corpus asymmetry handled via shared-kinds filter.
-- Vote reasons not in primary TF pipeline.
+Boilerplate risk. Shared-kinds design avoids punishment asymmetry but cannot remove group confound. Confidence high on keyness direction; medium on preference interpretation.

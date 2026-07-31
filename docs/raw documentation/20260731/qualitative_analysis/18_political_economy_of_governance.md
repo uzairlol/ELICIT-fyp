@@ -1,93 +1,54 @@
 # 18 — Political Economy of Governance (20260731)
 
-How agents use institutional mechanisms to shape obligations, redistribution, and enforcement — distinguishing cooperative frames from self-serving design.
+**Opening claim.** Governance in this run is a **reward-and-redistribution ratchet** wrapped in cooperation talk. Agents use costless democracy to reshape parameters that bind *other* mechanisms (SFI proposers hiking SI subsidies; SI proposers hiking LDF equity), while costly Stage-2 enforcement remains an SI private burden. Cooperative rhetoric does not disclose incidence.
 
 ---
 
-## Governance instruments in this run
+## Quantitative backbone
 
-| Instrument | What it can change | Who controls |
-|------------|--------------------|--------------|
-| Forced SI/SFI partition | Nothing (exogenous) | Designer / scenario |
-| Stage-2 sanctions | Peer payoffs (SI) | SI agents (costly) |
-| Subsidy parameters | Redistribution of punishment costs to top SI contributors | Democracy (all agents) |
-| LDF parameters | Coverage, equity, damage weights | Democracy (all agents) |
-| ToM/gossip | Social information | Endogenous LLM scores |
+Adopted: SUBSIDY_FRACTION path upward; LDF_EQUITY_WEIGHT 0.5→0.7; LDF_PAYOUT_DAMAGE_WEIGHT 1.5. Failed: PUNISHMENT_EFFECT→1 twice. Same-group vote rate ≈0.51 (near base rate). Post-adoption mean prop deltas small/confounded.
+
+[Evidence: `tables/prompt5_numeric_summary.json` | run=20260731_013853 | round=n/a | agent=n/a | record=adopted_by_category]
 
 ---
 
-## Observed political pattern
+## Raw discourse — politics in proposal text
 
-### 1. Reward expansion beats punishment hardening
+**SFI agent 4 hiking SI subsidy (adopted R5):**
 
-Adopted path: `SUBSIDY_FRACTION` 0.3 → 0.4 → 0.6; LDF equity 0.5 → 0.7; LDF damage weight 1.5.  
-Rejected: `PUNISHMENT_EFFECT` cuts to 1 (twice).
+> Increasing the subsidy fraction will incentivize cooperation by rewarding top contributors and potentially reducing punishment costs…
 
-**Reading:** The polity prefers **carrot / redistributive** parameter moves over explicit sanction weakening — but also never adopts *stronger* punishment.
+**SI agent 22 hiking LDF equity (adopted R10):**
 
-[Evidence: `tables/adopted_rules.csv` | run=20260731_013853 | round=5-30 | agent=n/a | record=applied]
+> …prioritizing poorer developing nations, promoting trust within the community.
 
-### 2. Cross-group rule shopping
+**SI agent 14 hiking damage weight (adopted R20):**
 
-SFI proposers win SI subsidy changes (agents 4, 24, 15). SI proposers win LDF equity/damage rules that primarily affect developing payouts (22, 14).
+> …incentivize agents to prioritize cooperation and reduce free-riding…
 
-**Inference:** Agents use democracy to shape rules that bind **other** mechanism domains (SI subsidy vs LDF), not only their own Stage-2 toolkit.
+**SFI agent 15 late subsidy 0.6 (adopted R30):**
 
-### 3. Cooperative rhetoric, contested incidence
+> …stronger reward for contributing to the common good
 
-Proposal/vote text is saturated with “cooperation,” “trust,” “fairness,” “free-riding.”  
-Incidence of benefits:
-
-- Higher subsidy → top SI contributors (often already high \(c_i\)).
-- Higher LDF equity → poorer developing (SFI) agents when pool is insufficient.
-- Weaker punishment EFFECT → would reduce bite of SI sanctions (failed).
-
-Templated language makes it hard to separate sincere collective intent from prompt-induced moral vocabulary.
-
-### 4. Information & voting power
-
-- All 26 agents vote each session (equal formal voice).
-- Fund pool balance still hidden from agents (Prompt 2) — LDF rule votes occur under incomplete fiscal observation.
-- Gossip not stored; reconstructed exposure uneven — political info is asymmetric.
-
-### 5. Post-adoption behaviour
-
-Mean prop changes after adoption (ALL agents, pre {−2,−1} vs post {+1,+2}):
-
-| Round | Rule | Δ prop |
-|-------|------|--------|
-| 5 | SUBSIDY_FRACTION 0.3 | +0.023 |
-| 10 | LDF_EQUITY_WEIGHT 0.5 | +0.010 |
-| 15 | SUBSIDY_FRACTION 0.4 | +0.046 |
-| 20 | LDF_PAYOUT_DAMAGE_WEIGHT 1.5 | +0.018 |
-| 25 | LDF_EQUITY_WEIGHT 0.7 | +0.150 |
-| 30 | SUBSIDY_FRACTION 0.6 | n/a (end) |
-
-Mild average increases; **not** clean causal effects (trends, shocks, democracy confounders).
-
-[Evidence: `tables/post_adoption_prop_changes.csv` | run=20260731_013853 | round=varies | agent=ALL | record=delta_prop]
+None of these sentences say “this transfers resources toward my group.” The political reading comes from matching **proposer institution** to **rule domain** (doc 14 table).
 
 ---
 
-## Cooperative governance vs self-serving design
+## Dual readings (labelled)
 
-| Signal | Cooperative reading | Self-serving reading |
-|--------|---------------------|----------------------|
-| LDF equity↑ | Fairness to vulnerable | SFI / developing capture of payouts |
-| Subsidy↑ | Reward cooperators | SI elite rebate; SFI voting on SI transfers they don’t fund via Stage 2 |
-| Punish EFFECT↓ proposals | Reduce retaliation spiral | Soften discipline on low contributors |
-| Forced membership | Treaty realism | Removes exit discipline |
+1. **Cooperative institutional design:** agents sincerely build carrots and equity.  
+2. **Self-serving rule shopping:** agents move parameters that benefit their side’s pocketbook while outsourcing costs.
 
-Both readings remain available; the data do not uniquely identify motives.
+Both are compatible with the text; (2) is supported by cross-domain proposal patterns, not by confessions.
 
 ---
 
-## Synthesis for later stages
+## Counterexamples
 
-Governance in this run is **parameter politics under fixed clubs**, with costless voting, costly SI enforcement, and hidden fund stocks. The strongest empirical regularity is **adopted redistributive/reward parameter drift**, not enforcement intensification.
+Same-group voting is weak (~0.51), so blocs are not tight. Some SI agents vote for developing-favouring LDF equity. Near-zero agent 1’s failed coverage proposal shows low contributors *attempt* redistribution expansions.
 
 ---
 
-## Limitations
+## Limits
 
-Single run; whitelist-bound agenda; LLM vote boilerplate; no counterfactual without democracy.
+Single seed; whitelist agenda; plurality. Confidence medium–high on descriptive politics; low on private intent.

@@ -47,3 +47,25 @@ There is sustained positive mean proportional contribution and no terminal colla
 This **differs** from the norm-emergence verdict: cooperation-as-positive-transfers can persist without a strong shared norm.
 
 **Confidence:** moderate (single seed; end-of-round wealth denominator).
+
+---
+
+## Path narratives behind the averages
+
+Stability is “moderately positive on average” because many agent-rounds still transfer positive amounts, yet the path is jagged:
+
+- **R1→R2:** mean prop 0.231→0.445 as SFI leaves cold-start zeros (doc 31/32).  
+- **R6:** SI zero share 41.7% with payoff-max templates — a cooperation dip without terminal collapse.  
+- **Gossip/bad-rep:** mean Δ prop negative (doc 11) — social events do not stabilise upward.  
+- **Polarisation:** agent 19 mean prop ≈0.001 coexists with agent 20 mean ≈0.60.
+
+Example of a non-stable high agent after social pressure (agent 3, SI, R6):
+
+> Given a high budget and low marginal return, I choose to contribute nothing to maximize my payoff.
+
+Example of persistent caution (agent 19, SFI, R1):
+
+> Contributing nothing allows me to conserve resources and observe the behavior of other agents…
+
+Together these show why mean levels can stay positive while path stability and shared norms fail.
+

@@ -1,0 +1,61 @@
+{
+  "run": "20260731_013853",
+  "source": "results/To_Use/simulation_llama3.1_8b_Full_scnldf_sh1_ldf1_seed1_26agents_30rounds_20260731_013853.json",
+  "inventory": [
+    {
+      "institution_choice": "SFI",
+      "n_agent_rounds": 420,
+      "n_zeros": 68,
+      "zero_share": 0.1619047619047619,
+      "n_liquidity_forced_approx": 0,
+      "n_voluntary_zero_approx": 68,
+      "n_agents_ever_zero": 14
+    },
+    {
+      "institution_choice": "SI",
+      "n_agent_rounds": 360,
+      "n_zeros": 23,
+      "zero_share": 0.06388888888888888,
+      "n_liquidity_forced_approx": 0,
+      "n_voluntary_zero_approx": 23,
+      "n_agents_ever_zero": 9
+    },
+    {
+      "institution_choice": "ALL",
+      "n_agent_rounds": 780,
+      "n_zeros": 91,
+      "zero_share": 0.11666666666666667,
+      "n_liquidity_forced_approx": 0,
+      "n_voluntary_zero_approx": 91,
+      "n_agents_ever_zero": 23
+    }
+  ],
+  "si_r6_zero_share": 0.4166666666666667,
+  "si_r6_zero_agents": [
+    2,
+    3,
+    5,
+    6,
+    14
+  ],
+  "sfi_r1_zero_share": 0.7142857142857143,
+  "sfi_r1_zero_agents": [
+    0,
+    7,
+    8,
+    9,
+    11,
+    12,
+    17,
+    19,
+    20,
+    24
+  ],
+  "all_r1_mean_prop": 0.23141811465856874,
+  "all_r2_mean_prop": 0.44513200086623367,
+  "sfi_r1_mean_prop": 0.021760913151822235,
+  "sfi_r2_mean_prop": 0.6024716203008716,
+  "n_warm_glow_cases": 6,
+  "n_burst_rounds": 14,
+  "liquidity_note": "liquidity_forced_approx uses stage1_cap_from_end_wealth==0; true decision-time wealth may differ \u2014 treat as approximate."
+}
