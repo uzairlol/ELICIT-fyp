@@ -11,17 +11,17 @@
   --bg-card-hover: #2a2e33;
   --border:        #343a40;
   --border-bright: #495057;
-  --accent-blue:   #8a99a8;
-  --accent-teal:   #6c757d;
-  --accent-amber:  #d97706;
-  --accent-red:    #dc2626;
-  --accent-green:  #16a34a;
-  --accent-purple: #94a3b8;
+  --accent-blue:   #3b82f6;
+  --accent-teal:   #06b6d4;
+  --accent-amber:  #f59e0b;
+  --accent-red:    #ef4444;
+  --accent-green:  #10b981;
+  --accent-purple: #8b5cf6;
   --text-primary:  #f8f9fa;
-  --text-muted:    #adb5bd;
-  --text-faint:    #495057;
-  --developed-color: #94a3b8;
-  --developing-color: #a3e635;
+  --text-muted:    #9ca3af;
+  --text-faint:    #4b5563;
+  --developed-color: #3b82f6;
+  --developing-color: #10b981;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }

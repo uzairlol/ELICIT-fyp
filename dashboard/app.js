@@ -19,18 +19,18 @@ const State = {
 
 // ── Colour helpers ─────────────────────────────────────────────
 const COLORS = {
-  blue:   '#71717a',
-  teal:   '#9ca3af',
-  amber:  '#d97706',
-  red:    '#dc2626',
-  green:  '#16a34a',
-  purple: '#6b7280',
-  cyan:   '#71717a',
-  rose:   '#dc2626',
-  developed: '#a1a1aa',
-  developing:'#a3e635',
-  si:     '#71717a',
-  sfi:    '#4b5563',
+  blue:   '#3b82f6',
+  teal:   '#06b6d4',
+  amber:  '#f59e0b',
+  red:    '#ef4444',
+  green:  '#10b981',
+  purple: '#8b5cf6',
+  cyan:   '#06b6d4',
+  rose:   '#f43f5e',
+  developed: '#3b82f6',
+  developing:'#10b981',
+  si:     '#8b5cf6',
+  sfi:    '#f59e0b',
 };
 
 const APEX_BASE = {
