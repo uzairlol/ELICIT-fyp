@@ -1,0 +1,514 @@
+{
+  "run": "20260731_013853",
+  "primary_comparison": "SI_shared_kinds vs SFI_shared_kinds (excludes SI-only punishment blocks)",
+  "corpus_stats": [
+    {
+      "corpus": "SI_all",
+      "n_blocks": 2168,
+      "n_agents": 12,
+      "n_rounds": 30,
+      "total_tokens": 16309,
+      "mean_block_chars": 85.55719557195572,
+      "mean_block_tokens": 7.52260147601476,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SFI_all",
+      "n_blocks": 1686,
+      "n_agents": 14,
+      "n_rounds": 30,
+      "total_tokens": 11162,
+      "mean_block_chars": 73.75563463819691,
+      "mean_block_tokens": 6.6204033214709375,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SI_contribution",
+      "n_blocks": 360,
+      "n_agents": 12,
+      "n_rounds": 30,
+      "total_tokens": 3702,
+      "mean_block_chars": 121.12222222222222,
+      "mean_block_tokens": 10.283333333333333,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SFI_contribution",
+      "n_blocks": 420,
+      "n_agents": 14,
+      "n_rounds": 30,
+      "total_tokens": 4196,
+      "mean_block_chars": 112.27380952380952,
+      "mean_block_tokens": 9.99047619047619,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SI_proposal_reason",
+      "n_blocks": 8,
+      "n_agents": 7,
+      "n_rounds": 5,
+      "total_tokens": 104,
+      "mean_block_chars": 150.125,
+      "mean_block_tokens": 13.0,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SFI_proposal_reason",
+      "n_blocks": 6,
+      "n_agents": 5,
+      "n_rounds": 5,
+      "total_tokens": 83,
+      "mean_block_chars": 158.16666666666666,
+      "mean_block_tokens": 13.833333333333334,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SI_post_shock",
+      "n_blocks": 48,
+      "n_agents": 12,
+      "n_rounds": 4,
+      "total_tokens": 495,
+      "mean_block_chars": 120.4375,
+      "mean_block_tokens": 10.3125,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SFI_post_shock",
+      "n_blocks": 56,
+      "n_agents": 14,
+      "n_rounds": 4,
+      "total_tokens": 568,
+      "mean_block_chars": 116.89285714285714,
+      "mean_block_tokens": 10.142857142857142,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SI_post_gossip",
+      "n_blocks": 35,
+      "n_agents": 11,
+      "n_rounds": 18,
+      "total_tokens": 367,
+      "mean_block_chars": 127.05714285714286,
+      "mean_block_tokens": 10.485714285714286,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SFI_post_gossip",
+      "n_blocks": 52,
+      "n_agents": 11,
+      "n_rounds": 25,
+      "total_tokens": 534,
+      "mean_block_chars": 113.07692307692308,
+      "mean_block_tokens": 10.26923076923077,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SI_post_badrep",
+      "n_blocks": 36,
+      "n_agents": 12,
+      "n_rounds": 18,
+      "total_tokens": 382,
+      "mean_block_chars": 126.44444444444444,
+      "mean_block_tokens": 10.61111111111111,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SFI_post_badrep",
+      "n_blocks": 68,
+      "n_agents": 14,
+      "n_rounds": 24,
+      "total_tokens": 707,
+      "mean_block_chars": 115.57352941176471,
+      "mean_block_tokens": 10.397058823529411,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SI_shared_kinds",
+      "n_blocks": 1440,
+      "n_agents": 12,
+      "n_rounds": 30,
+      "total_tokens": 9567,
+      "mean_block_chars": 74.06388888888888,
+      "mean_block_tokens": 6.64375,
+      "missing_empty_text": 0
+    },
+    {
+      "corpus": "SFI_shared_kinds",
+      "n_blocks": 1680,
+      "n_agents": 14,
+      "n_rounds": 30,
+      "total_tokens": 11079,
+      "mean_block_chars": 73.45416666666667,
+      "mean_block_tokens": 6.5946428571428575,
+      "missing_empty_text": 0
+    }
+  ],
+  "top_SI_key_terms": [
+    {
+      "term": "strategy",
+      "z": 12.497799586150311,
+      "count_SI": 518,
+      "count_SFI": 231
+    },
+    {
+      "term": "following",
+      "z": 6.4900965041252086,
+      "count_SI": 81,
+      "count_SFI": 16
+    },
+    {
+      "term": "self-interest",
+      "z": 5.711556665667211,
+      "count_SI": 65,
+      "count_SFI": 4
+    },
+    {
+      "term": "follow",
+      "z": 5.65807451528294,
+      "count_SI": 262,
+      "count_SFI": 177
+    },
+    {
+      "term": "significant",
+      "z": 5.457434738916068,
+      "count_SI": 66,
+      "count_SFI": 18
+    },
+    {
+      "term": "payoff",
+      "z": 5.373977434305612,
+      "count_SI": 129,
+      "count_SFI": 67
+    },
+    {
+      "term": "maximize",
+      "z": 5.086260685534997,
+      "count_SI": 85,
+      "count_SFI": 36
+    },
+    {
+      "term": "cumulative",
+      "z": 4.920124339289039,
+      "count_SI": 76,
+      "count_SFI": 31
+    },
+    {
+      "term": "emissions",
+      "z": 3.845314646357761,
+      "count_SI": 29,
+      "count_SFI": 6
+    },
+    {
+      "term": "considering",
+      "z": 3.641779119893817,
+      "count_SI": 93,
+      "count_SFI": 59
+    },
+    {
+      "term": "framework",
+      "z": 3.63957879288304,
+      "count_SI": 24,
+      "count_SFI": 3
+    },
+    {
+      "term": "selfish-institution",
+      "z": 3.380051566891815,
+      "count_SI": 21,
+      "count_SFI": 2
+    }
+  ],
+  "top_SFI_key_terms": [
+    {
+      "term": "sfi",
+      "z": -10.677955446438345,
+      "count_SI": 92,
+      "count_SFI": 362
+    },
+    {
+      "term": "incentives",
+      "z": -7.229546978294441,
+      "count_SI": 9,
+      "count_SFI": 125
+    },
+    {
+      "term": "highly",
+      "z": -5.479868839609251,
+      "count_SI": 3,
+      "count_SFI": 86
+    },
+    {
+      "term": "immediate",
+      "z": -5.417553602017778,
+      "count_SI": 2,
+      "count_SFI": 109
+    },
+    {
+      "term": "long-run",
+      "z": -5.200157084287432,
+      "count_SI": 2,
+      "count_SFI": 94
+    },
+    {
+      "term": "low",
+      "z": -5.157192603925941,
+      "count_SI": 123,
+      "count_SFI": 249
+    },
+    {
+      "term": "recent",
+      "z": -3.980286345672954,
+      "count_SI": 30,
+      "count_SFI": 81
+    },
+    {
+      "term": "except",
+      "z": -3.9372878038115062,
+      "count_SI": 13,
+      "count_SFI": 51
+    },
+    {
+      "term": "institution",
+      "z": -3.736466123587008,
+      "count_SI": 252,
+      "count_SFI": 391
+    },
+    {
+      "term": "mostly",
+      "z": -3.4906512106640446,
+      "count_SI": 95,
+      "count_SFI": 171
+    },
+    {
+      "term": "balance",
+      "z": -3.489021322919896,
+      "count_SI": 50,
+      "count_SFI": 105
+    },
+    {
+      "term": "minimally",
+      "z": -3.180862085928122,
+      "count_SI": 2,
+      "count_SFI": 24
+    }
+  ],
+  "top_SI_bigrams": [
+    {
+      "term": "contributors follow",
+      "z": 7.433306475570216
+    },
+    {
+      "term": "contribution peers",
+      "z": 6.501992436986841
+    },
+    {
+      "term": "follow strategy",
+      "z": 6.431073006815039
+    },
+    {
+      "term": "significant amount",
+      "z": 5.691555160283911
+    },
+    {
+      "term": "high contribution",
+      "z": 5.145264470916325
+    },
+    {
+      "term": "contribute significant",
+      "z": 4.977239725406374
+    },
+    {
+      "term": "cumulative payoff",
+      "z": 4.91687211422626
+    },
+    {
+      "term": "peers strategy",
+      "z": 4.855866204872066
+    },
+    {
+      "term": "mostly following",
+      "z": 4.6476886453683806
+    },
+    {
+      "term": "self-interest cooperate",
+      "z": 4.585610527268902
+    }
+  ],
+  "top_SFI_bigrams": [
+    {
+      "term": "peers contribute",
+      "z": -6.886800787037211
+    },
+    {
+      "term": "mostly institution",
+      "z": -5.049651830863136
+    },
+    {
+      "term": "contribute highly",
+      "z": -4.948540849139414
+    },
+    {
+      "term": "contributors sfi",
+      "z": -4.797459057347913
+    },
+    {
+      "term": "cooperate incentives",
+      "z": -4.674413094520751
+    },
+    {
+      "term": "highly institution",
+      "z": -4.5179633916672435
+    },
+    {
+      "term": "low contributors",
+      "z": -4.33662284673463
+    },
+    {
+      "term": "amount balance",
+      "z": -4.137826001915443
+    },
+    {
+      "term": "contribution sfi",
+      "z": -3.8074612961205387
+    },
+    {
+      "term": "balance immediate",
+      "z": -3.764094595978528
+    }
+  ],
+  "loo_jaccard_SI_mean": 0.8699095022624435,
+  "loo_jaccard_SFI_mean": 1.0,
+  "loo_jaccard_SI_min": 0.7647058823529411,
+  "examples": {
+    "SI_punishment": [
+      {
+        "evidence_id": "RB-01-A2-punishment",
+        "agent_id": 2,
+        "round": 1,
+        "institution": "SI",
+        "kind": "punishment",
+        "excerpt": "Punishing free-riders and rewarding cooperative agents to encourage cooperation and discourage opportunistic behavior."
+      },
+      {
+        "evidence_id": "RB-01-A2-deanonymized_punishment",
+        "agent_id": 2,
+        "round": 1,
+        "institution": "SI",
+        "kind": "deanonymized_punishment",
+        "excerpt": "Punishing free-riders and rewarding cooperative agents to encourage cooperation and discourage opportunistic behavior."
+      },
+      {
+        "evidence_id": "RB-01-A3-punishment",
+        "agent_id": 3,
+        "round": 1,
+        "institution": "SI",
+        "kind": "punishment",
+        "excerpt": "Punished free-riders and rewarded cooperative agents to balance self-interest and institutional credibility."
+      }
+    ],
+    "SFI_damage_or_ldf": [
+      {
+        "evidence_id": "RB-01-A0-institution",
+        "agent_id": 0,
+        "round": 1,
+        "institution": "SFI",
+        "kind": "institution",
+        "excerpt": "Climate/LDF mode defaults developing countries to the non-binding agreement."
+      },
+      {
+        "evidence_id": "RB-01-A1-institution",
+        "agent_id": 1,
+        "round": 1,
+        "institution": "SFI",
+        "kind": "institution",
+        "excerpt": "Climate/LDF mode defaults developing countries to the non-binding agreement."
+      },
+      {
+        "evidence_id": "RB-01-A4-institution",
+        "agent_id": 4,
+        "round": 1,
+        "institution": "SFI",
+        "kind": "institution",
+        "excerpt": "Climate/LDF mode defaults developing countries to the non-binding agreement."
+      }
+    ],
+    "SI_fair": [
+      {
+        "evidence_id": "RB-02-A5-punishment",
+        "agent_id": 5,
+        "round": 2,
+        "institution": "SI",
+        "kind": "punishment",
+        "excerpt": "Punishing free-riders and those who did not match their stated intentions to maintain cooperation and fairness within the group."
+      },
+      {
+        "evidence_id": "RB-02-A5-deanonymized_punishment",
+        "agent_id": 5,
+        "round": 2,
+        "institution": "SI",
+        "kind": "deanonymized_punishment",
+        "excerpt": "Punishing free-riders and those who did not match their stated intentions to maintain cooperation and fairness within the group."
+      },
+      {
+        "evidence_id": "RB-04-A3-punishment",
+        "agent_id": 3,
+        "round": 4,
+        "institution": "SI",
+        "kind": "punishment",
+        "excerpt": "Punished free-riders and rewarded generous contributors to promote fairness and cooperation within the institution."
+      }
+    ],
+    "SFI_fair": [],
+    "SI_cooperate": [
+      {
+        "evidence_id": "RB-01-A13-contribution",
+        "agent_id": 13,
+        "round": 1,
+        "institution": "SI",
+        "kind": "contribution",
+        "excerpt": "Choose a moderate contribution to balance between individual gain and group cooperation."
+      },
+      {
+        "evidence_id": "RB-02-A2-contribution",
+        "agent_id": 2,
+        "round": 2,
+        "institution": "SI",
+        "kind": "contribution",
+        "excerpt": "Medium contribution to balance self-interest with cooperation, considering previous round's group average and my internal beliefs about SI strategy."
+      },
+      {
+        "evidence_id": "RB-02-A3-contribution",
+        "agent_id": 3,
+        "round": 2,
+        "institution": "SI",
+        "kind": "contribution",
+        "excerpt": "I'm choosing a moderate contribution to balance self-interest and cooperation, while also considering the historical emissions index of 1.50."
+      }
+    ],
+    "SFI_cooperate": [
+      {
+        "evidence_id": "RB-01-A1-contribution",
+        "agent_id": 1,
+        "round": 1,
+        "institution": "SFI",
+        "kind": "contribution",
+        "excerpt": "Choosing a moderate contribution to balance immediate resilience needs with long-run cooperation incentives."
+      },
+      {
+        "evidence_id": "RB-01-A18-contribution",
+        "agent_id": 18,
+        "round": 1,
+        "institution": "SFI",
+        "kind": "contribution",
+        "excerpt": "Maximizing my cumulative payoff requires a balance between immediate resilience needs and long-run cooperation incentives, so I choose a contribution that is substantial but not excessive."
+      },
+      {
+        "evidence_id": "RB-01-A19-contribution",
+        "agent_id": 19,
+        "round": 1,
+        "institution": "SFI",
+        "kind": "contribution",
+        "excerpt": "Contributing nothing allows me to conserve resources and observe the behavior of other agents, without immediately committing to a cooperative action."
+      }
+    ]
+  }
+}

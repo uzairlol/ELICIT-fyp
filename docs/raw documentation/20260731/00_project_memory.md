@@ -394,6 +394,20 @@ Rules:
 30. Stage-2 enforcement is costly; ToM/gossip/voting are not. Mean corr(prop, enforcement spend)≈0.14; top-quartile prop agents pay ~35% of SI enforcement tokens.
 31. Vote same-group-as-proposer rate ≈0.51 (near base rate).
 
+### Prompt 6 facts
+
+32. Comparable corpus = shared kinds (excl. SI punishment): 1440 SI vs 1680 SFI blocks; similar mean tokens (~6.6).
+33. Keyness: SI → strategy/self-interest/follow; SFI → sfi/incentives/immediate/long-run (log-odds z).
+34. Concept rates: SI self_interest 0.081 vs SFI 0.013 (shared); contribution-only 0.303 vs 0.050; post-shock 0.479 vs 0.054.
+35. Fairness/reciprocity coded hits ≈0 in shared kinds.
+36. Leave-one-out keyness Jaccard high (SI≈0.87, SFI≈1.0) — not one-agent artefact.
+
+### Prompt 7 verdicts
+
+37. Norm emergence: **limited or mixed evidence** (polarisation, weak obligation language, no repair after gossip/bad-rep).
+38. Cooperation stability: **moderately positive average levels with limited path stability** (mean prop≈0.29 persists; aggregate autocorr≈0.03; median≪mean).
+39. Early→late: IQR prop 0.24→0.18; zero-share 0.19→0.12; std still ~0.66.
+
 ---
 
 ## Analysis decisions
@@ -414,6 +428,8 @@ Rules:
 | Reconstruct gossip from tom_scores | Only feasible bulletin proxy; document tie-order limit |
 | Bad-rep threshold = 4.0 | Anchored below code default neutral 5.0; disclosed analyst choice |
 | Code PUNISHMENT_EFFECT proposals as weakening | In-run values move 3→1 vs parameter default |
+| Language primary contrast = shared kinds | Avoid SI punishment-block asymmetry |
+| Separate norm vs cooperation-stability verdicts | Prompt 7 requires non-equivalence |
 
 ---
 
@@ -471,3 +487,19 @@ Prompt 5:
 - `docs/raw documentation/20260731/qualitative_analysis/18_political_economy_of_governance.md`
 - Tables: `proposals_coded.csv`, `votes_parsed.csv`, `enforcement_burden_*.csv`, `post_adoption_prop_changes.csv`, `prompt5_numeric_summary.json`
 - Plots: `proposal_categories_timeline.png`, `adopted_rules_timeline.png`, `proposers_by_institution.png`, `enforcement_burden.png`
+
+Prompt 6:
+
+- `docs/raw documentation/20260731/scripts/analyze_20260731_language.py`
+- `docs/raw documentation/20260731/qualitative_analysis/19_si_sfi_language_comparison.md`
+- `docs/raw documentation/20260731/qualitative_analysis/20_wordcloud_and_keyness_analysis.md`
+- Tables: `language_*.csv`, `prompt6_numeric_summary.json`
+- Plots: `wordcloud_*.png`, `keyness_shared_unigrams.png`, `concept_rates_shared.png`
+
+Prompt 7:
+
+- `docs/raw documentation/20260731/scripts/analyze_20260731_norm_stability.py`
+- `docs/raw documentation/20260731/synthesis/21_norm_emergence_assessment.md`
+- `docs/raw documentation/20260731/synthesis/22_cooperation_stability_assessment.md`
+- `docs/raw documentation/20260731/synthesis/23_evidence_matrix.md`
+- Tables: `norm_stability_round_series.csv`, `prompt7_numeric_summary.json`
