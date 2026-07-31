@@ -408,6 +408,15 @@ Rules:
 38. Cooperation stability: **moderately positive average levels with limited path stability** (mean prop≈0.29 persists; aggregate autocorr≈0.03; median≪mean).
 39. Early→late: IQR prop 0.24→0.18; zero-share 0.19→0.12; std still ~0.66.
 
+### Prompt 8 theory anchors
+
+40. Organising economics question locked in `theory/24_*.md` (voluntary → enforcement → institutional adaptation under imperfect observation/control).
+41. Strongest BE fits: bounded/prompt-shaped reasoning; institutional parameter path dependence; weak/contrary reputation repair; moderate conditional-cooperation *talk*.
+42. Ostrom mapping: partial analogues only; **not** a full design-principle implementation (no graduated ladder, no nested enterprises, forced membership).
+43. Real FRLD: established COP27 (2/CP.27); operationalised COP28 (1/CP.28 Governing Instrument + Board; World Bank interim FIF invitation). Do not conflate establishment / operationalisation / pledges / deposits / disbursement.
+44. Simulation LDF deposit = Stage-1 contribution (dual-use); payouts developing-only; pool hidden from agents; redistribution formula family largely exogenous.
+45. Model lock for motivation section: `llama3.1:8b` via local Ollama (`run_experiments.DEFAULT_MODEL`).
+
 ---
 
 ## Analysis decisions
@@ -430,6 +439,8 @@ Rules:
 | Code PUNISHMENT_EFFECT proposals as weakening | In-run values move 3→1 vs parameter default |
 | Language primary contrast = shared kinds | Avoid SI punishment-block asymmetry |
 | Separate norm vs cooperation-stability verdicts | Prompt 7 requires non-equivalence |
+| Cite only verified UNFCCC/UNEP/World Bank sources for real LDF | Prompt 8 forbids invented citations |
+| Defend small model methodologically, not via cost sympathy | Prompt 8 explicit rule |
 
 ---
 
