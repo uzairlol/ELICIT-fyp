@@ -719,35 +719,55 @@ function renderDemocracyView() {
   }
 
   const html = votes.map(v => {
-    const for_  = v.votes_for || v.for  || 0;
-    const against = v.votes_against || v.against || 0;
-    const total = for_ + against;
-    const pctFor = total > 0 ? (for_ / total * 100).toFixed(0) : 50;
-    const passed = v.passed != null ? v.passed : (for_ > against);
+    const passed = v.applied != null ? v.applied : (v.winning_proposal != null);
+    const win = v.winning_proposal;
+    const tally = v.tally || {};
+    const proposalList = v.proposals || [];
+
+    const totalVotesCast = Object.values(tally).reduce((a, b) => a + b, 0);
+
+    const tallyHTML = Object.entries(tally).map(([propIdx, count]) => {
+      const prop = proposalList[parseInt(propIdx)];
+      const label = prop ? `Prop [${propIdx}]: ${prop.rule} -> ${prop.new_value} (by A${prop.proposer})` : `Proposal ${propIdx}`;
+      const pctVal = totalVotesCast > 0 ? (count / totalVotesCast * 100).toFixed(0) : 0;
+      return `
+        <div style="margin-top:0.5rem">
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem">
+            <span>${label}</span>
+            <span style="font-weight:700" class="mono">${count} votes (${pctVal}%)</span>
+          </div>
+          <div class="vote-bar-wrap"><div class="vote-bar-inner" style="width:${pctVal}%"></div></div>
+        </div>
+      `;
+    }).join('');
+
     return `
       <div class="vote-card">
         <div class="vote-header">
           <span>Round ${v.round} — Constitutional Vote</span>
-          <span class="pill ${passed ? 'pill-green' : 'pill-red'}">${passed ? '✓ PASSED' : '✗ FAILED'}</span>
+          <span class="pill ${passed ? 'pill-green' : 'pill-red'}">${passed ? '✓ PASSED & APPLIED' : '✗ REJECTED'}</span>
         </div>
-        ${v.proposal ? `<div class="reasoning-block"><strong>Proposal:</strong> ${v.proposal}</div>` : ''}
+        ${win ? `
+          <div class="reasoning-block" style="border-left: 3px solid var(--accent-green)">
+            <strong>🏆 Winning Proposal:</strong> <code>${win.rule}</code> set to <code>${win.new_value}</code> (Proposed by Agent ${win.proposer})<br/>
+            <span style="font-size:0.72rem;color:#adb5bd">"${win.reason}"</span>
+          </div>` : '<div class="reasoning-block">No winning proposal passed.</div>'}
         <div style="margin-top:0.75rem">
-          <div style="display:flex; justify-content:space-between; font-size:0.72rem; margin-bottom:0.35rem">
-            <span style="color:#4ade80">For: ${for_}</span>
-            <span style="color:#f87171">Against: ${against}</span>
-          </div>
-          <div class="vote-bar-wrap"><div class="vote-bar-inner" style="width:${pctFor}%"></div></div>
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted)">Vote Breakdown</div>
+          ${tallyHTML}
         </div>
-        ${v.changes ? `<div style="margin-top:0.75rem; font-size:0.72rem; color:#94a3b8">${Object.entries(v.changes).map(([k,v2]) => `<div class="stat-row"><span class="stat-label">${k}</span><span class="stat-value mono">${JSON.stringify(v2)}</span></div>`).join('')}</div>` : ''}
       </div>
     `;
   }).join('');
 
+  const passedCount = votes.filter(v => v.applied != null ? v.applied : (v.winning_proposal != null)).length;
+  const failedCount = votes.length - passedCount;
+
   el('democracy-view-content').innerHTML = `
     <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem">
       <div class="kpi-card kpi-purple"><div class="kpi-label">Total Votes</div><div class="kpi-value">${votes.length}</div></div>
-      <div class="kpi-card kpi-green"><div class="kpi-label">Passed</div><div class="kpi-value">${votes.filter(v=>(v.passed!=null?v.passed:((v.votes_for||v.for||0)>(v.votes_against||v.against||0)))).length}</div></div>
-      <div class="kpi-card kpi-red"><div class="kpi-label">Failed</div><div class="kpi-value">${votes.filter(v=>!(v.passed!=null?v.passed:((v.votes_for||v.for||0)>(v.votes_against||v.against||0)))).length}</div></div>
+      <div class="kpi-card kpi-green"><div class="kpi-label">Passed &amp; Applied</div><div class="kpi-value">${passedCount}</div></div>
+      <div class="kpi-card kpi-red"><div class="kpi-label">Failed / Rejected</div><div class="kpi-value">${failedCount}</div></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:0">${html}</div>
   `;
