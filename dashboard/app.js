@@ -778,10 +778,11 @@ function buildWordcloudDOM(canvasEl, tableEl, wordsFreqMap, maxWords = 30) {
   const colors = ['#f8f9fa', '#adb5bd', '#6c757d', '#8a99a8', '#94a3b8', '#a3e635', '#d97706'];
 
   canvasEl.innerHTML = topWords.map(([w, freq], idx) => {
-    const norm = maxFreq > minFreq ? (freq - minFreq) / (maxFreq - minFreq) : 0.5;
-    const fontSize = (0.65 + norm * 0.5).toFixed(2); // compact size: 0.65rem to 1.15rem
-    const col = colors[idx % colors.length];
-    return `<span style="font-size:${fontSize}rem; color:${col}; font-weight:${norm > 0.5 ? '700' : '400'}; user-select:none; line-height:1.2" title="${w}: ${freq} occurrences">${w}</span>`;
+    const norm = maxFreq > minFreq ? Math.pow((freq - minFreq) / (maxFreq - minFreq), 0.8) : 0.5;
+    const fontSize = (0.75 + norm * 1.45).toFixed(2); // scaling from 0.75rem up to 2.2rem
+    const opacity = (0.45 + norm * 0.55).toFixed(2);
+    const col = norm > 0.6 ? '#f8f9fa' : (norm > 0.3 ? '#adb5bd' : '#6c757d');
+    return `<span style="font-size:${fontSize}rem; color:${col}; opacity:${opacity}; font-weight:${norm > 0.4 ? '800' : '400'}; user-select:none; line-height:1.25; margin:0.15rem 0.35rem" title="${w}: ${freq} occurrences">${w}</span>`;
   }).join(' ');
 
   tableEl.innerHTML = `
