@@ -64,6 +64,9 @@
       <nav id="nav-tabs">
         <div class="nav-tab active" data-view="macro">📈 Macro Dynamics</div>
         <div class="nav-tab" data-view="agents">🔍 Agent Deep Dive</div>
+        <div class="nav-tab" data-view="sanctions">⚖️ Sanctions &amp; Rewards</div>
+        <div class="nav-tab" data-view="beliefs">🧠 Cognitive Beliefs</div>
+        <div class="nav-tab" data-view="inequality">📊 Climate Inequality</div>
         <div class="nav-tab" data-view="network">🕸️ Sanction Network</div>
         <div class="nav-tab" data-view="ldf" id="tab-ldf" style="display:none">🌍 LDF Analysis</div>
         <div class="nav-tab" data-view="democracy" id="tab-democracy" style="display:none">🗳️ Democracy</div>
@@ -184,6 +187,60 @@
               </div>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Sanctions & Rewards                                -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-sanctions" class="view-section">
+        <div class="chart-grid chart-grid-2">
+          <div class="chart-card">
+            <div class="chart-title">⚖️ Total Punishments &amp; Rewards Executed per Round</div>
+            <div class="chart-subtitle">Aggregate punitive fines (red) and cooperative rewards (green) across all agents.</div>
+            <div id="chart-sanction-timeline"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🎯 Top Sanctioning &amp; Target Agents</div>
+            <div class="chart-subtitle">Agents giving the most punishments vs agents receiving the most punishments.</div>
+            <div id="chart-sanction-top"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Cognitive Beliefs                                -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-beliefs" class="view-section">
+        <div class="chart-grid chart-grid-2">
+          <div class="chart-card">
+            <div class="chart-title">🧠 Agent Belief Categorization Distribution</div>
+            <div class="chart-subtitle">Proportion of peer labels assigned by LLM agent belief states across rounds.</div>
+            <div id="chart-belief-dist"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">📊 Per-Agent Perception Profile</div>
+            <div class="chart-subtitle">How many peers categorize this agent as cooperative vs defector / free-rider.</div>
+            <div id="chart-agent-perception"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- VIEW: Climate Inequality                               -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <section id="view-inequality" class="view-section">
+        <div class="chart-grid chart-grid-2">
+          <div class="chart-card">
+            <div class="chart-title">⚖️ Wealth Gap Trajectory</div>
+            <div class="chart-subtitle">Absolute wealth gap between Developed (avg) and Developing (avg) nations over time.</div>
+            <div id="chart-wealth-gap"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🌱 Cumulative Damage vs LDF Payout Compensation</div>
+            <div class="chart-subtitle">Comparing total climate shock damage taken vs total LDF payout funds received.</div>
+            <div id="chart-damage-comp"></div>
           </div>
         </div>
       </section>

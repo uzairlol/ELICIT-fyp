@@ -19,18 +19,18 @@ const State = {
 
 // ── Colour helpers ─────────────────────────────────────────────
 const COLORS = {
-  blue:   '#3b82f6',
-  teal:   '#14b8a6',
-  amber:  '#f59e0b',
-  red:    '#ef4444',
-  green:  '#22c55e',
-  purple: '#a855f7',
-  cyan:   '#06b6d4',
-  rose:   '#f43f5e',
-  developed: '#60a5fa',
-  developing:'#34d399',
-  si:     '#818cf8',
-  sfi:    '#94a3b8',
+  blue:   '#71717a',
+  teal:   '#9ca3af',
+  amber:  '#d97706',
+  red:    '#dc2626',
+  green:  '#16a34a',
+  purple: '#6b7280',
+  cyan:   '#71717a',
+  rose:   '#dc2626',
+  developed: '#a1a1aa',
+  developing:'#a3e635',
+  si:     '#71717a',
+  sfi:    '#4b5563',
 };
 
 const APEX_BASE = {
@@ -170,6 +170,9 @@ function renderAll() {
   renderKPIs();
   renderMacroCharts();
   renderAgentList();
+  renderSanctionsView();
+  renderBeliefsView();
+  renderInequalityView();
   if (State.meta.isLDF) renderLDFView();
   if (State.meta.hasDemocracy) renderDemocracyView();
 
@@ -535,6 +538,173 @@ function renderLDFView() {
 
   // Re-render LDF charts since they're now in the DOM
   renderLDFPoolChart(State.rounds.map(r => `R${r.round_number}`));
+}
+
+// ── Sanctions & Rewards View ───────────────────────────────────
+function renderSanctionsView() {
+  const rounds = State.rounds;
+  const labels = rounds.map(r => `R${r.round_number}`);
+
+  const totalPuns = rounds.map(r =>
+    Object.values(r.agents).reduce((acc, a) => acc + Object.values(a.assigned_punishments || {}).reduce((s, v) => s + v, 0), 0)
+  );
+  const totalRews = rounds.map(r =>
+    Object.values(r.agents).reduce((acc, a) => acc + Object.values(a.assigned_rewards || {}).reduce((s, v) => s + v, 0), 0)
+  );
+
+  destroyChart('chart-sanction-timeline');
+  State.charts['chart-sanction-timeline'] = new ApexCharts(el('chart-sanction-timeline'), {
+    ...APEX_BASE,
+    chart: { ...APEX_BASE.chart, type: 'bar', height: 260, stacked: false },
+    plotOptions: { bar: { columnWidth: '60%', borderRadius: 0 } },
+    series: [
+      { name: 'Punishment Fines', data: totalPuns },
+      { name: 'Cooperative Rewards', data: totalRews },
+    ],
+    colors: [COLORS.red, COLORS.green],
+    xaxis: { ...APEX_BASE.xaxis, categories: labels },
+    yaxis: { ...APEX_BASE.yaxis, title: { text: 'Magnitude', style: { color: '#64748b', fontSize: '11px' } } },
+    annotations: buildShockAnnotations(rounds),
+  });
+  State.charts['chart-sanction-timeline'].render();
+
+  const agentIds = State.meta.agentIds;
+  const punGivers = agentIds.map(id => ({
+    id,
+    val: rounds.reduce((s, r) => s + Object.values(r.agents[id]?.assigned_punishments || {}).reduce((a, b) => a + b, 0), 0)
+  })).sort((a, b) => b.val - a.val).slice(0, 5);
+
+  const punTargets = agentIds.map(id => ({
+    id,
+    val: rounds.reduce((s, r) => s + (r.agents[id]?.received_punishments || 0), 0)
+  })).sort((a, b) => b.val - a.val).slice(0, 5);
+
+  destroyChart('chart-sanction-top');
+  State.charts['chart-sanction-top'] = new ApexCharts(el('chart-sanction-top'), {
+    ...APEX_BASE,
+    chart: { ...APEX_BASE.chart, type: 'bar', height: 260 },
+    plotOptions: { bar: { horizontal: true, columnWidth: '50%', borderRadius: 0 } },
+    series: [
+      { name: 'Top Sanctioners (Givers)', data: punGivers.map(x => x.val) },
+      { name: 'Top Sanction Targets (Receivers)', data: punTargets.map(x => x.val) },
+    ],
+    colors: [COLORS.purple, COLORS.red],
+    xaxis: { ...APEX_BASE.xaxis, categories: punGivers.map(x => `Agent ${x.id}`) },
+    yaxis: { ...APEX_BASE.yaxis },
+  });
+  State.charts['chart-sanction-top'].render();
+}
+
+// ── Cognitive Beliefs View ─────────────────────────────────────
+function renderBeliefsView() {
+  const rounds = State.rounds;
+  const categoryCounts = {};
+
+  rounds.forEach(r => {
+    Object.values(r.agents).forEach(a => {
+      Object.values(a.belief_state?.trust_levels || {}).forEach(label => {
+        const key = trustClass(label).replace('trust-', '');
+        categoryCounts[key] = (categoryCounts[key] || 0) + 1;
+      });
+    });
+  });
+
+  const categories = Object.keys(categoryCounts);
+  const values = Object.values(categoryCounts);
+
+  destroyChart('chart-belief-dist');
+  State.charts['chart-belief-dist'] = new ApexCharts(el('chart-belief-dist'), {
+    ...APEX_BASE,
+    chart: { ...APEX_BASE.chart, type: 'pie', height: 260 },
+    series: values.length ? values : [1],
+    labels: categories.length ? categories.map(c => c.toUpperCase()) : ['No Belief Data'],
+    colors: [COLORS.green, COLORS.red, COLORS.amber, COLORS.purple, COLORS.blue],
+    legend: { ...APEX_BASE.legend, position: 'bottom' },
+  });
+  State.charts['chart-belief-dist'].render();
+
+  const agentIds = State.meta.agentIds;
+  const perceptionData = agentIds.map(id => {
+    let devCnt = 0;
+    let coopCnt = 0;
+    rounds.forEach(r => {
+      Object.values(r.agents).forEach(a => {
+        const trustObj = a.belief_state?.trust_levels || {};
+        if (trustObj[id]) {
+          const cls = trustClass(trustObj[id]);
+          if (cls.includes('free-rider') || cls.includes('untrustworthy') || cls.includes('unreliable')) devCnt++;
+          else coopCnt++;
+        }
+      });
+    });
+    return { id, coopCnt, devCnt };
+  });
+
+  destroyChart('chart-agent-perception');
+  State.charts['chart-agent-perception'] = new ApexCharts(el('chart-agent-perception'), {
+    ...APEX_BASE,
+    chart: { ...APEX_BASE.chart, type: 'bar', height: 260, stacked: true },
+    plotOptions: { bar: { columnWidth: '60%', borderRadius: 0 } },
+    series: [
+      { name: 'Perceived Cooperative', data: perceptionData.map(x => x.coopCnt) },
+      { name: 'Perceived Free-Rider/Defector', data: perceptionData.map(x => x.devCnt) },
+    ],
+    colors: [COLORS.green, COLORS.red],
+    xaxis: { ...APEX_BASE.xaxis, categories: agentIds.map(id => `A${id}`) },
+    yaxis: { ...APEX_BASE.yaxis, title: { text: 'Mentions in Belief States', style: { color: '#64748b', fontSize: '11px' } } },
+  });
+  State.charts['chart-agent-perception'].render();
+}
+
+// ── Climate Inequality View ────────────────────────────────────
+function renderInequalityView() {
+  const rounds = State.rounds;
+  const labels = rounds.map(r => `R${r.round_number}`);
+  const agentIds = State.meta.agentIds;
+
+  const devIds = agentIds.filter(id => State.agents[id]?.group === 'developed');
+  const dvgIds = agentIds.filter(id => State.agents[id]?.group === 'developing');
+
+  const wealthGaps = rounds.map(r => {
+    const devAvg = devIds.reduce((s, id) => s + (r.agents[id]?.wealth || 0), 0) / (devIds.length || 1);
+    const dvgAvg = dvgIds.reduce((s, id) => s + (r.agents[id]?.wealth || 0), 0) / (dvgIds.length || 1);
+    return Math.max(0, devAvg - dvgAvg);
+  });
+
+  destroyChart('chart-wealth-gap');
+  State.charts['chart-wealth-gap'] = new ApexCharts(el('chart-wealth-gap'), {
+    ...APEX_BASE,
+    chart: { ...APEX_BASE.chart, type: 'area', height: 260 },
+    series: [{ name: 'Developed vs Developing Wealth Gap', data: wealthGaps.map(v => +v.toFixed(2)) }],
+    colors: [COLORS.amber],
+    fill: { type: 'solid', opacity: 0.15 },
+    xaxis: { ...APEX_BASE.xaxis, categories: labels },
+    yaxis: { ...APEX_BASE.yaxis, labels: { formatter: v => fmt(v), style: { colors: '#64748b' } } },
+    annotations: buildShockAnnotations(rounds),
+  });
+  State.charts['chart-wealth-gap'].render();
+
+  const dvgDamage = dvgIds.map(id =>
+    rounds.reduce((s, r) => s + (r.agents[id]?.climate_damage_taken_round || 0), 0)
+  );
+  const dvgPayout = dvgIds.map(id =>
+    rounds.reduce((s, r) => s + (r.agents[id]?.ldf_payout_round || 0), 0)
+  );
+
+  destroyChart('chart-damage-comp');
+  State.charts['chart-damage-comp'] = new ApexCharts(el('chart-damage-comp'), {
+    ...APEX_BASE,
+    chart: { ...APEX_BASE.chart, type: 'bar', height: 260 },
+    plotOptions: { bar: { columnWidth: '60%', borderRadius: 0 } },
+    series: [
+      { name: 'Cumulative Climate Damage', data: dvgDamage.map(v => +v.toFixed(2)) },
+      { name: 'Cumulative LDF Payouts', data: dvgPayout.map(v => +v.toFixed(2)) },
+    ],
+    colors: [COLORS.red, COLORS.green],
+    xaxis: { ...APEX_BASE.xaxis, categories: dvgIds.map(id => `Developing A${id}`) },
+    yaxis: { ...APEX_BASE.yaxis, labels: { formatter: v => fmt(v), style: { colors: '#64748b' } } },
+  });
+  State.charts['chart-damage-comp'].render();
 }
 
 // ── Democracy View ─────────────────────────────────────────────
