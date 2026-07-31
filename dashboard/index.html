@@ -253,6 +253,15 @@
         <div id="wordcloud-container" class="chart-card">
           <div style="display:flex; gap:1rem; align-items:center; border-bottom:1px solid var(--border); padding-bottom:1rem; margin-bottom:1.25rem; flex-wrap:wrap">
             <div class="network-ctrl-group">
+              <label>View Mode</label>
+              <select class="ctrl-select" id="wc-mode-select">
+                <option value="single">🔍 Single Wordcloud</option>
+                <option value="si_sfi">⚔️ Side-by-Side: SI vs SFI</option>
+                <option value="shock">⚡ Side-by-Side: Shock vs Non-Shock Rounds</option>
+                <option value="dev_dvg">🌍 Side-by-Side: Developed vs Developing</option>
+              </select>
+            </div>
+            <div class="network-ctrl-group">
               <label>Reasoning Field</label>
               <select class="ctrl-select" id="wc-field-select">
                 <option value="aggregated">🌐 All Reasoning Combined</option>
@@ -262,7 +271,7 @@
                 <option value="belief">🧠 Beliefs &amp; Observations</option>
               </select>
             </div>
-            <div class="network-ctrl-group">
+            <div class="network-ctrl-group" id="wc-agent-filter-group">
               <label>Agent Filter</label>
               <select class="ctrl-select" id="wc-agent-select">
                 <option value="all">👥 All Agents (Simulation-wide)</option>
@@ -270,26 +279,42 @@
                 <option value="developing">🌿 Developing Nations Only</option>
               </select>
             </div>
-            <div class="network-ctrl-group">
-              <label>Scope</label>
+            <div class="network-ctrl-group" id="wc-round-filter-group">
+              <label>Round Scope</label>
               <select class="ctrl-select" id="wc-round-select">
                 <option value="all">⌛ All Rounds Combined</option>
               </select>
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:1.5rem">
+          <!-- Single View -->
+          <div id="wc-single-view" style="display:grid; grid-template-columns: 2fr 1fr; gap:1.25rem">
             <div>
               <div class="chart-title">☁️ Dynamic Text Frequency Wordcloud</div>
-              <div class="chart-subtitle">Sized proportional to word frequency across selected agent LLM reasoning prompts.</div>
-              <div id="wordcloud-canvas" style="min-height:380px; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:0.6rem; padding:1.5rem; background:var(--bg-surface); border:1px solid var(--border)"></div>
+              <div class="chart-subtitle">Compact wordcloud scaled proportionally to word frequencies.</div>
+              <div id="wordcloud-canvas" style="min-height:220px; max-height:260px; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:0.4rem; padding:1rem; background:var(--bg-surface); border:1px solid var(--border); overflow:hidden"></div>
             </div>
             <div>
               <div class="chart-title">📊 Top Word Frequencies</div>
               <div class="chart-subtitle">Ranked frequency list for active filters</div>
-              <div id="wordcloud-freq-table" style="max-height:380px; overflow-y:auto"></div>
+              <div id="wordcloud-freq-table" style="max-height:260px; overflow-y:auto"></div>
             </div>
           </div>
+
+          <!-- Side by Side View -->
+          <div id="wc-compare-view" style="display:none; grid-template-columns: 1fr 1fr; gap:1.25rem">
+            <div>
+              <div class="chart-title" id="wc-left-title">Group A</div>
+              <div id="wc-canvas-left" style="min-height:200px; max-height:240px; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:0.35rem; padding:0.85rem; background:var(--bg-surface); border:1px solid var(--border); overflow:hidden; margin-bottom:0.75rem"></div>
+              <div id="wc-table-left" style="max-height:160px; overflow-y:auto"></div>
+            </div>
+            <div>
+              <div class="chart-title" id="wc-right-title">Group B</div>
+              <div id="wc-canvas-right" style="min-height:200px; max-height:240px; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:0.35rem; padding:0.85rem; background:var(--bg-surface); border:1px solid var(--border); overflow:hidden; margin-bottom:0.75rem"></div>
+              <div id="wc-table-right" style="max-height:160px; overflow-y:auto"></div>
+            </div>
+          </div>
+
         </div>
       </section>
 

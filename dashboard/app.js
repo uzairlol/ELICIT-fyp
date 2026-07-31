@@ -726,7 +726,7 @@ function renderWordcloudView() {
 
   const updateWC = () => generateDynamicWordcloud();
 
-  ['wc-field-select', 'wc-agent-select', 'wc-round-select'].forEach(id => {
+  ['wc-mode-select', 'wc-field-select', 'wc-agent-select', 'wc-round-select'].forEach(id => {
     const e = el(id);
     if (e && !e.dataset.bound) {
       e.addEventListener('change', updateWC);
@@ -737,89 +737,149 @@ function renderWordcloudView() {
   generateDynamicWordcloud();
 }
 
+function extractTextTokens(fieldChoice, agentObj) {
+  let textSnippet = '';
+  if (fieldChoice === 'contribution') {
+    textSnippet = (agentObj.contribution_reasoning || '') + ' ' + (agentObj.contribution_facts_used || []).join(' ');
+  } else if (fieldChoice === 'institution') {
+    textSnippet = (agentObj.institution_reasoning || '') + ' ' + (agentObj.institution_facts_used || []).join(' ');
+  } else if (fieldChoice === 'punishment') {
+    textSnippet = (agentObj.punishment_reasoning || '') + ' ' + (agentObj.deanonymized_punishment_reasoning || '') + ' ' + (agentObj.punishment_facts_used || []).join(' ');
+  } else if (fieldChoice === 'belief') {
+    const bs = agentObj.belief_state || {};
+    textSnippet = (bs.institutional_strategy || '') + ' ' + (bs.observations || '') + ' ' + Object.values(bs.trust_levels || {}).join(' ');
+  } else {
+    const bs = agentObj.belief_state || {};
+    textSnippet = [
+      agentObj.institution_reasoning,
+      agentObj.contribution_reasoning,
+      agentObj.punishment_reasoning,
+      bs.institutional_strategy,
+      bs.observations
+    ].join(' ');
+  }
+
+  return textSnippet.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(tok =>
+    tok.length > 2 && !STOPWORDS.has(tok) && !/^\d+$/.test(tok)
+  );
+}
+
+function buildWordcloudDOM(canvasEl, tableEl, wordsFreqMap, maxWords = 30) {
+  const sortedWords = Object.entries(wordsFreqMap).sort((a, b) => b[1] - a[1]);
+  if (!sortedWords.length) {
+    canvasEl.innerHTML = '<div class="empty-state" style="padding:1rem"><p>No word data available.</p></div>';
+    tableEl.innerHTML = '';
+    return;
+  }
+
+  const topWords = sortedWords.slice(0, maxWords);
+  const maxFreq = topWords[0][1];
+  const minFreq = topWords[topWords.length - 1][1];
+  const colors = ['#f8f9fa', '#adb5bd', '#6c757d', '#8a99a8', '#94a3b8', '#a3e635', '#d97706'];
+
+  canvasEl.innerHTML = topWords.map(([w, freq], idx) => {
+    const norm = maxFreq > minFreq ? (freq - minFreq) / (maxFreq - minFreq) : 0.5;
+    const fontSize = (0.65 + norm * 0.5).toFixed(2); // compact size: 0.65rem to 1.15rem
+    const col = colors[idx % colors.length];
+    return `<span style="font-size:${fontSize}rem; color:${col}; font-weight:${norm > 0.5 ? '700' : '400'}; user-select:none; line-height:1.2" title="${w}: ${freq} occurrences">${w}</span>`;
+  }).join(' ');
+
+  tableEl.innerHTML = `
+    <table class="sanction-table">
+      <thead><tr><th>Word</th><th>Count</th></tr></thead>
+      <tbody>
+        ${sortedWords.slice(0, 8).map(([w, c]) => `<tr><td><code>${w}</code></td><td class="mono">${c}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
 function generateDynamicWordcloud() {
+  const mode = el('wc-mode-select')?.value || 'single';
   const fieldChoice = el('wc-field-select')?.value || 'aggregated';
   const agentFilter = el('wc-agent-select')?.value || 'all';
   const roundFilter = el('wc-round-select')?.value || 'all';
 
-  let targetRounds = State.rounds;
-  if (roundFilter !== 'all') {
-    const rNum = parseInt(roundFilter);
-    targetRounds = State.rounds.filter(r => r.round_number === rNum);
-  }
+  const singleView = el('wc-single-view');
+  const compareView = el('wc-compare-view');
 
-  const wordsFreq = {};
+  if (mode === 'single') {
+    singleView.style.display = 'grid';
+    compareView.style.display = 'none';
 
-  targetRounds.forEach(r => {
-    Object.entries(r.agents).forEach(([id, a]) => {
-      const isDev = a.agent_group === 'developed';
-      if (agentFilter === 'developed' && !isDev) return;
-      if (agentFilter === 'developing' && isDev) return;
+    let targetRounds = State.rounds;
+    if (roundFilter !== 'all') {
+      const rNum = parseInt(roundFilter);
+      targetRounds = State.rounds.filter(r => r.round_number === rNum);
+    }
 
-      let textSnippet = '';
-      if (fieldChoice === 'contribution') {
-        textSnippet = (a.contribution_reasoning || '') + ' ' + (a.contribution_facts_used || []).join(' ');
-      } else if (fieldChoice === 'institution') {
-        textSnippet = (a.institution_reasoning || '') + ' ' + (a.institution_facts_used || []).join(' ');
-      } else if (fieldChoice === 'punishment') {
-        textSnippet = (a.punishment_reasoning || '') + ' ' + (a.deanonymized_punishment_reasoning || '') + ' ' + (a.punishment_facts_used || []).join(' ');
-      } else if (fieldChoice === 'belief') {
-        const bs = a.belief_state || {};
-        textSnippet = (bs.institutional_strategy || '') + ' ' + (bs.observations || '') + ' ' + Object.values(bs.trust_levels || {}).join(' ');
-      } else {
-        // aggregated
-        const bs = a.belief_state || {};
-        textSnippet = [
-          a.institution_reasoning,
-          a.contribution_reasoning,
-          a.punishment_reasoning,
-          bs.institutional_strategy,
-          bs.observations
-        ].join(' ');
-      }
-
-      const tokens = textSnippet.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/);
-      tokens.forEach(tok => {
-        if (tok.length > 2 && !STOPWORDS.has(tok) && !/^\d+$/.test(tok)) {
-          wordsFreq[tok] = (wordsFreq[tok] || 0) + 1;
-        }
+    const wordsFreq = {};
+    targetRounds.forEach(r => {
+      Object.entries(r.agents).forEach(([id, a]) => {
+        const isDev = a.agent_group === 'developed';
+        if (agentFilter === 'developed' && !isDev) return;
+        if (agentFilter === 'developing' && isDev) return;
+        extractTextTokens(fieldChoice, a).forEach(tok => { wordsFreq[tok] = (wordsFreq[tok] || 0) + 1; });
       });
     });
-  });
 
-  const sortedWords = Object.entries(wordsFreq).sort((a, b) => b[1] - a[1]);
-  const canvas = el('wordcloud-canvas');
-  const table = el('wordcloud-freq-table');
+    buildWordcloudDOM(el('wordcloud-canvas'), el('wordcloud-freq-table'), wordsFreq, 35);
+  } else {
+    singleView.style.display = 'none';
+    compareView.style.display = 'grid';
 
-  if (!canvas || !table) return;
+    const freqA = {};
+    const freqB = {};
+    let titleA = 'Group A';
+    let titleB = 'Group B';
 
-  if (!sortedWords.length) {
-    canvas.innerHTML = '<div class="empty-state"><span class="empty-icon">☁️</span><p>No word reasoning data for selected filters.</p></div>';
-    table.innerHTML = '<div class="empty-state" style="padding:1rem"><p>No frequencies available.</p></div>';
-    return;
+    if (mode === 'si_sfi') {
+      titleA = '🏛️ SI Institution Members';
+      titleB = '🕊️ SFI (Free Institution) Members';
+      State.rounds.forEach(r => {
+        Object.entries(r.agents).forEach(([id, a]) => {
+          const isSI = (a.institution_choice === 'SI') || r.si_members.includes(parseInt(id));
+          const tokens = extractTextTokens(fieldChoice, a);
+          tokens.forEach(t => {
+            if (isSI) freqA[t] = (freqA[t] || 0) + 1;
+            else freqB[t] = (freqB[t] || 0) + 1;
+          });
+        });
+      });
+    } else if (mode === 'shock') {
+      titleA = '⚡ Climate Shock Rounds';
+      titleB = '🌤️ Normal (Non-Shock) Rounds';
+      State.rounds.forEach(r => {
+        const isShock = r.shock_occurred;
+        Object.values(r.agents).forEach(a => {
+          const tokens = extractTextTokens(fieldChoice, a);
+          tokens.forEach(t => {
+            if (isShock) freqA[t] = (freqA[t] || 0) + 1;
+            else freqB[t] = (freqB[t] || 0) + 1;
+          });
+        });
+      });
+    } else if (mode === 'dev_dvg') {
+      titleA = '🏭 Developed Nations';
+      titleB = '🌿 Developing Nations';
+      State.rounds.forEach(r => {
+        Object.values(r.agents).forEach(a => {
+          const isDev = a.agent_group === 'developed';
+          const tokens = extractTextTokens(fieldChoice, a);
+          tokens.forEach(t => {
+            if (isDev) freqA[t] = (freqA[t] || 0) + 1;
+            else freqB[t] = (freqB[t] || 0) + 1;
+          });
+        });
+      });
+    }
+
+    el('wc-left-title').textContent = titleA;
+    el('wc-right-title').textContent = titleB;
+
+    buildWordcloudDOM(el('wc-canvas-left'), el('wc-table-left'), freqA, 25);
+    buildWordcloudDOM(el('wc-canvas-right'), el('wc-table-right'), freqB, 25);
   }
-
-  const topWords = sortedWords.slice(0, 40);
-  const maxFreq = topWords[0][1];
-  const minFreq = topWords[topWords.length - 1][1];
-
-  const colors = ['#f8f9fa', '#adb5bd', '#6c757d', '#8a99a8', '#94a3b8', '#a3e635', '#d97706'];
-
-  canvas.innerHTML = topWords.map(([w, freq], idx) => {
-    const norm = maxFreq > minFreq ? (freq - minFreq) / (maxFreq - minFreq) : 0.5;
-    const fontSize = (0.75 + norm * 1.5).toFixed(2);
-    const col = colors[idx % colors.length];
-    return `<span style="font-size:${fontSize}rem; color:${col}; font-weight:${norm > 0.5 ? '700' : '400'}; user-select:none" title="${w}: ${freq} occurrences">${w}</span>`;
-  }).join(' ');
-
-  table.innerHTML = `
-    <table class="sanction-table">
-      <thead><tr><th>Word</th><th>Count</th></tr></thead>
-      <tbody>
-        ${sortedWords.slice(0, 15).map(([w, c]) => `<tr><td><code>${w}</code></td><td class="mono">${c}</td></tr>`).join('')}
-      </tbody>
-    </table>
-  `;
 }
 
 // ── Democracy View ─────────────────────────────────────────────
