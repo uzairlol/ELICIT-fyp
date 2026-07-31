@@ -1,0 +1,90 @@
+{
+  "run": "20260731_013853",
+  "source": "results/To_Use/simulation_llama3.1_8b_Full_scnldf_sh1_ldf1_seed1_26agents_30rounds_20260731_013853.json",
+  "shock_rounds": [
+    5,
+    10
+  ],
+  "si_sfi": {
+    "metric": "prop_of_wealth",
+    "notes": [
+      "In this run institution_choice is perfectly collinear with agent_group (developed=SI, developing=SFI). Differences are not identifiable as institution effects separate from group/wealth differences.",
+      "Agents do not observe numeric LDF pool balance; interpret contributions without assuming optimisation against fund stock."
+    ],
+    "SI_agent_round_mean_prop": 0.2905099237300424,
+    "SI_agent_round_mean_prop_ci95": [
+      0.24644008051472377,
+      0.3391952594088952
+    ],
+    "SI_agent_round_median_prop": 0.1943425867977709,
+    "SI_agent_round_std_prop": 0.44565190018524764,
+    "SI_agent_round_n": 360,
+    "SI_zero_share": 0.06388888888888888,
+    "SI_mean_abs_contribution": 11973199.975,
+    "SI_median_abs_contribution": 10626200.0,
+    "SFI_agent_round_mean_prop": 0.295745304027546,
+    "SFI_agent_round_mean_prop_ci95": [
+      0.22395521403069582,
+      0.3780934214411639
+    ],
+    "SFI_agent_round_median_prop": 0.03419605202066455,
+    "SFI_agent_round_std_prop": 0.8004960243678866,
+    "SFI_agent_round_n": 420,
+    "SFI_zero_share": 0.1619047619047619,
+    "SFI_mean_abs_contribution": 81351.30714285714,
+    "SFI_median_abs_contribution": 30830.0,
+    "SI_mean_of_agent_means_prop": 0.2905099237300424,
+    "SI_mean_of_agent_means_prop_ci95": [
+      0.2199401989558761,
+      0.3662379077675523
+    ],
+    "SI_n_agents": 12,
+    "SFI_mean_of_agent_means_prop": 0.295745304027546,
+    "SFI_mean_of_agent_means_prop_ci95": [
+      0.179506452369567,
+      0.4103624691685744
+    ],
+    "SFI_n_agents": 14,
+    "effect_size_hedges_g_SI_minus_SFI_agent_round": -0.007914298428607611,
+    "effect_size_hedges_g_SI_minus_SFI_agent_means": -0.025523355673616785,
+    "loo_diff_min": -0.027901997659483202,
+    "loo_diff_max": 0.018385694674846353,
+    "loo_diff_full": -0.005235380297503589
+  },
+  "persistence": {
+    "SI_mean_autocorr_prop": 0.21229349538103237,
+    "SFI_mean_autocorr_prop": 0.21701805167379068,
+    "SI_mean_change_abs_dev": -0.01962209025990653,
+    "SFI_mean_change_abs_dev": 0.02221281458247739
+  },
+  "shock_delta_means": {
+    "5": {
+      "SI": {
+        "mean_delta_post_minus_pre": -0.17843732154479183,
+        "median_delta_post_minus_pre": -0.06411473749874476,
+        "frac_positive_delta": 0.4166666666666667,
+        "n": 12
+      },
+      "SFI": {
+        "mean_delta_post_minus_pre": 0.19480746648339123,
+        "median_delta_post_minus_pre": -0.008103605510089724,
+        "frac_positive_delta": 0.2857142857142857,
+        "n": 14
+      }
+    },
+    "10": {
+      "SI": {
+        "mean_delta_post_minus_pre": 0.0488373402782441,
+        "median_delta_post_minus_pre": 0.11685654887245345,
+        "frac_positive_delta": 0.6666666666666666,
+        "n": 12
+      },
+      "SFI": {
+        "mean_delta_post_minus_pre": -0.0224355301647202,
+        "median_delta_post_minus_pre": -0.0005899321715451501,
+        "frac_positive_delta": 0.42857142857142855,
+        "n": 14
+      }
+    }
+  }
+}

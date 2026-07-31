@@ -1,0 +1,157 @@
+round_number,voter,voter_group,voter_institution,vote_index,voted_rule,voted_new_value,voted_proposer,vote_reason,same_group_as_proposer
+5,0,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,"I choose proposal [0] because it suggests a more moderate increase in the subsidy fraction, which may be less likely to disrupt the community's dynamics.",1
+5,1,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it is a more conservative adjustment that may still incentivize cooperation without overburdening the community.,1
+5,2,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it is a more conservative adjustment that may encourage cooperation without over-rewarding contributors.,0
+5,3,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it is a more conservative adjustment that may still incentivize cooperation without overburdening the community.,0
+5,4,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,"Increasing the subsidy fraction to 0.3 may have a more moderate effect on cooperation, allowing for further experimentation and adjustment.",1
+5,5,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it is a more conservative adjustment that may still incentivize cooperation without overburdening the community.,0
+5,6,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+5,7,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,1
+5,8,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it is a more conservative adjustment that may encourage cooperation without over-rewarding contributors.,1
+5,9,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,1
+5,10,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+5,11,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,1
+5,12,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,1
+5,13,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+5,14,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+5,15,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,1
+5,16,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+5,17,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,1
+5,18,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,1
+5,19,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it is a more conservative adjustment that may encourage cooperation without over-rewarding contributors.,1
+5,20,developing,SFI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it is a more conservative adjustment that may still incentivize cooperation without overburdening the community.,1
+5,21,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+5,22,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+5,23,developed,SI,1,SUBSIDY_FRACTION,0.5,23,Increasing the subsidy fraction to 0.5 aligns with my initial strategy and may further incentivize cooperation.,1
+5,24,developing,SFI,1,SUBSIDY_FRACTION,0.5,23,I choose to increase the subsidy fraction to 0.5 as it provides a stronger incentive for cooperation and potentially reduces punishment costs.,0
+5,25,developed,SI,0,SUBSIDY_FRACTION,0.3,4,I choose to increase the subsidy fraction to 0.3 as it strikes a balance between incentivizing cooperation and maintaining reasonable punishment costs.,0
+10,0,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose to increase the equity weight in LDF payouts as it prioritizes poorer developing nations, promoting fairness and trust within the community.",0
+10,1,developing,SFI,0,LDF_MAX_COVERAGE,0.95,1,I choose proposal [0] LDF_MAX_COVERAGE → 0.95 because it directly addresses the issue of free-riding and has a more significant predicted resilience impact.,1
+10,2,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose to increase the equity weight in LDF payouts as it promotes fairness and cooperation among nations, which is crucial for long-term sustainability.",1
+10,3,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose to increase the equity weight in LDF payouts as it prioritizes poorer developing nations, promoting fairness and trust within the community.",1
+10,4,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] LDF_EQUITY_WEIGHT → 0.5 because it prioritizes fairness and cooperation by giving more weight to poorer nations, which I believe will increase overall group welfare.",0
+10,5,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] to prioritize equity in LDF payouts, which I believe will promote fairness and cooperation within the community.",1
+10,6,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] LDF_EQUITY_WEIGHT → 0.5 because it prioritizes fairness and equity, which I believe will foster a more cooperative community.",1
+10,7,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] LDF_EQUITY_WEIGHT → 0.5 because it prioritizes fairness and equity, which I believe will foster a more cooperative community.",0
+10,8,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] LDF_EQUITY_WEIGHT → 0.5 because it prioritizes fairness and equity, which I believe will foster a more cooperative community.",0
+10,9,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity and fairness, which I believe will foster a more cooperative community.",0
+10,10,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity and fairness, which I believe will foster a more cooperative community.",1
+10,11,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] to prioritize equity in LDF payouts, promoting fairness and cooperation within the community.",0
+10,12,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] to prioritize equity in LDF payouts, which will promote fairness and cooperation within the community.",0
+10,13,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] to prioritize equity in LDF payouts, as it will promote fairness and cooperation within the community.",1
+10,14,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity in LDF payouts, which will promote fairness and cooperation within the community.",1
+10,15,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity and fairness, which I believe will foster a more cooperative community.",0
+10,16,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity and fairness, which I believe will foster a more cooperative community.",1
+10,17,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity and fairness, which I believe will foster a more cooperative community.",0
+10,18,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity and fairness, which I believe will foster a more cooperative community.",0
+10,19,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity, which will promote fairness and cooperation within the community.",0
+10,20,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose to increase the equity weight in LDF payouts as it will promote fairness and cooperation among nations, leading to a more resilient community.",0
+10,21,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity and fairness, which I believe will lead to increased cooperation and trust within the community.",1
+10,22,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"Increasing equity weight in LDF payouts is expected to have a significantly higher resilience impact, promoting fairness and cooperation within the community.",1
+10,23,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] to prioritize equity in LDF payouts, as it will promote fairness and cooperation among nations.",1
+10,24,developing,SFI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] to prioritize equity in LDF payouts, as it promotes fairness and cooperation among nations.",0
+10,25,developed,SI,1,LDF_EQUITY_WEIGHT,0.5,22,"I choose proposal [1] because it prioritizes equity, which will promote fairness and cooperation among nations.",1
+15,0,developing,SFI,0,SUBSIDY_TOP_N,5.0,20,"I choose SUBSIDY_TOP_N → 5 because it has the potential to increase cooperation among high-contributing agents, which could lead to a more efficient allocation of resources.",1
+15,1,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",1
+15,2,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",0
+15,3,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is crucial at this stage in the game.",0
+15,4,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is crucial at this stage in the game.",1
+15,5,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",0
+15,6,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",0
+15,7,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is likely to increase cooperation and improve group welfare.",1
+15,8,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare in this stage of the game.",1
+15,9,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",1
+15,10,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",0
+15,11,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is crucial at this stage in the game.",1
+15,12,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",1
+15,13,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare in this stage of the game.",0
+15,14,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",0
+15,15,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",1
+15,16,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",0
+15,17,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing, which I believe will incentivize more cooperation and improve group welfare.",1
+15,18,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",1
+15,19,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare.",1
+15,20,developing,SFI,0,SUBSIDY_TOP_N,5.0,20,Increasing the number of top contributors in the SI who share the subsidy pool will incentivize more cooperation and sharing among high-contributing agents.,1
+15,21,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is crucial at this stage in the game.",0
+15,22,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare in this stage of the game.",0
+15,23,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is likely to increase cooperation and improve group welfare.",0
+15,24,developing,SFI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is likely to improve group welfare.",1
+15,25,developed,SI,1,SUBSIDY_FRACTION,0.4,24,"Increasing the subsidy fraction to 0.4 will provide a stronger reward for contributing to the public good, which is essential for group welfare in this stage of the game.",0
+20,0,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,1,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,2,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,1
+20,3,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,1
+20,4,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,5,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,1
+20,6,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+20,7,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,8,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",0
+20,9,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,10,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+20,11,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",0
+20,12,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,13,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+20,14,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+20,15,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",0
+20,16,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+20,17,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize agents to prioritize cooperation and reduce free-riding, aligning with my goal of maximizing collective welfare.",0
+20,18,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,19,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,20,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,0
+20,21,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,Increasing the weight of direct damage on LDF payouts is likely to have a significant positive impact on cooperation and collective welfare.,1
+20,22,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+20,23,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+20,24,developing,SFI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize agents to prioritize cooperation and reduce free-riding, leading to improved collective welfare.",0
+20,25,developed,SI,1,LDF_PAYOUT_DAMAGE_WEIGHT,1.5,14,"Increasing the weight of direct damage on LDF payouts will incentivize cooperation and reduce free-riding, leading to improved collective welfare.",1
+25,0,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%.",0
+25,1,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have the highest predicted resilience impact, making it a more sustainable collective outcome.",0
+25,2,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+25,3,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+25,4,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",0
+25,5,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have the highest predicted resilience impact, making it the most beneficial for group welfare.",1
+25,6,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+25,7,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, making it the best choice for improving group welfare.",0
+25,8,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",0
+25,9,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, making it the best choice for improving group welfare.",0
+25,10,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+25,11,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have the highest predicted resilience impact, making it a more sustainable collective outcome.",0
+25,12,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",0
+25,13,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, making it the best choice for improving group welfare.",1
+25,14,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+25,15,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",0
+25,16,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, making it the most beneficial choice for group welfare.",1
+25,17,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have the highest predicted resilience impact, making it a more sustainable collective outcome.",0
+25,18,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",0
+25,19,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%.",0
+25,20,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",0
+25,21,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+25,22,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, making it the best choice for improving group welfare.",1
+25,23,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+25,24,developing,SFI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",0
+25,25,developed,SI,1,LDF_EQUITY_WEIGHT,0.7,22,"Increasing LDF_EQUITY_WEIGHT to 0.7 is expected to have a significant positive impact on resilience, with a predicted increase of +325136271.6%",1
+30,0,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose to increase the subsidy fraction to 0.6 as it may provide a stronger reward for contributing to the common good, potentially leading to increased cooperation and trust.",1
+30,1,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",1
+30,2,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] because it increases the subsidy fraction more significantly, which may be necessary to overcome the current lack of cooperation and trust in the community.",0
+30,3,developed,SI,1,SUBSIDY_FRACTION,0.5,3,Increasing the subsidy fraction to 0.5 is a more conservative and incremental change that balances cooperation incentives with punishment reduction,1
+30,4,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] because it increases the subsidy fraction more significantly, which may be necessary to overcome the current lack of cooperation and trust in the community.",1
+30,5,developed,SI,1,SUBSIDY_FRACTION,0.5,3,Increasing the subsidy fraction to 0.5 is a more conservative approach that still incentivizes cooperation without over-rewarding free-riders.,1
+30,6,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",0
+30,7,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] because it increases the subsidy fraction more significantly, which may be necessary to overcome the current lack of cooperation and trust in the community.",1
+30,8,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",1
+30,9,developing,SFI,1,SUBSIDY_FRACTION,0.5,3,Increasing the subsidy fraction to 0.5 is a more conservative approach that still promotes cooperation without over-rewarding contributors.,0
+30,10,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",0
+30,11,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",1
+30,12,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",1
+30,13,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",0
+30,14,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] SUBSIDY_FRACTION → 0.6 as it offers a more significant increase in the subsidy fraction, which may be necessary to overcome the current lack of cooperation and trust.",0
+30,15,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"Increasing the subsidy fraction to 0.6 will provide a stronger incentive for cooperation and trust, potentially leading to more efficient collective action.",1
+30,16,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",0
+30,17,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] SUBSIDY_FRACTION → 0.6 because it offers a more significant increase in the subsidy fraction, which could lead to increased cooperation and trust among community members.",1
+30,18,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",1
+30,19,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] because it increases the subsidy fraction more significantly, which may be necessary to overcome the current lack of cooperation and trust in the community.",1
+30,20,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] because it increases the subsidy fraction more significantly, which may be necessary to overcome the current lack of cooperation and trust in the community.",1
+30,21,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] SUBSIDY_FRACTION → 0.6 because it offers a stronger reward for contributing to the common good, which may be necessary at this stage in the game.",0
+30,22,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] SUBSIDY_FRACTION → 0.6 because it offers a stronger reward for contributing to the common good, which may be necessary to overcome the current cooperation issues in our community.",0
+30,23,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"Increasing the subsidy fraction to 0.6 may provide a stronger incentive for cooperation, potentially leading to more efficient collective action.",0
+30,24,developing,SFI,0,SUBSIDY_FRACTION,0.6,15,"I choose proposal [0] to increase the subsidy fraction, as it may incentivize cooperation and trust in our community.",1
+30,25,developed,SI,0,SUBSIDY_FRACTION,0.6,15,"Increasing the subsidy fraction to 0.6 may provide a stronger incentive for cooperation, potentially leading to improved group welfare.",0
