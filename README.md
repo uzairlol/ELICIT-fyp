@@ -235,7 +235,3 @@ Important groups:
 
 - Random seed controlled by `SEED` in `parameters.py` and CLI overrides
 - Mixed-population assignment uses deterministic shuffling under the configured seed
-
-## Suggested GitHub description
-
-ELICIT: LLM-based multi-agent simulation of public goods cooperation with sanctions, reputation, constitutional voting, and climate loss-and-damage risk-sharing.
