@@ -433,6 +433,7 @@ Rules:
 54. Conditional-coop corr (peer prev mean vs own prop): SI≈0.05, SFI≈−0.09.
 55. Semantic architecture doc 33: LDF pool architecturally written, semantically absent from decisions.
 56. RQ answer index: `synthesis/37_additional_research_answers.md`.
+57. Pre-paper coherent story + connections graph: `paper_story/01_coherent_research_story_and_connections.md` (baseline TEX + Full LDF + literature hooks + claim nodes B*/C*/H*).
 
 ---
 
@@ -563,3 +564,7 @@ Deepening pass:
 - Rewritten/thickened qualitative `11`–`20`, synthesis `21`–`23`, checklist section I
 - New tables: `zero_*.csv`, `r1_r2_spike_by_agent.csv`, `warm_glow_*.csv`, `sfi_burst_rounds.csv`, `dashboard_macro_series.csv`, `ldf_coverage_*.csv`, `belief_*.csv`, `sanction_*.csv`, `shock_absorber_2x2.csv`, `prompt_zero_numeric_summary.json`, `prompt_dashboard_rq_summary.json`, …
 - New plots: `gini_*.png`, `wealth_gap_*.png`, `ldf_pool_dynamics.png`, `sanction_punish_reward_timeline.png`
+
+Paper story (pre-manuscript):
+
+- `docs/raw documentation/20260731/paper_story/01_coherent_research_story_and_connections.md`

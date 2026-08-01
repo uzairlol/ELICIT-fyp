@@ -3,7 +3,7 @@
 **Purpose:** Pre-paper narrative spine for ELICIT / endogenous institutions and climate risk-sharing.  
 **Not a manuscript.** Use this file to see how baseline studies, the locked Full LDF run (`20260731_013853`), architecture, behavioural findings, and selected literature lock together before drafting chapters.
 
-**Draft status:** Sections 1–8 filled (Acts I–III + bridge). Sections 9–11 fill in the next commit.
+**Draft status:** Complete for pre-paper use (sections 1–11).
 
 ---
 
@@ -17,9 +17,9 @@
 6. Act II — What climate/LDF changes in the architecture  
 7. Act III — Full LDF run as connected mechanisms  
 8. Baseline ↔ Full bridge table  
-9. Claim node catalogue *(checkpoint 4)*  
-10. What the paper may claim / must not claim *(checkpoint 4)*  
-11. Open gaps that still block some paper sentences *(checkpoint 4)*  
+9. Claim node catalogue  
+10. What the paper may claim / must not claim  
+11. Open gaps that still block some paper sentences  
 
 ---
 
@@ -435,12 +435,121 @@ Under forced SI/SFI and a hidden dual-use LDF, llama3.1:8b agents generate posit
 
 ## 9. Claim node catalogue
 
-*(Pending — checkpoint 4)*
+Each node is a paper-safe atom. **Links** point to other nodes. Use these IDs in outlines (`C12`, `B3`, …).
+
+### B — Baseline layer
+
+| ID | Claim | Status | Anchors | Upstream / Downstream | Literature hook |
+|----|-------|--------|---------|----------------------|-----------------|
+| B1 | Without climate shocks, hardcoded greedy zero-contrib SFI maximises individual wealth | baseline-only | TEX §Runs 5–6 | → B8, C1 | Classical PGG dominant strategy |
+| B2 | LLM Control sustains moderate average contributions (~14) with SI/SFI split | baseline-only | TEX §Run 1 | → C4 | Spontaneous giving (Li & Shirado contrast) |
+| B3 | Without public reputation, SI punishment is volatile / mis-targeted | baseline-only | TEX §Run 1 findings | → C9, C11 | Costly sanctioning papers |
+| B4 | SFI can host high contributors (sanctions not necessary for all LLM cooperation) | baseline-only | TEX Runs 1, 2, 4 | → C5 | — |
+| B5 | Reputation can pull agents into SI and become an explicit objective | baseline-only | TEX §Run 2 | → C9 (contrast) | — |
+| B6 | Absolute-contribution punishment is regressive for developing agents in SI | baseline-only | TEX §Run 2 table | → C2, C15 | — |
+| B7 | Voting without reputation yields paranoia and worst LLM collective wealth | baseline-only | TEX §Run 3 | → C12 (different object) | — |
+| B8 | Layered Full-abstract mechanisms → high contributors flee SI to SFI | baseline-only | TEX §Run 4 | → C2 (contrast) | — |
+| B9 | LLMs can identify greedy free-riders but cannot sanction across SFI boundary | baseline-only | TEX §Runs 7–8 | → C9, C11 | Free riders / SanctSim framing |
+| B10 | Structural developed–developing inequality persists across all abstract mechanisms | baseline-only | TEX §Cross-Condition | → C16 | — |
+| B11 | Reasoning–action gaps and punishment myopia are baseline LLM limits | baseline-only | TEX §Cognitive Limits | → C7, C10 | Li & Shirado; Free-riders LLM |
+| B12 | Thesis: climate risk + LDF needed for cooperation beyond intrinsic bias | interpretive (baseline) | TEX §Necessity of Climate Risk | → C1–C17 (tested) | Alympics / multi-agent labs |
+
+### C — Full LDF 20260731 layer
+
+| ID | Claim | Status | Anchors | Links | Literature hook |
+|----|-------|--------|---------|-------|-----------------|
+| C1 | Locked run is 26×30 Full LDF llama3.1:8b seed1 | verified | memory | — | — |
+| C2 | Institution membership forced developed→SI / developing→SFI | verified | env.py; doc 16 | contrasts B8 | — |
+| C3 | Agents do not observe numeric LDF pool | verified | arch 06, 33 | → C14 | Real LDF opacity analogy (theory 26) |
+| C4 | Mean prop≈0.293 persists; median≪mean | verified | prompt3/7 | → C6 | — |
+| C5 | SI vs SFI mean prop nearly identical; SFI more zero-skewed | verified | prompt3 | not causal institution effect | — |
+| C6 | Norm emergence limited/mixed; coop stability moderately positive / path-unstable | verified | docs 21–22 | → C7, C9 | Gupta et al. norms tension |
+| C7 | R1→R2 prop spike; SFI cold-start zeros then escalation | verified | docs 31–32 | → C4; partial CC | Conditional coop literature |
+| C8 | SI R6 zero share 41.7% with MCPR payoff-max text; not liquidity | verified | docs 31–32 | → C6; hooks B11 | Calculated greed |
+| C9 | After bad-rep/gossip, mean Δ prop negative (no repair) | verified | doc 11 | contrasts B5 | — |
+| C10 | ToM scores discrete; 84% ≤7 (gossip threshold ambient) | verified | dashboard RQ JSON | → C9 | — |
+| C11 | Enforcement costly SI-only; weak prop–spend corr; hubs | verified | docs 17, 36 | → B9 | Second-order free-riding |
+| C12 | Democracy: subsidy/LDF equity ratchet; punish-weaken fails | verified | docs 14, 18 | contrasts B7 | Institutional adaptation |
+| C13 | Proposal rhetoric is portable cooperation boilerplate | verified | proposals_coded.csv | → C12 | — |
+| C14 | LDF shock coverage ≈76.8%; pool ≫ payouts | verified | doc 35 | → C3, C15 | Collection≠disbursement |
+| C15 | Developed–developing wealth gap widens R1→R30 | verified | doc 34 | supports B10 | — |
+| C16 | SI/SFI language dialects; fairness≈absent in shared contribution talk | verified | docs 19–20 | → C6 | — |
+| C17 | Dual-use Stage-1 deposit funds LDF | verified | loss_damage_fund.py | → C14 | — |
+| C18 | Organising question is voluntary→enforcement→adaptation under imperfect observation | verified (design) | theory 24 | frames C1–C17 | — |
+| C19 | Real FRLD: COP27 establish / COP28 operationalise — not equated to sim | verified (external) | theory 28 | motivation only | UNFCCC sources |
+| C20 | Causal SI vs SFI institution effect in Full run | unsupported | forced routing | — | — |
+| C21 | Simulation proves real LDF effectiveness | unsupported | theory 26 | — | — |
+| C22 | Full Ostrom design principles implemented | unsupported | theory 25 | — | Ostrom mapping caution |
+
+### Cross-layer hinge nodes
+
+| ID | Claim | Status | Why it matters |
+|----|-------|--------|----------------|
+| H1 | Baselines motivate climate/LDF; Full run is a different estimand | verified | Prevents false continuity |
+| H2 | Inequality persists with and without LDF stylisation | partial | LDF pays damage but not stocks |
+| H3 | Social monitoring often fails to raise contribution in both layers | partial | B9 + C9 |
+| H4 | LLM reasoning templates can justify free-riding (MCPR) even under risk | interpretive | B11 + C8 + Li & Shirado |
+
+---
 
 ## 10. What the paper may claim / must not claim
 
-*(Pending — checkpoint 4)*
+### May claim (with citations to nodes)
+
+1. Abstract baselines show greedy dominance without climate risk (**B1**) and persistent inequality (**B10**), motivating climate/LDF design (**B12**, **H1**).  
+2. In the locked Full run, positive average proportional contributions coexist with limited norm emergence (**C4**, **C6**).  
+3. Forced SI/SFI routing makes institution comparisons collinear with group (**C2**, **C20**).  
+4. Social reputation/gossip events associate with contribution declines, not repair (**C9**, **C10**).  
+5. Democracy adapts parameters toward subsidies and LDF equity weights (**C12**).  
+6. LDF covers a large share of shock damage yet the wealth gap widens (**C14**, **C15**, **H2**).  
+7. Hidden pool + dual-use deposits limit fund-stock behavioural interpretation (**C3**, **C17**).  
+8. Methodological: small instruct model choice and limitations (**theory 27**); LLM reasoning–action / MCPR templates (**C8**, **H4**, **B11**).  
+9. Real-world FRLD timeline as motivation only (**C19**).
+
+### Must not claim
+
+1. That Full-run SI vs SFI differences are causal institution effects (**C20**).  
+2. That the simulation evaluates real FRLD effectiveness, pledges, or disbursement (**C21**).  
+3. That Ostrom’s design principles are fully implemented (**C22**).  
+4. That gossip in results JSON is verbatim (it is reconstructed).  
+5. That establishment (COP27) = operationalisation (COP28) = paid-in = disbursed.  
+6. That baseline free-choice SFI-flight reappears under climate forced routing (**B8** vs **C2**).  
+7. That positive mean cooperation equals internalised norms (**C6**).  
+8. Multi-seed / cross-model generality (single seed, one model).
+
+---
 
 ## 11. Open gaps that still block some paper sentences
 
-*(Pending — checkpoint 4)*
+Do not write these as settled findings until closed (see also `synthesis/37_additional_research_answers.md`):
+
+| Gap | Blocks which paper sentence | Status |
+|-----|-----------------------------|--------|
+| Multi-seed / leave-one-agent robustness | “Results are robust…” | Deferred |
+| Endogenous SI/SFI under climate prompts | “Agents prefer SI because…” | Deferred (design) |
+| Desynchronised shock vs democracy | “Shocks caused …” without confound caveat | Partial only |
+| Native gossip export | Strong causal gossip claims | Reconstruction limit |
+| First-impression ToM lock-in partials | “Reputation is path-dependent from R2…” | Deferred |
+| Vulnerability–prop correlation | “More vulnerable agents insure more…” | Deferred |
+| Subsidy rank-gaming | “Agents optimise SUBSIDY_TOP_N cutoff…” | Deferred |
+| SI effective tax series | “Developed agents face tipping tax…” | Deferred |
+| Cross-model replication | “Not an artefact of llama3.1:8b…” | Deferred |
+| Parse failures for missing proposals | “Agenda shaped by LLM capability…” | Deferred |
+
+When drafting, either omit these sentences or mark them as **future work** citing doc 37.
+
+---
+
+## Appendix — Quick evidence path cheat sheet
+
+| If the paper section is about… | Start here |
+|--------------------------------|------------|
+| Why baselines | TEX Cross-Condition; §5 Act I; **B1–B12** |
+| Why LDF / multi-agent | theory 26–28; §6 |
+| Contribution / SI–SFI | docs 08–09, 31–32; **C4–C8** |
+| Reputation / gossip / ToM | docs 11, 33; **C9–C10** |
+| Democracy / political economy | docs 14–18; **C12–C13** |
+| Norms / stability | docs 21–22; **C6** |
+| LDF coverage / inequality | docs 34–35; **C14–C15** |
+| Language | docs 19–20; **C16** |
+| Claim hygiene | §10; checklist `30` |
