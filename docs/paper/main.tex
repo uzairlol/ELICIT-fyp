@@ -1,0 +1,121 @@
+% !TEX program = pdflatex
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[letterpaper,margin=0.7in,columnsep=0.25in]{geometry}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{mathptmx}
+  \usepackage[scaled=0.92]{helvet}
+\else
+  \usepackage{fontspec}
+  \setmainfont{Times New Roman}
+\fi
+
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{natbib}
+\usepackage{titlesec}
+\usepackage{balance}
+
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+
+\captionsetup{font=small,labelfont=bf,skip=4pt}
+\captionsetup[sub]{font=footnotesize}
+\setlength{\abovecaptionskip}{4pt}
+\setlength{\belowcaptionskip}{2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+
+\titleformat{\section}{\normalsize\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{8pt plus 2pt minus 1pt}{4pt plus 1pt}
+\titlespacing*{\subsection}{0pt}{6pt plus 2pt minus 1pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{4pt plus 1pt}{2pt}
+
+\setlist[itemize]{leftmargin=*,itemsep=1pt,topsep=2pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=*,itemsep=1pt,topsep=2pt,parsep=0pt}
+
+\input{macros}
+
+\bibpunct{(}{)}{;}{a}{ }{,}
+\bibliographystyle{apalike}
+
+\title{\textbf{When Reputation Backfires:\\
+Gossip and Social Pressure Undermine Contribution\\
+in LLM Agent Societies under Climate Risk}}
+
+\author{
+Uzair Arif\thanks{Corresponding author.}\\
+\textit{Independent Researcher}\\
+\and
+Rayaan Raza\\
+\textit{Independent Researcher}\\
+\and
+Ghamz-e-Ali Siyal\\
+\textit{Independent Researcher}\\
+\and
+Ahmad Essa\\
+\textit{Independent Researcher}
+}
+
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+\noindent\textbf{Keywords:} large language model agents; multi-agent systems; reputation; gossip; cooperation; climate risk sharing; endogenous institutions; public goods
+
+\section{Introduction}
+\input{sections/introduction}
+
+\section{Literature Review}
+\input{sections/literature}
+
+\section{Methodology}
+\input{sections/methodology}
+
+\section{Experimental Design}
+\input{sections/experimental_design}
+
+\section{Results}
+\input{sections/results}
+
+\section{Discussion}
+\input{sections/discussion}
+
+\section{Limitations}
+\input{sections/limitations}
+
+\section{Conclusion}
+\input{sections/conclusion}
+
+{\small
+\bibliography{bib/references}
+}
+
+\clearpage
+\appendix
+\onecolumn
+\input{sections/appendix}
+
+\end{document}
