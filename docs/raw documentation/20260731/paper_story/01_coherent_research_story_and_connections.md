@@ -3,7 +3,7 @@
 **Purpose:** Pre-paper narrative spine for ELICIT / endogenous institutions and climate risk-sharing.  
 **Not a manuscript.** Use this file to see how baseline studies, the locked Full LDF run (`20260731_013853`), architecture, behavioural findings, and selected literature lock together before drafting chapters.
 
-**Draft status:** Sections 1–6 filled (Acts I–II). Sections 7–11 fill in later commits.
+**Draft status:** Sections 1–8 filled (Acts I–III + bridge). Sections 9–11 fill in the next commit.
 
 ---
 
@@ -15,8 +15,8 @@
 4. Master connections graph  
 5. Act I — Baseline story (abstract scenario)  
 6. Act II — What climate/LDF changes in the architecture  
-7. Act III — Full LDF run as connected mechanisms *(checkpoint 3)*  
-8. Baseline ↔ Full bridge table *(checkpoint 3)*  
+7. Act III — Full LDF run as connected mechanisms  
+8. Baseline ↔ Full bridge table  
 9. Claim node catalogue *(checkpoint 4)*  
 10. What the paper may claim / must not claim *(checkpoint 4)*  
 11. Open gaps that still block some paper sentences *(checkpoint 4)*  
@@ -330,11 +330,108 @@ Baselines showed that without climate risk, greedy free-riding dominates and for
 
 ## 7. Act III — Full LDF run as connected mechanisms
 
-*(Pending — checkpoint 3)*
+Chronological spine first, then thematic mechanisms. All quantities are for `20260731_013853` unless noted. This section is the **story of what happened**; §8 compares it to baselines; §9 will atomise claims.
+
+### 7.1 Cold start → R2 spike (conditional cooperation vs prompt artefact)
+
+**Facts.** Overall mean `prop_of_wealth` jumps 0.231 → 0.445 from R1 to R2. SFI mean prop jumps 0.022 → 0.602; SFI R1 zero share is 71.4%. R1 zero reasoning emphasises conservation and observation (“assess future opportunities,” “no prior experience”).
+
+[Evidence: `quantitative_analysis/31_zero_contribution_episodes.md` | run=20260731_013853 | round=1-2 | agent=n/a | record=r2_spike]  
+[Evidence: `qualitative_analysis/32_zero_contribution_reasoning.md` | run=20260731_013853 | round=1 | agent=0,9,24 | record=cold_start]
+
+**Connection.** Once R1 peer history enters prompts, many SFI agents escalate — compatible with **conditional cooperation**, but also with **cold-start artefact** (thin context → caution). Later full-path peer-prev correlations are weak (SI≈0.05, SFI≈−0.09), so R2 is not proof of stable CC for the whole run.
+
+[Evidence: `synthesis/37_additional_research_answers.md` | run=20260731_013853 | round=n/a | agent=n/a | record=Q12_Q21]
+
+**Literature hook.** Conditional cooperation is the classical PGG mechanism; LLM “calculated greed” literature warns that explicit MCPR/payoff reasoning can later reverse early cooperative bursts (Li & Shirado; Free-riders/PGG LLM papers in §3).
+
+### 7.2 Positive average cooperation without strong norms
+
+**Facts.** Overall mean prop ≈ 0.293; median ≈ 0.092. SI mean ≈ 0.291 vs SFI ≈ 0.296 (negligible mean gap) but SFI median 0.034 and higher zero share. Prompt 7: **limited/mixed** norm emergence; **moderately positive average cooperation with limited path stability** (group-mean autocorr ≈ 0.03).
+
+[Evidence: `synthesis/21_norm_emergence_assessment.md` | run=20260731_013853 | round=n/a | agent=n/a | record=verdict]  
+[Evidence: `synthesis/22_cooperation_stability_assessment.md` | run=20260731_013853 | round=n/a | agent=n/a | record=verdict]  
+[Evidence: `tables/prompt3_numeric_summary.json` | run=20260731_013853 | round=n/a | agent=n/a | record=si_sfi]
+
+**Connection.** This is the Full-run analogue of the baseline “SFI paradox / intrinsic LLM cooperation”: transfers happen, but obligation language is weak (fairness/reciprocity ≈ 0 in shared kinds). Paper must keep **levels** and **norms** separate.
+
+### 7.3 Shock window — SI R6 MCPR zero bloc
+
+**Facts.** After R5 shock (and democracy), SI zero share at R6 = 41.7% (agents 2, 3, 5, 6, 14). Stated reasons are payoff-max / low MCPR templates, not “cannot afford” — end-of-round wealth remains large. Other SI agents continue contributing.
+
+[Evidence: `quantitative_analysis/31_zero_contribution_episodes.md` | run=20260731_013853 | round=6 | agent=2,3,5,6,14 | record=si_r6]  
+[Evidence: `qualitative_analysis/32_zero_contribution_reasoning.md` | run=20260731_013853 | round=6 | agent=2 | record=excerpt]
+
+**Connection.** Shock **disturbs composition**; mean prop recovers within 1–2 rounds (Prompt 7), so this is not permanent unraveling — but it is the clearest Full-run instance of **calculated free-riding** under MCPR salience. Shock–democracy calendar overlap prevents clean causal attribution to climate damage alone.
+
+### 7.4 Social enforcement fails as repair — reputation, gossip, ToM
+
+**Facts.**
+
+- Bad-rep / gossip-target events: mean Δ prop **negative** (e.g. SFI gossip imm ≈ −0.20).  
+- Gossip targets have high mean prop at event (~0.52); ranks mid-pack.  
+- ToM scores discrete: 5.0 and 1.0 dominate; **84%** of scores ≤ 7 → gossip threshold nearly ambient.  
+- Explicit repair language rare; opportunistic/MCPR talk more common.
+
+[Evidence: `qualitative_analysis/11_reputation_and_gossip_events.md` | run=20260731_013853 | round=n/a | agent=n/a | record=event_study]  
+[Evidence: `tables/prompt_dashboard_rq_summary.json` | run=20260731_013853 | round=n/a | agent=n/a | record=tom_gossip]
+
+**Connection.** Baseline mixed-pop already showed **identification without sanction reach**. Full LDF adds: even *within* the social-information channel, naming does not raise contribution. Semantic architecture: gossip partly redundant for SI Stage-2 visibility; more unique for SFI.
+
+[Evidence: `architecture/33_semantic_module_connections.md` | run=20260731_013853 | round=n/a | agent=n/a | record=gossip_edge]
+
+### 7.5 Costly enforcement uneven; democracy substitutes with carrots
+
+**Facts.** Stage-2 only in SI; corr(prop, enforcement tokens) ≈ 0.14; top-quartile prop agents pay ~35% of tokens. Sanction hubs: givers 25, 2, 14, 3, 22; receivers 14, 10, 6, 16, 22. Democracy adopts subsidy↑ and LDF equity/damage↑; **fails** two punishment-weakening proposals. Proposal reasons are cooperation boilerplate.
+
+[Evidence: `qualitative_analysis/17_enforcement_as_public_good.md` | run=20260731_013853 | round=n/a | agent=n/a | record=burden]  
+[Evidence: `qualitative_analysis/14_proposal_trends.md` | run=20260731_013853 | round=n/a | agent=n/a | record=adopted_path]  
+[Evidence: `quantitative_analysis/36_beliefs_and_sanction_structure.md` | run=20260731_013853 | round=n/a | agent=n/a | record=hubs]
+
+**Connection.** Second-order free-riding tension persists. Unlike baseline Voting-without-reputation catastrophe, Full democracy is thin (14 proposals) and **directional** toward rewards/redistribution parameters — a ratchet, not chaos.
+
+### 7.6 LDF: coverage without equalisation
+
+**Facts.** Shock coverage ≈ 0.768 at R5 and R10. Cumulative payouts ~8.5e5 vs terminal pool ~4.34e9. Developed–developing mean wealth gap widens ~4.6e6 → ~2.15e8. Belief free-rider labels (~13%) outnumber cooperative (~8%).
+
+[Evidence: `quantitative_analysis/35_ldf_coverage_and_transfers.md` | run=20260731_013853 | round=5,10 | agent=n/a | record=coverage]  
+[Evidence: `quantitative_analysis/34_wealth_gini_and_cooperation_rate.md` | run=20260731_013853 | round=1,30 | agent=n/a | record=wealth_gap]
+
+**Connection.** Baseline TEX claimed inequality invariance without LDF; Full run shows LDF **pays developing damage partially** but does **not** close wealth stocks — because absolute SI contributions and endowments dwarf payouts. “Collection ≠ effective redistribution” is the political-economy punchline (theory 26).
+
+### 7.7 Language dialects without fairness norms
+
+**Facts.** SI keyness: strategy / self-interest / follow / payoff. SFI: incentives / immediate / long-run. Fairness appears mainly in SI **punishment** blocks; SFI_fair examples empty in Prompt 6.
+
+[Evidence: `qualitative_analysis/19_si_sfi_language_comparison.md` | run=20260731_013853 | round=n/a | agent=n/a | record=keyness]
+
+**Connection.** Forced routing + role prompts produce **dialects**, not identified preference types. Supports limited-norm verdict.
+
+### 7.8 Act III one-paragraph spine (paste into paper outline)
+
+Under forced SI/SFI and a hidden dual-use LDF, llama3.1:8b agents generate positive average proportional contributions that spike once peer history appears, dip into MCPR-justified SI zeros after the first shock, fail to repair after gossip/bad reputation, drift democratic parameters toward subsidies and LDF equity, and leave the developed–developing wealth gap widening despite ~77% damage coverage — cooperation as transfers without internalised norms, and redistribution without equalisation.
+
+---
 
 ## 8. Baseline ↔ Full bridge table
 
-*(Pending — checkpoint 3)*
+| Theme | Baseline (TEX) | Full LDF 20260731 | Connection | Paper implication |
+|-------|----------------|-------------------|------------|-------------------|
+| Institutional choice | Free SI/SFI sorting; Full-abstract → SFI flight by high contributors | Forced developed→SI, developing→SFI | **contrasts** | Do not cite Full SI/SFI means as institutional preference |
+| Cooperation without sanctions | SFI contributors exist (Control, Reputation Agent 5, Full-abstract migrants) | SFI mean prop ≈ SI; many SFI zeros + bursts | **supports** (LLM can give without Stage-2) | Separate “can cooperate” from “will enforce” |
+| Greedy optimum without risk | All-greedy: highest wealth; zero contrib dominant | Positive mean prop under shocks/LDF | **motivates** Full design | Climate/LDF as survival/redistribution pressure — but Full still has MCPR zeros |
+| Reputation as repair | Public scores become objectives; high rep possible in SFI | Bad-rep/gossip → mean Δ prop negative | **contrasts / fails** | Full social info ≠ image-repair mechanism here |
+| Identification of free-riders | Mixed: ToM/gossip label greedy; cannot punish across SFI | ToM discrete; gossip often hits high-prop agents | **partial continuity** | Monitoring ≠ correct targeting ≠ behavioural repair |
+| Punishment regressivity | Developing SI crushed by absolute-contribution norms | Developing forced to SFI (no Stage-2); SI bears enforcement | **design response** | Forced SFI protects developing from SI punish — tradeoff: no peer sanction on SFI free-ride |
+| Voting / democracy | Voting-without-rep → paranoia, worst wealth | Sparse democracy; subsidy/equity ratchet; punish-weaken fails | **different object** | Full democracy = parameter politics, not baseline voting war |
+| Reasoning–action gap | Plans vs numbers diverge; rationalise punishment | Coop/free-ride language vs zeros; MCPR templates | **supports** | Method finding about LLM agents, not only climate |
+| Inequality | Wealth gap persists across all abstract mechanisms | Gap **widens** despite LDF coverage | **supports + intensifies** | LDF stylisation insufficient for stock equalisation |
+| Over-enforcement / SFI haven | Full-abstract: flee SI when rep strong | Cannot flee; SI stuck with Stage-2 costs | **contrasts** | Forced membership creates asymmetric burden (doc 24 tax theme deferred) |
+| Second-order enforcement | Implicit in SI punishment volatility | corr~0.14; hubs; costless democracy substitute | **supports** | Enforcement as public good is paper-ready |
+| Norm emergence | Not primary TEX verdict; intrinsic bias noted | Explicit limited/mixed + path-unstable coop | **Full adds measurement** | Use Prompt 7 twin verdicts |
+| Climate necessity thesis | TEX conclusion: need shocks + LDF | Full implements both; mixed behavioural success | **tests** | Thesis partially confirmed (coop persists) and partially strained (norms weak; gap widens; gossip fails) |
+
+---
 
 ## 9. Claim node catalogue
 
