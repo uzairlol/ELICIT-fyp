@@ -1,15 +1,20 @@
 \begin{table}[t]
 \centering
-\caption{Diff-in-diff of $\Delta\mathrm{prop}$ versus same-round co-institution controls.}
+\caption{Diff-in-diff of $\Delta\mathrm{prop}$ versus same-round controls.
+Point estimate is the mean across rounds of (affected $-$ control).
+CI: bootstrap over rounds ($B{=}5000$).
+$p_{\mathrm{perm}}$: two-sided within-round label shuffle ($R{=}5000$).
+Cohen's $d$: affected vs control agent-round deltas.}
 \label{tab:did}
 \scriptsize
-\begin{tabular}{lccc}
+\setlength{\tabcolsep}{2.2pt}
+\begin{tabular}{lrrrrr}
 \toprule
-Event & Affected $\Delta$ & Control $\Delta$ & Diff-in-diff \\
+Event & Aff.\ $\Delta$ & Ctrl $\Delta$ & DiD [95\% CI] & $d$ & $p_{\mathrm{perm}}$ \\
 \midrule
-Bad reputation & $-0.291$ & $-0.003$ & $-0.288$ \\
-Gossip target & $-0.197$ & $+0.011$ & $-0.208$ \\
-Reputation drop & $-0.124$ & $+0.019$ & $-0.143$ \\
+Bad rep. & $-0.080$ & $+0.014$ & $-0.288$ [$-0.860$, $0.203$] & $-0.10$ & 0.015 \\
+Gossip & $-0.139$ & $+0.019$ & $-0.208$ [$-0.601$, $0.189$] & $-0.18$ & 0.039 \\
+Rep.\ drop & $-0.105$ & $+0.028$ & $-0.143$ [$-0.291$, $-0.017$] & $-0.15$ & 0.072 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,0 +1,30 @@
+{
+  "n_post_event_contribution": 114,
+  "n_subsample": 47,
+  "subsample_fraction": 0.41228070175438597,
+  "percent_agreement": 0.8297872340425532,
+  "cohens_kappa_primary_label": 0.7151515151515151,
+  "cohens_kappa_opportunistic_binary": 0.9140767824497257,
+  "coder_a_counts_full": {
+    "opportunistic": 67,
+    "none": 35,
+    "reputation_management": 7,
+    "conformity": 4,
+    "named_agents": 1
+  },
+  "coder_a_counts_sample": {
+    "opportunistic": 27,
+    "none": 14,
+    "reputation_management": 3,
+    "conformity": 2,
+    "named_agents": 1
+  },
+  "coder_b_counts_sample": {
+    "opportunistic": 25,
+    "none": 14,
+    "conformity": 4,
+    "reputation_management": 3,
+    "named_agents": 1
+  },
+  "codebook_note": "Coder A uses regex patterns from the analysis pipeline. Coder B independently applies written motif definitions to the subsample."
+}

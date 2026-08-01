@@ -1,0 +1,141 @@
+{
+  "seed": 20260731,
+  "n_boot": 5000,
+  "n_perm": 5000,
+  "event_study": [
+    {
+      "event_family": "bad_rep",
+      "institution": "SI",
+      "n": 36,
+      "mean_delta": -0.03585861321347311,
+      "ci_lo": -0.2439696783630399,
+      "ci_hi": 0.14581452239584908,
+      "frac_positive": 0.3888888888888889,
+      "cohens_d_vs_zero": -0.059290353646949095
+    },
+    {
+      "event_family": "bad_rep",
+      "institution": "SFI",
+      "n": 68,
+      "mean_delta": -0.10272822095618256,
+      "ci_lo": -0.5361030052959397,
+      "ci_hi": 0.3086841044870632,
+      "frac_positive": 0.38235294117647056,
+      "cohens_d_vs_zero": -0.05698293149121
+    },
+    {
+      "event_family": "bad_rep",
+      "institution": "ALL",
+      "n": 104,
+      "mean_delta": -0.07958104904524467,
+      "ci_lo": -0.36538584600154767,
+      "ci_hi": 0.19950573922657872,
+      "frac_positive": 0.38461538461538464,
+      "cohens_d_vs_zero": -0.05317914453851218
+    },
+    {
+      "event_family": "rep_drop",
+      "institution": "SI",
+      "n": 74,
+      "mean_delta": -0.09050781614998207,
+      "ci_lo": -0.2172311111368725,
+      "ci_hi": 0.021953382913762292,
+      "frac_positive": 0.32432432432432434,
+      "cohens_d_vs_zero": -0.17020912507463798
+    },
+    {
+      "event_family": "rep_drop",
+      "institution": "SFI",
+      "n": 81,
+      "mean_delta": -0.11898861411360102,
+      "ci_lo": -0.39007551888929004,
+      "ci_hi": 0.11295007216749955,
+      "frac_positive": 0.30864197530864196,
+      "cohens_d_vs_zero": -0.10386000021010634
+    },
+    {
+      "event_family": "rep_drop",
+      "institution": "ALL",
+      "n": 155,
+      "mean_delta": -0.1053913299245184,
+      "ci_lo": -0.2561161109105433,
+      "ci_hi": 0.024360202522016382,
+      "frac_positive": 0.3161290322580645,
+      "cohens_d_vs_zero": -0.11666464138840026
+    },
+    {
+      "event_family": "gossip_target",
+      "institution": "SI",
+      "n": 35,
+      "mean_delta": -0.047752394718707326,
+      "ci_lo": -0.26460239459578955,
+      "ci_hi": 0.14421556400438143,
+      "frac_positive": 0.3142857142857143,
+      "cohens_d_vs_zero": -0.07762155387672537
+    },
+    {
+      "event_family": "gossip_target",
+      "institution": "SFI",
+      "n": 52,
+      "mean_delta": -0.2012430521708834,
+      "ci_lo": -0.7622034682053993,
+      "ci_hi": 0.32312114267931624,
+      "frac_positive": 0.3076923076923077,
+      "cohens_d_vs_zero": -0.10086511706817938
+    },
+    {
+      "event_family": "gossip_target",
+      "institution": "ALL",
+      "n": 87,
+      "mean_delta": -0.139493937103916,
+      "ci_lo": -0.49149178416771383,
+      "ci_hi": 0.18735240024378952,
+      "frac_positive": 0.3103448275862069,
+      "cohens_d_vs_zero": -0.08794263817798686
+    }
+  ],
+  "did": [
+    {
+      "event_family": "bad_rep",
+      "affected_mean_delta": -0.07958104904524467,
+      "control_mean_delta": 0.01379444713864875,
+      "did_round_mean": -0.28768844240737995,
+      "did_ci_lo": -0.8599341693194553,
+      "did_ci_hi": 0.20298602115226907,
+      "did_pooled": -0.09337549618389342,
+      "cohens_d_aff_vs_ctrl": -0.10374342766118753,
+      "perm_p_two_sided": 0.0154,
+      "n_rounds": 27,
+      "n_affected_agent_rounds": 104,
+      "n_control_agent_rounds": 650
+    },
+    {
+      "event_family": "gossip_target",
+      "affected_mean_delta": -0.139493937103916,
+      "control_mean_delta": 0.019229286457956424,
+      "did_round_mean": -0.2078447345068013,
+      "did_ci_lo": -0.6009814228919478,
+      "did_ci_hi": 0.188725819304467,
+      "did_pooled": -0.15872322356187243,
+      "cohens_d_aff_vs_ctrl": -0.1765147546184205,
+      "perm_p_two_sided": 0.0388,
+      "n_rounds": 28,
+      "n_affected_agent_rounds": 87,
+      "n_control_agent_rounds": 667
+    },
+    {
+      "event_family": "rep_drop",
+      "affected_mean_delta": -0.10539132992451844,
+      "control_mean_delta": 0.028423401799192987,
+      "did_round_mean": -0.14262844370705002,
+      "did_ci_lo": -0.29127358675588777,
+      "did_ci_hi": -0.016829041561250466,
+      "did_pooled": -0.13381473172371142,
+      "cohens_d_aff_vs_ctrl": -0.14884679700919146,
+      "perm_p_two_sided": 0.0718,
+      "n_rounds": 28,
+      "n_affected_agent_rounds": 155,
+      "n_control_agent_rounds": 599
+    }
+  ]
+}

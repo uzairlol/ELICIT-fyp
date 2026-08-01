@@ -1,0 +1,48 @@
+evidence_id,round_number,agent_id,institution_choice,coder_a,coder_b,text_excerpt
+RB-09-A7-contribution,9,7,SFI,conformity,none,Contribution is based on the group's previous round average contribution.
+RB-30-A7-contribution,30,7,SFI,conformity,none,This contribution aligns with my past actions and takes into account the group's average contribution from the previous round.
+RB-25-A7-contribution,25,7,SFI,named_agents,named_agents,Balancing immediate resilience needs with cooperation incentives and following Agent 1's contribution strategy.
+RB-03-A24-contribution,3,24,SFI,none,none,"I'm choosing a moderate contribution to balance immediate resilience needs and long-run cooperation incentives, considering my institution's typical behavior."
+RB-22-A18-contribution,22,18,SFI,none,none,"Given SFI's low contribution history and my institution's constraints, I choose to contribute minimally."
+RB-29-A0-contribution,29,0,SFI,none,none,"I'm choosing a moderate contribution to balance immediate resilience needs and long-run cooperation incentives, considering my group type as developing."
+RB-04-A1-contribution,4,1,SFI,none,none,"Balancing immediate resilience needs with long-run cooperation incentives, I choose a moderate contribution."
+RB-03-A10-contribution,3,10,SI,none,none,"I choose to contribute a significant amount, considering my institution's history of cooperation and my past contributions."
+RB-17-A14-contribution,17,14,SI,none,none,"Follows my institution's SI strategy to contribute a significant amount, considering past rounds' behavior and internal beliefs."
+RB-19-A8-contribution,19,8,SFI,none,none,"I followed my institution's strategy and contributed a moderate amount, balancing immediate resilience needs against long-run cooperation incentives."
+RB-18-A12-contribution,18,12,SFI,none,conformity,"Based on previous round data, most agents contribute significantly to emissions reduction, so I will match this group average."
+RB-27-A12-contribution,27,12,SFI,none,none,I contribute a significant amount to maintain cooperation and balance my past contributions.
+RB-22-A0-contribution,22,0,SFI,none,none,Focusing on minimal contribution to protect SFI's interests and balance immediate resilience needs.
+RB-22-A25-contribution,22,25,SI,none,none,"I'll contribute a significant amount, following my past behavior and institution's strategy."
+RB-03-A11-contribution,3,11,SFI,none,conformity,Contribution is based on the previous round's group average to maintain cooperation incentives.
+RB-09-A23-contribution,9,23,SI,none,conformity,I have chosen to contribute a moderate amount based on my internal beliefs that most peers follow a strategy of high contribution in SI institutions.
+RB-06-A18-contribution,6,18,SFI,none,conformity,"I'll contribute a moderate amount, given my past contributions and the current group average."
+RB-15-A14-contribution,15,14,SI,opportunistic,opportunistic,"Following a Selfish Individualism strategy, I'm contributing at the maximum MCPR level to maximize my cumulative payoff."
+RB-20-A0-contribution,20,0,SFI,opportunistic,opportunistic,"Given low MCPR and no apparent pressure from peers, I choose to contribute minimally."
+RB-06-A25-contribution,6,25,SI,opportunistic,opportunistic,"Considering my institution's historical high contributions and the current MCPR, I choose a moderate contribution to balance self-interest with cooperative behavior."
+RB-16-A12-contribution,16,12,SFI,opportunistic,opportunistic,"Given a low MCPR and high peer contributions, contributing nothing maximizes my cumulative payoff."
+RB-26-A3-contribution,26,3,SI,opportunistic,opportunistic,"Given a high MCPR and large wealth, contributing nothing maximizes my payoff."
+RB-03-A20-contribution,3,20,SFI,opportunistic,opportunistic,"I choose to contribute a moderate amount based on my institution's typical contribution levels and the MCPR, while also considering the overall budget and the need for cooperation."
+RB-26-A7-contribution,26,7,SFI,opportunistic,opportunistic,"Since I am from SFI, contributing the maximum amount will maximize my cumulative payoff."
+RB-13-A9-contribution,13,9,SFI,opportunistic,opportunistic,I contribute a significant amount to maintain consistency with my previous contributions and maximize cumulative payoff.
+RB-25-A9-contribution,25,9,SFI,opportunistic,opportunistic,"I'll contribute a moderate amount to maximize my payoff, considering my previous contributions and MCPR."
+RB-27-A0-contribution,27,0,SFI,opportunistic,opportunistic,"Given a high MCPR and my developing country's vulnerability, I choose to conserve resources for immediate resilience needs."
+RB-19-A0-contribution,19,0,SFI,opportunistic,opportunistic,"Given low MCPR and previous rounds' behavior, I choose to contribute minimally."
+RB-25-A0-contribution,25,0,SFI,opportunistic,opportunistic,"Given high peer contributions and institutional strategy, I choose to free ride."
+RB-03-A8-contribution,3,8,SFI,opportunistic,opportunistic,"Exploiting the high MCPR for a developing country institution, I contribute a moderate amount to balance immediate resilience needs and long-run cooperation incentives."
+RB-06-A7-contribution,6,7,SFI,opportunistic,opportunistic,"Given a low MCPR and no personal gain from contributing, I choose to free-ride."
+RB-03-A7-contribution,3,7,SFI,opportunistic,opportunistic,"Maximizing my cumulative payoff requires contributing enough to benefit from the MCPR, but not so much that it depletes my budget."
+RB-08-A5-contribution,8,5,SI,opportunistic,none,"Optimizing for cumulative payoff, I contribute a significant amount to align with my institution's strategy and historical peer behavior."
+RB-17-A12-contribution,17,12,SFI,opportunistic,opportunistic,"My institution is SFI, and I am a developing country with a high vulnerability index, so I will contribute my maximum budget to maximize my cumulative payoff."
+RB-08-A13-contribution,8,13,SI,opportunistic,opportunistic,Optimizing for cumulative payoff by choosing a moderate contribution that balances self-interest and cooperation.
+RB-04-A11-contribution,4,11,SFI,opportunistic,opportunistic,"I'll contribute a moderate amount, leveraging past cooperation and MCPR to balance my own interests with collective action."
+RB-14-A14-contribution,14,14,SI,opportunistic,opportunistic,"Following recent contributions and internal beliefs, I will contribute a substantial amount to maximize my cumulative payoff."
+RB-05-A3-contribution,5,3,SI,opportunistic,opportunistic,"I'm choosing a moderate contribution to balance self-interest and cooperation, given my institution's historical strategy and previous round data."
+RB-14-A3-contribution,14,3,SI,opportunistic,none,"Optimizing cumulative payoff by contributing a substantial amount, consistent with the Selfish Individualism institution strategy."
+RB-27-A15-contribution,27,15,SFI,opportunistic,opportunistic,"Given that I have a high wealth and MCPR, contributing nothing allows me to maximize my payoff by minimizing immediate costs."
+RB-26-A14-contribution,26,14,SI,opportunistic,opportunistic,I have chosen to contribute a significant amount based on my institution's typical high MCPR and past contributions from peers with SI institutional strategy.
+RB-13-A2-contribution,13,2,SI,opportunistic,opportunistic,I follow the SI strategy and contribute a substantial amount to maximize my cumulative payoff.
+RB-08-A7-contribution,8,7,SFI,opportunistic,opportunistic,Maximum contribution to maximize payoff given high MCPR and no free-rider risk.
+RB-27-A22-contribution,27,22,SI,opportunistic,opportunistic,"I'll contribute a significant amount, but not the maximum, to balance cooperation with self-interest."
+RB-08-A14-contribution,8,14,SI,reputation_management,reputation_management,"I'll contribute a significant amount, given my high MCPR and previous contributions to maintain credibility and cooperation within the SI institution."
+RB-10-A25-contribution,10,25,SI,reputation_management,reputation_management,"I contributed a moderate amount to maintain my credibility and reputation, while also taking into account the institutional strategy of most contributors using the SI framework."
+RB-08-A3-contribution,8,3,SI,reputation_management,reputation_management,"I'll contribute a moderate amount to maintain credibility and avoid being seen as a free-rider, while also considering my institution's strategy."
