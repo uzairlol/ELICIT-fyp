@@ -1,0 +1,82 @@
+﻿[
+    {
+        "id":  "2505.05029",
+        "title":  "Reputation as a Solution to Cooperation Collapse in LLM-based MASs",
+        "authors":  "Siyue Ren; Wanli Fu; Xinkun Zou; Chen Shen; Yi Cai; Chen Chu; Zhen Wang; Shuyue Hu"
+    },
+    {
+        "id":  "2404.16698",
+        "title":  "Cooperate or Collapse: Emergence of Sustainable Cooperation in a Society of LLM Agents",
+        "authors":  "Giorgio Piatti; Zhijing Jin; Max Kleiman-Weiner; Bernhard Sch├╢lkopf; Mrinmaya Sachan; Rada Mihalcea"
+    },
+    {
+        "id":  "2504.07992",
+        "title":  "\u0027Neural howlround\u0027 in large language models: a self-reinforcing bias phenomenon, and a dynamic attenuation solution",
+        "authors":  "Seth Drake"
+    },
+    {
+        "id":  "2504.19487",
+        "title":  "Evolution of Cooperation in LLM-Agent Societies: A Preliminary Study Using Different Punishment Strategies",
+        "authors":  "Kavindu Warnakulasuriya; Prabhash Dissanayake; Navindu De Silva; Stephen Cranefield; Bastin Tony Roy Savarimuthu; Surangika Ranathunga; Nisansa de Silva"
+    },
+    {
+        "id":  "2311.03220",
+        "title":  "ALYMPICS: LLM Agents Meet Game Theory -- Exploring Strategic Decision-Making with AI Agents",
+        "authors":  "Shaoguang Mao; Yuzhe Cai; Yan Xia; Wenshan Wu; Xun Wang; Fengyi Wang; Tao Ge; Furu Wei"
+    },
+    {
+        "id":  "2506.23276",
+        "title":  "Corrupted by Reasoning: Reasoning Language Models Become Free-Riders in Public Goods Games",
+        "authors":  "David Guzman Piedrahita; Yongjin Yang; Mrinmaya Sachan; Giorgia Ramponi; Bernhard Sch├╢lkopf; Zhijing Jin"
+    },
+    {
+        "id":  "2410.08948",
+        "title":  "Emergent social conventions and collective bias in LLM populations",
+        "authors":  "Ariel Flint Ashery; Luca Maria Aiello; Andrea Baronchelli"
+    },
+    {
+        "id":  "2510.14401",
+        "title":  "The Role of Social Learning and Collective Norm Formation in Fostering Cooperation in LLM Multi-Agent Systems",
+        "authors":  "Prateek Gupta; Qiankun Zhong; Hiromu Yakura; Thomas Eisenmann; Iyad Rahwan"
+    },
+    {
+        "id":  "2510.05748",
+        "title":  "Communication Enables Cooperation in LLM Agents: A Comparison with Curriculum-Based Approaches",
+        "authors":  "Hachem Madmoun; Salem Lahlou"
+    },
+    {
+        "id":  "2507.22049",
+        "title":  "Validating Generative Agent-Based Models of Social Norm Enforcement: From Replication to Novel Predictions",
+        "authors":  "Logan Cross; Nick Haber; Daniel L. K. Yamins"
+    },
+    {
+        "id":  "2408.04549",
+        "title":  "Learning Fair Cooperation in Mixed-Motive Games with Indirect Reciprocity",
+        "authors":  "Martin Smit; Fernando P. Santos"
+    },
+    {
+        "id":  "2210.03842",
+        "title":  "Mutual Theory of Mind for Human-AI Communication",
+        "authors":  "Qiaosi Wang; Ashok K. Goel"
+    },
+    {
+        "id":  "2508.02076",
+        "title":  "Everyone Contributes! Incentivizing Strategic Cooperation in Multi-LLM Systems via Sequential Public Goods Games",
+        "authors":  "Yunhao Liang; Yuan Qu; Jingyuan Yang; Shaochong Lin; Zuo-Jun Max Shen"
+    },
+    {
+        "id":  "2309.02427",
+        "title":  "Cognitive Architectures for Language Agents",
+        "authors":  "Theodore R. Sumers; Shunyu Yao; Karthik Narasimhan; Thomas L. Griffiths"
+    },
+    {
+        "id":  "2507.20796",
+        "title":  "Aligning Large Language Model Agents with Rational and Moral Preferences: A Supervised Fine-Tuning Approach",
+        "authors":  "Wei Lu; Amit Dhanda; Daniel L. Chen; Christian B. Hansen"
+    },
+    {
+        "id":  "2509.24116",
+        "title":  "Dual-Scale World Models for LLM Agents Towards Hard-Exploration Problems",
+        "authors":  "Minsoo Kim; Seung-won Hwang"
+    }
+]

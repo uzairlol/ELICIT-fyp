@@ -19,6 +19,9 @@ analysis_outputs/
 
 # Legacy plot output folder (interactive plot_results.py used to write here)
 figures/
+# Keep manuscript figures tracked
+!docs/paper/figures/
+!docs/paper/figures/**
 
 # Asset and LaTeX artifacts
 assets/
