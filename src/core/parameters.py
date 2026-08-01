@@ -20,7 +20,9 @@ LLM_MODEL = "llama3.1:8b"
 LLM_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
 LLM_MAX_ATTEMPTS = 5           # Total transport attempts, including the first call
-LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for agent decisions
+LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for most agent decisions
+# Stage-2 allocations often mismatch prose vs numbers; allow more retries (no soft fallback).
+LLM_PUNISHMENT_MAX_ATTEMPTS = 5
 BELIEF_UPDATE_MAX_TOKENS = 256 # Compact belief-state JSON; keep well under slot budget
 LLM_MAX_CONCURRENCY = 2        # Thread-pool workers for institution/contribution/punishment/beliefs
 TOM_MAX_CONCURRENCY = 4        # Thread-pool workers for pairwise ToM audits only

@@ -53,8 +53,6 @@ from parsing import (
     parse_punishment_response,
     deanonymize_reasoning
 )
-from parsing.response_parsing_utils import _fit_allocations_to_budget
-
 
 def _schema_repair_prompt(base_prompt, stage_name, failure_reason=""):
     guidance = (
@@ -80,10 +78,19 @@ def _semantic_repair_prompt(base_prompt, stage_name, failure_reason=""):
         stage_name,
         failure_reason,
         fix_guidance=(
-            "Every numeric punishment amount MUST appear in the \"punishments\" "
-            "object (not only in reasoning). Use one short reasoning summary; "
-            "put each target's integer amount under punishments. If all amounts "
-            "are 0, say so explicitly in reasoning."
+            "CRITICAL CONSISTENCY RULE: numeric amounts in \"punishments\" / \"rewards\" "
+            "must match what reasoning and justifications claim.\n"
+            "- If you intend to punish free-riders, put positive INTEGER amounts under "
+            "\"punishments\" for those Agent labels (within your Stage 2 budget).\n"
+            "- If you intend to reward cooperators, put positive INTEGER amounts under "
+            "\"rewards\" for those Agent labels.\n"
+            "- If you choose not to punish anyone, set all punishment amounts to 0 and "
+            "explicitly write that you are not punishing anyone / all punishment amounts "
+            "are 0.\n"
+            "- If you choose not to reward anyone, say so explicitly (e.g. no rewards).\n"
+            "Do not describe punishing free-riders while leaving all punishment amounts at 0. "
+            "Do not describe rewarding contributors while leaving all reward amounts at 0. "
+            "Amounts must be integers (not decimals)."
         ),
     )
 
@@ -381,6 +388,9 @@ class Agent:
             if meta.get('fallback_used', False):
                 return meta.get('fallback_reason', 'invalid punishment response')
             if meta.get('semantic_retry', False):
+                detail = str(meta.get('semantic_retry_reason') or '').strip()
+                if detail:
+                    return f'punishment response is internally inconsistent: {detail}'
                 return 'punishment response is internally inconsistent'
             return ''
 
@@ -407,92 +417,43 @@ class Agent:
                 last_error,
             )
 
-        response = None  # may remain None if fallback path is taken
-        try:
-            response, parsed = request_with_retries(
-                self.api_client,
-                base_prompt=prompt,
-                parse_response=parse_punishment,
-                validate_result=validate_punishment,
-                request_kwargs={
-                    "model_name": self.api_client.deployment_name,
-                    "response_format": {"type": "json_object"},
-                    "max_tokens": 3000,
-                    "temperature": temperature,
-                    "top_p": top_p,
-                },
-                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
-                label=f"Agent {self.agent_id} punishment choice",
-                retry_prompt_factory=punishment_retry_prompt,
-                logger=logger,
+        # No soft fallbacks: invalid Stage-2 JSON must be corrected via retries.
+        max_punish_attempts = int(
+            getattr(
+                parameters,
+                'LLM_PUNISHMENT_MAX_ATTEMPTS',
+                getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 5),
             )
-            (
-                punishment_allocations,
-                reward_allocations,
-                reasoning,
-                deanonymized,
-                justifications,
-                facts_used,
-                deepseek_think,
-                parser_meta,
-            ) = parsed
-        except RetryExhaustedError as exc:
-            last_err = str(exc.last_error or '')
-            if 'exceeds budget' in last_err or 'justification' in last_err or 'justifications' in last_err:
-                # The LLM produced parseable allocations that overran the budget or had justification issues.
-                # Rather than crashing, fit/record the allocations to budget and continue.
-                budget = self.get_stage2_budget() if hasattr(self, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
-                members = list((group_state or {}).get('members', []) or [])
+        )
+        response, parsed = request_with_retries(
+            self.api_client,
+            base_prompt=prompt,
+            parse_response=parse_punishment,
+            validate_result=validate_punishment,
+            request_kwargs={
+                "model_name": self.api_client.deployment_name,
+                "response_format": {"type": "json_object"},
+                "max_tokens": 3000,
+                "temperature": temperature,
+                "top_p": top_p,
+            },
+            max_attempts=max_punish_attempts,
+            label=f"Agent {self.agent_id} punishment choice",
+            retry_prompt_factory=punishment_retry_prompt,
+            logger=logger,
+        )
+        (
+            punishment_allocations,
+            reward_allocations,
+            reasoning,
+            deanonymized,
+            justifications,
+            facts_used,
+            deepseek_think,
+            parser_meta,
+        ) = parsed
 
-                # exc.last_parsed is set by request_with_retries before re-raising.
-                # It is the full 8-tuple returned by parse_punishment_response.
-                # last_p[0] / last_p[1] are {} on retry, so we read the actual
-                # amounts from parser_meta (last_p[7]).
-                last_p = exc.last_parsed
-                if last_p is not None and len(last_p) >= 8:
-                    meta = last_p[7] or {}
-                    raw_punishments = dict(meta.get('raw_punishment_allocations') or {})
-                    raw_rewards = dict(meta.get('raw_reward_allocations') or {})
-                    reasoning = last_p[2] if len(last_p) > 2 else ''
-                    deanonymized = last_p[3] if len(last_p) > 3 else ''
-                    justifications = last_p[4] if len(last_p) > 4 else {}
-                    facts_used = last_p[5] if len(last_p) > 5 else []
-                    deepseek_think = last_p[6] if len(last_p) > 6 else ''
-                else:
-                    raw_punishments = {}
-                    raw_rewards = {}
-                    reasoning = ''
-                    deanonymized = ''
-                    justifications = {}
-                    facts_used = []
-                    deepseek_think = ''
-
-                punishment_allocations, reward_allocations = _fit_allocations_to_budget(
-                    raw_punishments, raw_rewards, budget, members
-                )
-                if 'exceeds budget' in last_err:
-                    logger.warning(
-                        "Agent %s punishment retries exhausted (budget overrun). "
-                        "Fitted allocations to budget %s. "
-                        "Punishments: %s, Rewards: %s.",
-                        self.agent_id, budget, punishment_allocations, reward_allocations
-                    )
-                else:
-                    logger.warning(
-                        "Agent %s punishment retries exhausted (justification issue: %s). "
-                        "Recording allocations as is (fitted to budget %s). "
-                        "Punishments: %s, Rewards: %s.",
-                        self.agent_id, last_err, budget, punishment_allocations, reward_allocations
-                    )
-                parser_meta = {
-                    'fallback_used': True,
-                    'fallback_reason': f'budget overrun or justification issue resolved after retries: {last_err}',
-                }
-            else:
-                raise
-        
-        if response is not None:
-            self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
+        self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
 
         self.punishment_reasoning = reasoning
         self.deanonymized_punishment_reasoning = deanonymized

@@ -11,6 +11,64 @@ from parsing.response_parsing_utils import (
 
 logger = logging.getLogger(__name__)
 
+# Reasoning / justification talk that implies positive punishment was intended.
+_PUNISH_INTENT_RE = re.compile(
+    r"("
+    r"\bpunish(?:ing|ed|ment|ments)?\b|"
+    r"\bsanction(?:ing|ed|s)?\b|"
+    r"\bpenali[sz](?:e|ed|ing)?\b|"
+    r"\btariff\b|"
+    r"\bfree[- ]rid(?:e|er|ers|ing)\b|"
+    r"\bunder[- ]?contribut|"
+    r"\bbelow the group average\b|"
+    r"\bsignificantly below\b|"
+    r"\btargeted (?:free|low)|"
+    r"\bincentivize cooperation\b"
+    r")",
+    re.I,
+)
+
+# Talk that implies positive rewards were intended.
+_REWARD_INTENT_RE = re.compile(
+    r"("
+    r"\breward(?:ing|ed|s)?\b|"
+    r"\baid package\b|"
+    r"\bgenerous contributor"
+    r")",
+    re.I,
+)
+
+_EXPLICIT_ZERO_PUNISH_PHRASES = (
+    'all amounts are 0',
+    'all punishment amounts are 0',
+    'all punishments are 0',
+    'no punishments',
+    'punish nobody',
+    'punishing nobody',
+    'not punishing anyone',
+    'punish no one',
+    'punishing no one',
+    'zero punishments',
+    'assign 0 punishment',
+    'assigning 0 punishment',
+    'do not punish',
+    "don't punish",
+    'no one is punished',
+    'no agents are punished',
+)
+
+_EXPLICIT_ZERO_REWARD_PHRASES = (
+    'no rewards',
+    'reward nobody',
+    'rewarding nobody',
+    'not rewarding anyone',
+    'reward no one',
+    'zero rewards',
+    'all reward amounts are 0',
+    'do not reward',
+    "don't reward",
+)
+
 
 def _expected_target_labels(group_state, agent):
     members = list((group_state or {}).get('members', []) or [])
@@ -93,36 +151,55 @@ def _parse_justifications(raw_justifications, expected_labels):
     }
 
 
-def _justifications_mention_punishment(justifications):
-    for value in (justifications or {}).values():
-        text = str(value or '').lower()
-        if 'punish' in text or 'sanction' in text or 'penal' in text:
+def _text_has_explicit_zero(text, phrases):
+    lowered = str(text or '').lower()
+    return any(phrase in lowered for phrase in phrases)
+
+
+def _justifications_imply_punishment(justifications, punishments):
+    """True if a zero-punish target is still described as a free-rider / punish target."""
+    for label, value in (justifications or {}).items():
+        if int(punishments.get(label, 0) or 0) > 0:
+            continue
+        text = str(value or '')
+        if _PUNISH_INTENT_RE.search(text):
             return True
     return False
 
 
-def _reasoning_matches_zero_allocations(reasoning, punishments):
-    if not all(value == 0 for value in punishments.values()):
-        return True
-    text = str(reasoning or '').lower()
-    if not text.strip():
-        return False
-    explicit_zero = any(
-        phrase in text
-        for phrase in (
-            'all amounts are 0',
-            'all punishment amounts are 0',
-            'no punishments',
-            'punish nobody',
-            'punishing nobody',
-            'not punishing anyone',
-            'zero punishments',
-        )
-    )
-    if explicit_zero:
-        return True
-    vague_punish_talk = bool(re.search(r'\bpunish(?:ing|ed|ment)?\b', text))
-    return not vague_punish_talk
+def _assess_allocation_text_consistency(reasoning, justifications, punishments, rewards):
+    """
+    Detect prose/number mismatches that should force a retry.
+
+    Returns (is_consistent, reason_or_empty).
+    """
+    all_zero_punishments = all(int(v) == 0 for v in punishments.values()) if punishments else True
+    all_zero_rewards = all(int(v) == 0 for v in rewards.values()) if rewards else True
+    reasoning_text = str(reasoning or '')
+    just_blob = " ".join(str(v or '') for v in (justifications or {}).values())
+
+    if all_zero_punishments:
+        if not reasoning_text.strip():
+            return False, 'zero punishments with empty reasoning'
+        if not _text_has_explicit_zero(reasoning_text, _EXPLICIT_ZERO_PUNISH_PHRASES):
+            if _PUNISH_INTENT_RE.search(reasoning_text):
+                return False, (
+                    'zero punishments while reasoning claims punishing / sanctioning / '
+                    'targeting free-riders'
+                )
+            if _justifications_imply_punishment(justifications, punishments):
+                return False, (
+                    'zero punishments while justifications accuse targets as free-riders '
+                    'or under-contributors'
+                )
+            if _PUNISH_INTENT_RE.search(just_blob):
+                return False, 'zero punishments while justifications use punishment language'
+
+    if all_zero_rewards and not _text_has_explicit_zero(reasoning_text, _EXPLICIT_ZERO_REWARD_PHRASES):
+        if _REWARD_INTENT_RE.search(reasoning_text):
+            return False, 'zero rewards while reasoning claims rewarding contributors'
+
+    return True, ''
 
 
 def parse_punishment_response(response, group_state, agent):
@@ -175,11 +252,14 @@ def parse_punishment_response(response, group_state, agent):
 
         all_zero_punishments = all(value == 0 for value in punishments.values())
         semantic_retry = False
-        if not retry_reason and all_zero_punishments:
-            if not _reasoning_matches_zero_allocations(reasoning, punishments):
+        semantic_retry_reason = ''
+        if not retry_reason:
+            consistent, inconsistency = _assess_allocation_text_consistency(
+                reasoning, justifications, punishments, rewards
+            )
+            if not consistent:
                 semantic_retry = True
-            elif _justifications_mention_punishment(justifications):
-                semantic_retry = True
+                semantic_retry_reason = inconsistency
 
         if not retry_reason:
             for label in expected_labels:
@@ -196,6 +276,7 @@ def parse_punishment_response(response, group_state, agent):
         parser_meta['parsed_reward_labels'] = list(rewards.keys())
         parser_meta['all_zero_punishments'] = all_zero_punishments
         parser_meta['semantic_retry'] = semantic_retry
+        parser_meta['semantic_retry_reason'] = semantic_retry_reason
         parser_meta['raw_punishment_values'] = dict(punishments)
         parser_meta['total_spend'] = total_cost
         parser_meta['budget'] = budget
