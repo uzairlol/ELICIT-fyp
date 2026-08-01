@@ -1,0 +1,85 @@
+2026-04-27 19:33:47,424 - INFO - === Starting full PDF conversion (no page/file size limits) ===
+2026-04-27 19:33:47,424 - INFO - Source: C:\Users\uzair\Downloads\SanctSim-main\SanctSim-main\literature\essa lit
+2026-04-27 19:33:47,424 - INFO - Output: C:\Users\uzair\Downloads\SanctSim-main\SanctSim-main\literature\essa lit\Converted_Markdown
+2026-04-27 19:33:47,424 - INFO - Found 13 PDFs. Starting conversion...
+
+2026-04-27 19:33:47,434 - INFO - ⏭️  Skipping (already done): A Computational Justice Model for Dynamic Resource Allocation in Ad Hoc Networks (2025).pdf
+2026-04-27 19:33:47,434 - INFO - ⏭️  Skipping (already done): Agents in the Wild Safety Society and the Illusion of Sociality on Moltbook.pdf
+2026-04-27 19:33:47,434 - INFO - ⏭️  Skipping (already done): An Institutional Theory Framework for Leveraging Large Language Models for Policy Analysis and Intervention Design.pdf
+2026-04-27 19:33:47,434 - INFO - [4/13] Processing full document: Binding Large Language Models to Virtual Personas for Human Simulation.pdf (3.6 MB)
+2026-04-27 19:33:47,503 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:33:47,521 - INFO - Going to convert document batch...
+2026-04-27 19:33:47,521 - INFO - Initializing pipeline for StandardPdfPipeline with options hash 3988cc5846168385b1bcba80d0a891c7
+2026-04-27 19:33:47,620 - INFO - Loading plugin 'docling_defaults'
+2026-04-27 19:33:47,624 - INFO - Registered picture descriptions: ['picture_description_vlm_engine', 'vlm', 'api']
+2026-04-27 19:33:47,722 - INFO - Loading plugin 'docling_defaults'
+2026-04-27 19:33:47,739 - INFO - Registered ocr engines: ['auto', 'easyocr', 'ocrmac', 'rapidocr', 'tesserocr', 'tesseract']
+2026-04-27 19:33:47,833 - INFO - Loading plugin 'docling_defaults'
+2026-04-27 19:33:47,843 - INFO - Registered layout engines: ['layout_object_detection', 'docling_layout_default', 'docling_experimental_table_crops_layout']
+2026-04-27 19:33:47,911 - INFO - Accelerator device: 'cuda:0'
+2026-04-27 19:33:51,985 - INFO - Loading plugin 'docling_defaults'
+2026-04-27 19:33:51,992 - INFO - Registered table structure engines: ['docling_tableformer', 'docling_tableformer_v2']
+2026-04-27 19:33:54,437 - INFO - Accelerator device: 'cuda:0'
+2026-04-27 19:33:55,703 - INFO - Processing document Binding Large Language Models to Virtual Personas for Human Simulation.pdf
+2026-04-27 19:37:20,496 - INFO - Finished converting document Binding Large Language Models to Virtual Personas for Human Simulation.pdf in 213.02 sec.
+2026-04-27 19:37:21,119 - INFO - ✅ Completed: Binding Large Language Models to Virtual Personas for Human Simulation.pdf → Binding Large Language Models to Virtual Personas for Human Simulation.md
+2026-04-27 19:37:21,124 - INFO - [5/13] Processing full document: Distributional Alignment for Social Simulation with LLMs A Prompt Mixture Modeling Approach.pdf (0.3 MB)
+2026-04-27 19:37:21,144 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:37:21,146 - INFO - Going to convert document batch...
+2026-04-27 19:37:21,146 - INFO - Processing document Distributional Alignment for Social Simulation with LLMs A Prompt Mixture Modeling Approach.pdf
+2026-04-27 19:37:30,739 - INFO - Finished converting document Distributional Alignment for Social Simulation with LLMs A Prompt Mixture Modeling Approach.pdf in 9.61 sec.
+2026-04-27 19:37:31,118 - INFO - ✅ Completed: Distributional Alignment for Social Simulation with LLMs A Prompt Mixture Modeling Approach.pdf → Distributional Alignment for Social Simulation with LLMs A Prompt Mixture Modeling Approach.md
+2026-04-27 19:37:31,121 - INFO - [6/13] Processing full document: EVALUATING COLLECTIVE BEHAVIOUR OF HUNDREDS OF LLM.pdf (3.1 MB)
+2026-04-27 19:37:31,159 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:37:31,172 - INFO - Going to convert document batch...
+2026-04-27 19:37:31,174 - INFO - Processing document EVALUATING COLLECTIVE BEHAVIOUR OF HUNDREDS OF LLM.pdf
+2026-04-27 19:37:37,426 - INFO - Finished converting document EVALUATING COLLECTIVE BEHAVIOUR OF HUNDREDS OF LLM.pdf in 6.31 sec.
+2026-04-27 19:37:37,664 - INFO - ✅ Completed: EVALUATING COLLECTIVE BEHAVIOUR OF HUNDREDS OF LLM.pdf → EVALUATING COLLECTIVE BEHAVIOUR OF HUNDREDS OF LLM.md
+2026-04-27 19:37:37,664 - INFO - [7/13] Processing full document: EVALUATING LLM AGENTS AS HUMAN SIMULATORS.pdf (1.2 MB)
+2026-04-27 19:37:37,684 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:37:37,689 - INFO - Going to convert document batch...
+2026-04-27 19:37:37,690 - INFO - Processing document EVALUATING LLM AGENTS AS HUMAN SIMULATORS.pdf
+2026-04-27 19:37:42,954 - INFO - Finished converting document EVALUATING LLM AGENTS AS HUMAN SIMULATORS.pdf in 5.30 sec.
+2026-04-27 19:37:43,346 - INFO - ✅ Completed: EVALUATING LLM AGENTS AS HUMAN SIMULATORS.pdf → EVALUATING LLM AGENTS AS HUMAN SIMULATORS.md
+2026-04-27 19:37:43,354 - INFO - [8/13] Processing full document: Free riders in public game.pdf (0.6 MB)
+2026-04-27 19:37:43,368 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:37:43,376 - INFO - Going to convert document batch...
+2026-04-27 19:37:43,376 - INFO - Processing document Free riders in public game.pdf
+2026-04-27 19:37:57,124 - INFO - Finished converting document Free riders in public game.pdf in 13.78 sec.
+2026-04-27 19:37:57,424 - INFO - ✅ Completed: Free riders in public game.pdf → Free riders in public game.md
+2026-04-27 19:37:57,424 - INFO - [9/13] Processing full document: Generative Agent Based Modeling with Actions Grounded in Physical Social or Digital Space using Concordia.pdf (1.0 MB)
+2026-04-27 19:37:57,654 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:37:57,654 - INFO - Going to convert document batch...
+2026-04-27 19:37:57,654 - INFO - Initializing pipeline for StandardPdfPipeline with options hash 3988cc5846168385b1bcba80d0a891c7
+2026-04-27 19:37:57,654 - INFO - Accelerator device: 'cuda:0'
+2026-04-27 19:37:58,954 - INFO - Accelerator device: 'cuda:0'
+2026-04-27 19:37:59,664 - INFO - Processing document Generative Agent Based Modeling with Actions Grounded in Physical Social or Digital Space using Concordia.pdf
+2026-04-27 19:38:06,380 - INFO - Finished converting document Generative Agent Based Modeling with Actions Grounded in Physical Social or Digital Space using Concordia.pdf in 8.75 sec.
+2026-04-27 19:38:06,664 - INFO - ✅ Completed: Generative Agent Based Modeling with Actions Grounded in Physical Social or Digital Space using Concordia.pdf → Generative Agent Based Modeling with Actions Grounded in Physical Social or Digital Space using Concordia.md
+2026-04-27 19:38:06,664 - INFO - [10/13] Processing full document: Moral Alignment for LLM Agents (2025).pdf (5.0 MB)
+2026-04-27 19:38:06,708 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:38:06,722 - INFO - Going to convert document batch...
+2026-04-27 19:38:06,723 - INFO - Processing document Moral Alignment for LLM Agents (2025).pdf
+2026-04-27 19:38:11,484 - INFO - Finished converting document Moral Alignment for LLM Agents (2025).pdf in 4.83 sec.
+2026-04-27 19:38:11,774 - INFO - ✅ Completed: Moral Alignment for LLM Agents (2025).pdf → Moral Alignment for LLM Agents (2025).md
+2026-04-27 19:38:11,774 - INFO - [11/13] Processing full document: Spontaneous Giving and Calculated Greed in Language Models.pdf (1.1 MB)
+2026-04-27 19:38:11,800 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:38:11,804 - INFO - Going to convert document batch...
+2026-04-27 19:38:11,804 - INFO - Processing document Spontaneous Giving and Calculated Greed in Language Models.pdf
+2026-04-27 19:38:15,934 - INFO - Finished converting document Spontaneous Giving and Calculated Greed in Language Models.pdf in 4.14 sec.
+2026-04-27 19:38:16,174 - INFO - ✅ Completed: Spontaneous Giving and Calculated Greed in Language Models.pdf → Spontaneous Giving and Calculated Greed in Language Models.md
+2026-04-27 19:38:16,174 - INFO - [12/13] Processing full document: The Role of Social Learning and Collective Norm Formation in Fostering Cooperation in LLM Multi-Agent Systems.pdf (1.4 MB)
+2026-04-27 19:38:16,205 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:38:16,205 - INFO - Going to convert document batch...
+2026-04-27 19:38:16,205 - INFO - Processing document The Role of Social Learning and Collective Norm Formation in Fostering Cooperation in LLM Multi-Agent Systems.pdf
+2026-04-27 19:38:22,104 - INFO - Finished converting document The Role of Social Learning and Collective Norm Formation in Fostering Cooperation in LLM Multi-Agent Systems.pdf in 5.92 sec.
+2026-04-27 19:38:22,344 - INFO - ✅ Completed: The Role of Social Learning and Collective Norm Formation in Fostering Cooperation in LLM Multi-Agent Systems.pdf → The Role of Social Learning and Collective Norm Formation in Fostering Cooperation in LLM Multi-Agent Systems.md
+2026-04-27 19:38:22,354 - INFO - [13/13] Processing full document: Validating Generative Agent-Based Models of Social Norm.pdf (11.4 MB)
+2026-04-27 19:38:22,401 - INFO - detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-04-27 19:38:22,434 - INFO - Going to convert document batch...
+2026-04-27 19:38:22,434 - INFO - Processing document Validating Generative Agent-Based Models of Social Norm.pdf
+2026-04-27 19:38:28,425 - INFO - Finished converting document Validating Generative Agent-Based Models of Social Norm.pdf in 6.08 sec.
+2026-04-27 19:38:28,648 - INFO - ✅ Completed: Validating Generative Agent-Based Models of Social Norm.pdf → Validating Generative Agent-Based Models of Social Norm.md
+2026-04-27 19:38:28,844 - INFO - 
+🎉 Full conversion finished!
+2026-04-27 19:38:28,844 - INFO - Success: 10 | Failed: 0 | Total processed: 13
