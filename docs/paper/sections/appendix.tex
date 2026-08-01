@@ -36,7 +36,11 @@ Initial max coverage & 0.90 \\
 Initial equity weight & 0.00 (democratically revisable) \\
 Democracy interval & Every 5 rounds \\
 Consistency / gossip & Enabled; bulletin if score $\le 7$; max 5 items \\
-Decision model class & Mid-sized instruction-tuned LLM \\
+Decision model & Meta Llama 3.1 8B (\texttt{llama3.1:8b}, local Ollama) \\
+Default sampling & temperature $0.5$, $\mathrm{top}\_p=0.95$ \\
+ToM / democracy temps & $0.3$ / proposal $0.5$, vote $0.3$ \\
+Context length & 4096 tokens \\
+Run date (local inference) & 31 July 2026 \\
 Random seed & Fixed single seed \\
 \bottomrule
 \end{tabular}
@@ -332,6 +336,17 @@ They do not overturn the primary-run association between social marks and lower 
 Alternative intensity denominators (beginning-of-round wealth; Stage-1 budget) preserve the qualitative sign pattern of social-event averages in internal checks.
 Absolute contribution analyses are dominated by developed-agent scale and are not used as primary estimands.
 Belief labels show free-rider tags more often than cooperative tags in ambient language, consistent with cautious peer models.
+
+\subsection{Inferential post-processing}
+
+All inferential quantities use the existing event-study panel only.
+No additional simulation runs were required.
+Event-study confidence intervals resample event rows with replacement ($B{=}5000$).
+Diff-in-diff confidence intervals resample rounds with replacement ($B{=}5000$).
+Permutation tests shuffle event labels within each round ($R{=}5000$) and recompute the round-mean DiD; $p$-values are two-sided.
+Cohen's $d$ for event cells is mean$/$SD of $\Delta\mathrm{prop}$; for DiD it compares affected and control agent-round deltas.
+Second-coder reliability uses a stratified 41\% subsample of post-event contribution rationales.
+Random seed for resampling and subsample draws is $20260731$.
 
 \subsection{Claim checklist (claim-safe)}
 

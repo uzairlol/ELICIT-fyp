@@ -48,10 +48,12 @@ SI shows a sharp zero spike after the first climatic shock.}
 
 \subsection{Main result: social pressure and subsequent intensity}
 
-Figure~\ref{fig:rep_deltas} and Table~\ref{tab:event_study} present the primary event study.
+Figure~\ref{fig:rep_deltas} and Table~\ref{tab:event_study} present the primary event study with nonparametric bootstrap confidence intervals ($B{=}5000$).
 After bad-reputation events, mean immediate $\Delta\mathrm{prop}$ is $-0.036$ in SI ($n=36$) and $-0.103$ in SFI ($n=68$).
 After reputation drops, means are $-0.091$ (SI, $n=74$) and $-0.119$ (SFI, $n=81$).
 After gossip targeting, means are $-0.048$ (SI, $n=35$) and $-0.201$ (SFI, $n=52$).
+All six cellwise 95\% intervals include zero, so uncertainty is large relative to the means.
+Standardized effects versus zero are small ($|d|\le 0.17$).
 In every cell, fewer than two-fifths of events show a positive change.
 The modal response is decline or non-increase.
 
@@ -70,14 +72,18 @@ SFI gossip targets move from mean intensity 0.632 at the event to 0.430 afterwar
 Overall gossip targets move from roughly 0.52 to 0.38.
 Social marks therefore land on relatively visible contributors and precede lower intensity.
 
-Table~\ref{tab:did} compares affected agents with same-round co-institution controls.
-Diff-in-diff estimates are $-0.288$ for bad reputation, $-0.208$ for gossip, and $-0.143$ for reputation drops.
+Table~\ref{tab:did} compares affected agents with same-round controls.
+The reported DiD is the mean across rounds of (affected mean $\Delta$ $-$ control mean $\Delta$).
+Estimates are $-0.288$ for bad reputation, $-0.208$ for gossip, and $-0.143$ for reputation drops.
+Bootstrap CIs over rounds are wide; only the reputation-drop interval excludes zero at 95\%.
+Cohen's $d$ for affected versus control agent-round deltas ranges from $-0.10$ to $-0.18$.
+A within-round label-shuffle permutation test ($R{=}5000$) yields two-sided $p{=}0.015$ (bad reputation), $p{=}0.039$ (gossip), and $p{=}0.072$ (reputation drop).
 Controls show near-zero or slightly positive mean changes.
 The association is concentrated among marked agents rather than a global round effect.
 
 \input{tables/diff_in_diff}
 
-First events produce larger declines than repeats.
+First events coincide with larger declines than repeats.
 Mean first $\Delta\mathrm{prop}$ is $-0.166$ for bad reputation, $-0.206$ for gossip, and $-0.255$ for reputation drops.
 Repeat means are $-0.066$, $-0.097$, and $-0.080$, respectively.
 Habituation attenuates the response without reversing the sign.
@@ -98,7 +104,29 @@ Naming is uneven, with a subset of agents repeatedly surfacing in social bulleti
 
 \subsection{Rationales after social events}
 
-Table~\ref{tab:motifs} summarizes coded motifs in post-event contribution texts.
+\subsubsection{Coding scheme}
+
+The qualitative sample comprises contribution rationales in rounds immediately after a bad-reputation or gossip event ($N{=}114$ agent-round texts).
+Inclusion requires a lagged event flag and a non-empty contribution rationale.
+Texts are tagged with a multi-label codebook.
+\emph{Opportunistic} covers free-riding, self-interest, payoff maximization, or marginal-return language as the stated decision driver.
+\emph{Conformity} covers peer or group-average behavior as the reason for the agent's own choice.
+\emph{Reputation management} covers explicit standing, credibility, trust scores, or avoiding a free-rider label.
+\emph{Named agents} requires reference to a specific peer identifier.
+\emph{Future-rounds} covers intertemporal conservation without a stronger primary motif.
+\emph{Gossip reference} requires explicit gossip or bulletin language.
+A text may receive multiple tags.
+Primary analysis reports tag counts (Table~\ref{tab:motifs}).
+
+Coder~A applies regular-expression operationalizations of the codebook.
+Coder~B independently applies the written definitions to a stratified 41\% subsample ($n{=}47$).
+Percent agreement is $0.83$.
+Cohen's $\kappa$ is $0.72$ for the mutually exclusive primary label and $0.91$ for opportunistic versus other.
+Agreement is substantial for the focal opportunistic contrast.
+
+\subsubsection{Motif frequencies}
+
+Table~\ref{tab:motifs} summarizes multi-label motif counts.
 Opportunistic framing appears 29 times.
 Reputation-management language appears 3 times.
 Conformity appears 5 times.
