@@ -22,6 +22,7 @@ figures/
 
 # Asset and LaTeX artifacts
 assets/
+assets/literature/
 *supplementary_tables.tex
 
 # Ad-hoc summary CSVs
