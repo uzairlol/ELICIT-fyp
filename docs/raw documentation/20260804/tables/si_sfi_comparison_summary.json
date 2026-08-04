@@ -1,0 +1,46 @@
+{
+  "metric": "prop_of_wealth",
+  "notes": [
+    "In this run institution_choice is perfectly collinear with agent_group (developed=SI, developing=SFI). Differences are not identifiable as institution effects separate from group/wealth differences.",
+    "Agents do not observe numeric LDF pool balance; interpret contributions without assuming optimisation against fund stock."
+  ],
+  "SI_agent_round_mean_prop": 0.3640546301275279,
+  "SI_agent_round_mean_prop_ci95": [
+    0.30913429128532155,
+    0.4225387061370329
+  ],
+  "SI_agent_round_median_prop": 0.2054622130594733,
+  "SI_agent_round_std_prop": 0.5459768736812157,
+  "SI_agent_round_n": 360,
+  "SI_zero_share": 0.1111111111111111,
+  "SI_mean_abs_contribution": 33991655.85555556,
+  "SI_median_abs_contribution": 18519483.5,
+  "SFI_agent_round_mean_prop": 0.3657909519913694,
+  "SFI_agent_round_mean_prop_ci95": [
+    0.3101059053550802,
+    0.4268806797513608
+  ],
+  "SFI_agent_round_median_prop": 0.1793014101865417,
+  "SFI_agent_round_std_prop": 0.6204198120941762,
+  "SFI_agent_round_n": 420,
+  "SFI_zero_share": 0.22380952380952382,
+  "SFI_mean_abs_contribution": 1835643.980952381,
+  "SFI_median_abs_contribution": 500000.0,
+  "SI_mean_of_agent_means_prop": 0.36405463012752787,
+  "SI_mean_of_agent_means_prop_ci95": [
+    0.28886097840107405,
+    0.43593636882175246
+  ],
+  "SI_n_agents": 12,
+  "SFI_mean_of_agent_means_prop": 0.36579095199136935,
+  "SFI_mean_of_agent_means_prop_ci95": [
+    0.30423856311186254,
+    0.4210834081264906
+  ],
+  "SFI_n_agents": 14,
+  "effect_size_hedges_g_SI_minus_SFI_agent_round": -0.002953885340475336,
+  "effect_size_hedges_g_SI_minus_SFI_agent_means": -0.01333763609758273,
+  "loo_diff_min": -0.02199345035351885,
+  "loo_diff_max": 0.01600086563629277,
+  "loo_diff_full": -0.0017363218638414835
+}

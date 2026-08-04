@@ -1,0 +1,39 @@
+{
+  "group_mean_prop_autocorr_lag1": 0.09434881666094903,
+  "agent_mean_prop_autocorr_lag1": 0.014376435439292587,
+  "early_mean_std_prop": 0.5037703756952084,
+  "late_mean_std_prop": 0.5819165852085124,
+  "early_mean_iqr_prop": 0.39373663283517735,
+  "late_mean_iqr_prop": 0.31012006746174514,
+  "early_mean_zero_share": 0.18461538461538463,
+  "late_mean_zero_share": 0.13846153846153847,
+  "overall_mean_prop": 0.3649895726695964,
+  "overall_median_prop": 0.2000083593769251,
+  "near_zero_agents_mean_prop_lt_0.05": 0,
+  "high_agents_mean_prop_ge_0.25": 22,
+  "n_agents": 26,
+  "threshold_rounds": {
+    "0.1": 30,
+    "0.2": 30,
+    "0.3": 23
+  },
+  "shock_recoveries": {
+    "5": {
+      "pre_mean": 0.4709486166116413,
+      "rounds_to_regain_pre_mean": 6
+    },
+    "10": {
+      "pre_mean": 0.3948642751096016,
+      "rounds_to_regain_pre_mean": 1
+    }
+  },
+  "thresholds_disclosed": {
+    "near_zero_agent": 0.05,
+    "high_agent": 0.25,
+    "group_mean_levels": [
+      0.1,
+      0.2,
+      0.3
+    ]
+  }
+}

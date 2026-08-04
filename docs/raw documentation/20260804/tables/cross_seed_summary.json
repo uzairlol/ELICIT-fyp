@@ -1,0 +1,343 @@
+{
+  "metric": "prop_of_wealth",
+  "seeds": {
+    "seed1": {
+      "tables": "docs/raw documentation/20260731/tables",
+      "run_label": "20260731",
+      "json": "results/simulation_llama3.1_8b_Full_scnldf_sh1_ldf1_seed1_26agents_30rounds_20260731_013853.json"
+    },
+    "seed2": {
+      "tables": "docs/raw documentation/20260804/tables",
+      "run_label": "20260804",
+      "json": "results/simulation_llama3.1_8b_Full_scnldf_sh1_ldf1_seed2_26agents_30rounds_20260804_024555.json"
+    }
+  },
+  "shock_rounds": [
+    5,
+    10
+  ],
+  "notes": [
+    "agent_id group match across seeds: 12/26 (seeds reshuffle developed/developing assignment; correlations by agent_id are not persona-matched)."
+  ],
+  "agent_id_same_group_count": 12,
+  "agent_id_n": 26,
+  "round_mean_prop_correlation_ALL": {
+    "pearson_r": 0.1936657489876285,
+    "pearson_p": 0.30516156980108294,
+    "spearman_r": 0.21690767519466073,
+    "spearman_p": 0.24959160758351143,
+    "mean_seed1": 0.2933289746594674,
+    "mean_seed2": 0.3649895726695963,
+    "rmse": 0.1235909463485975
+  },
+  "round_mean_prop_correlation_by_institution": [
+    {
+      "level": "round_mean_prop",
+      "institution_choice": "ALL",
+      "n_rounds": 30,
+      "pearson_r": 0.1936657489876285,
+      "pearson_p": 0.30516156980108294,
+      "spearman_r": 0.21690767519466073,
+      "spearman_p": 0.24959160758351143,
+      "mean_seed1": 0.2933289746594674,
+      "mean_seed2": 0.3649895726695963,
+      "std_seed1": 0.07502152945905466,
+      "std_seed2": 0.08574695563585437,
+      "rmse": 0.1235909463485975
+    },
+    {
+      "level": "round_mean_prop",
+      "institution_choice": "SI",
+      "n_rounds": 30,
+      "pearson_r": 0.1440378554215434,
+      "pearson_p": 0.4476264470087807,
+      "spearman_r": 0.17196885428253617,
+      "spearman_p": 0.36351678056146086,
+      "mean_seed1": 0.2905099237300424,
+      "mean_seed2": 0.364054630127528,
+      "std_seed1": 0.11176702980081396,
+      "std_seed2": 0.11648571845238027,
+      "rmse": 0.16424191530937518
+    },
+    {
+      "level": "round_mean_prop",
+      "institution_choice": "SFI",
+      "n_rounds": 30,
+      "pearson_r": 0.02009657554514449,
+      "pearson_p": 0.9160530916607856,
+      "spearman_r": 0.040266963292547274,
+      "spearman_p": 0.8326804047464437,
+      "mean_seed1": 0.295745304027546,
+      "mean_seed2": 0.3657909519913693,
+      "std_seed1": 0.1327999456571527,
+      "std_seed2": 0.11389496053226379,
+      "rmse": 0.18413677148859803
+    }
+  ],
+  "agent_mean_prop_correlation": [
+    {
+      "match": "agent_id",
+      "subset": "all",
+      "n": 26,
+      "pearson_r": 0.08473705236694742,
+      "pearson_p": 0.6806564437720122,
+      "spearman_r": 0.07418803418803417,
+      "spearman_p": 0.718713542130672
+    },
+    {
+      "match": "agent_id",
+      "subset": "same_group_only",
+      "n": 12,
+      "pearson_r": -0.07826141447265308,
+      "pearson_p": 0.8089677377825397,
+      "spearman_r": 0.027972027972027972,
+      "spearman_p": 0.9312343512018807
+    }
+  ],
+  "mannwhitney_si_vs_sfi": [
+    {
+      "seed": "seed1",
+      "metric": "prop_of_wealth",
+      "unit": "agent-round",
+      "n_SI": 360,
+      "n_SFI": 420,
+      "mean_SI": 0.2905099237300424,
+      "mean_SFI": 0.295745304027546,
+      "median_SI": 0.1943425867977709,
+      "median_SFI": 0.03419605202066455,
+      "n_agents_SI": 12,
+      "n_agents_SFI": 14,
+      "mean_of_agent_means_SI": 0.2905099237300424,
+      "mean_of_agent_means_SFI": 0.295745304027546,
+      "mannwhitney_U_agent_round": 99871.0,
+      "mannwhitney_p_agent_round": 9.70472570158512e-15,
+      "mannwhitney_U_agent_means": 79.0,
+      "mannwhitney_p_agent_means": 0.8169613217153913,
+      "note": "institution_choice is collinear with agent_group (developed=SI, developing=SFI) in these runs."
+    },
+    {
+      "seed": "seed2",
+      "metric": "prop_of_wealth",
+      "unit": "agent-round",
+      "n_SI": 360,
+      "n_SFI": 420,
+      "mean_SI": 0.3640546301275279,
+      "mean_SFI": 0.3657909519913694,
+      "median_SI": 0.2054622130594733,
+      "median_SFI": 0.1793014101865417,
+      "n_agents_SI": 12,
+      "n_agents_SFI": 14,
+      "mean_of_agent_means_SI": 0.36405463012752787,
+      "mean_of_agent_means_SFI": 0.36579095199136935,
+      "mannwhitney_U_agent_round": 82476.0,
+      "mannwhitney_p_agent_round": 0.027996180767754703,
+      "mannwhitney_U_agent_means": 78.0,
+      "mannwhitney_p_agent_means": 0.7772615629718961,
+      "note": "institution_choice is collinear with agent_group (developed=SI, developing=SFI) in these runs."
+    }
+  ],
+  "shock_wilcoxon": [
+    {
+      "seed": "seed1",
+      "shock_round": 5,
+      "n_agents": 26,
+      "mean_delta_post_minus_pre": 0.022540641239614485,
+      "median_delta_post_minus_pre": -0.014311010172790503,
+      "wilcoxon_stat": 139.0,
+      "wilcoxon_p": 0.3666093051433563
+    },
+    {
+      "seed": "seed1",
+      "shock_round": 10,
+      "n_agents": 26,
+      "mean_delta_post_minus_pre": 0.010459640808955627,
+      "median_delta_post_minus_pre": 0.015355210510032361,
+      "wilcoxon_stat": 136.0,
+      "wilcoxon_p": 0.3276410400867462
+    },
+    {
+      "seed": "seed2",
+      "shock_round": 5,
+      "n_agents": 26,
+      "mean_delta_post_minus_pre": -0.08003670657132177,
+      "median_delta_post_minus_pre": -0.011456238933520171,
+      "wilcoxon_stat": 153.0,
+      "wilcoxon_p": 0.5822249948978424
+    },
+    {
+      "seed": "seed2",
+      "shock_round": 10,
+      "n_agents": 26,
+      "mean_delta_post_minus_pre": 0.0497378222498918,
+      "median_delta_post_minus_pre": -0.14708917030240382,
+      "wilcoxon_stat": 139.0,
+      "wilcoxon_p": 0.3666093051433563
+    }
+  ],
+  "wealth_gap_final_round": {
+    "seed1": 214685304.9261905,
+    "seed2": 582601383.8142858
+  },
+  "ldf_pool_end_final_round": {
+    "seed1": 4343669040.0,
+    "seed2": 13007116080.0
+  },
+  "reputation": {
+    "immediate_rows": 12
+  },
+  "adopted_rules": {
+    "seed1_n_rules": 6,
+    "seed1_rules": [
+      {
+        "round": 5,
+        "rule": "SUBSIDY_FRACTION",
+        "new_value": 0.3
+      },
+      {
+        "round": 10,
+        "rule": "LDF_EQUITY_WEIGHT",
+        "new_value": 0.5
+      },
+      {
+        "round": 15,
+        "rule": "SUBSIDY_FRACTION",
+        "new_value": 0.4
+      },
+      {
+        "round": 20,
+        "rule": "LDF_PAYOUT_DAMAGE_WEIGHT",
+        "new_value": 1.5
+      },
+      {
+        "round": 25,
+        "rule": "LDF_EQUITY_WEIGHT",
+        "new_value": 0.7
+      },
+      {
+        "round": 30,
+        "rule": "SUBSIDY_FRACTION",
+        "new_value": 0.6
+      }
+    ],
+    "seed2_n_rules": 6,
+    "seed2_rules": [
+      {
+        "round": 5,
+        "rule": "SUBSIDY_TOP_N",
+        "new_value": 5.0
+      },
+      {
+        "round": 10,
+        "rule": "SUBSIDY_FRACTION",
+        "new_value": 0.5
+      },
+      {
+        "round": 15,
+        "rule": "LDF_EQUITY_WEIGHT",
+        "new_value": 1.0
+      },
+      {
+        "round": 20,
+        "rule": "PUNISHMENT_EFFECT",
+        "new_value": 2.0
+      },
+      {
+        "round": 25,
+        "rule": "SUBSIDY_FRACTION",
+        "new_value": 0.8
+      },
+      {
+        "round": 30,
+        "rule": "SUBSIDY_FRACTION",
+        "new_value": 1.0
+      }
+    ],
+    "shared_round_rule_pairs": [
+      {
+        "round": 30,
+        "rule": "SUBSIDY_FRACTION"
+      }
+    ],
+    "only_seed1": [
+      {
+        "round": 5,
+        "rule": "SUBSIDY_FRACTION"
+      },
+      {
+        "round": 10,
+        "rule": "LDF_EQUITY_WEIGHT"
+      },
+      {
+        "round": 15,
+        "rule": "SUBSIDY_FRACTION"
+      },
+      {
+        "round": 20,
+        "rule": "LDF_PAYOUT_DAMAGE_WEIGHT"
+      },
+      {
+        "round": 25,
+        "rule": "LDF_EQUITY_WEIGHT"
+      }
+    ],
+    "only_seed2": [
+      {
+        "round": 5,
+        "rule": "SUBSIDY_TOP_N"
+      },
+      {
+        "round": 10,
+        "rule": "SUBSIDY_FRACTION"
+      },
+      {
+        "round": 15,
+        "rule": "LDF_EQUITY_WEIGHT"
+      },
+      {
+        "round": 20,
+        "rule": "PUNISHMENT_EFFECT"
+      },
+      {
+        "round": 25,
+        "rule": "SUBSIDY_FRACTION"
+      }
+    ]
+  },
+  "cooperation_trend": {
+    "seed1": {
+      "mann_kendall": {
+        "n": 30,
+        "skipped": false,
+        "kendall_tau": -0.029885057471264367,
+        "p_value": 0.831954647948868,
+        "sens_slope": -0.00041187118986578397,
+        "trend": "no significant trend"
+      },
+      "adf": {
+        "skipped": true,
+        "note": "statsmodels unavailable; ADF skipped"
+      }
+    },
+    "seed2": {
+      "mann_kendall": {
+        "n": 30,
+        "skipped": false,
+        "kendall_tau": -0.20919540229885059,
+        "p_value": 0.10877382529020774,
+        "sens_slope": -0.003912562501490535,
+        "trend": "no significant trend"
+      },
+      "adf": {
+        "skipped": true,
+        "note": "statsmodels unavailable; ADF skipped"
+      }
+    }
+  },
+  "outputs": {
+    "plots_dir": "docs/raw documentation/20260804/plots/cross_seed",
+    "tables_glob": "docs/raw documentation/20260804/tables/cross_seed_*.csv",
+    "summary_json": "docs/raw documentation/20260804/tables/cross_seed_summary.json"
+  },
+  "scipy_available": true,
+  "statsmodels_adf_available": false
+}

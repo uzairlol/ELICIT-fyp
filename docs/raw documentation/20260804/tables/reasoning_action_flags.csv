@@ -1,0 +1,96 @@
+round_number,agent_id,institution_choice,contribution,prop,gossip_prev,bad_rep_prev,flags,evidence_id,excerpt
+4,0,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-04-A0-contribution,"Given my high current wealth and no significant past contributions, I choose to contribute nothing this round."
+20,0,SI,25219266.0,0.4900211255900669,0,0,free_ride_language_positive_contrib,RB-20-A0-contribution,"My contribution is equal to the previous round's group average, as I want to maintain consistency and avoid being a free-rider."
+4,1,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-04-A1-contribution,I choose not to contribute due to low marginal return and high vulnerability index.
+13,1,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-13-A1-contribution,"Based on my institution's historical contributions and previous rounds' data, I choose not to contribute significantly this round."
+19,1,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-19-A1-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+27,1,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-27-A1-contribution,I choose to contribute nothing due to low marginal return and high vulnerability index.
+2,2,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-02-A2-contribution,"I chose to contribute nothing this round due to the high contribution of Agent 4 and 24, indicating a trend towards cooperation, but also considering my own institution's (SFI) relatively low contribution history."
+4,2,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-04-A2-contribution,"I chose not to contribute due to the high marginal return and past low contributions from peers, which suggests that contributing will have a minimal impact on my payoff."
+15,2,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-15-A2-contribution,"I choose to contribute nothing due to low marginal return and high vulnerability index, which aligns with my previous contributions."
+17,2,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-17-A2-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, aligning with my institution's typical behavior of contributing more when it serves their interests."
+19,2,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-19-A2-contribution,"The marginal return to me per unit contributed is low, and contributing zero aligns with my previous behavior."
+20,2,SFI,17327707.0,4.651415538926543,1,1,free_ride_language_positive_contrib,RB-20-A2-contribution,Contributing the maximum amount is optimal due to the high MCPR and no free-rider incentives.
+27,2,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-27-A2-contribution,I choose to contribute nothing due to low marginal return and high vulnerability index.
+28,2,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-28-A2-contribution,"The marginal return to me per unit contributed is low, and contributing nothing aligns with my previous actions and stated intent."
+2,3,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-02-A3-contribution,I choose to contribute nothing due to the high marginal return to me per unit contributed and my institution's past behavior of low contributions.
+3,3,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A3-contribution,"Based on previous rounds' data, I notice that SFI members tend to contribute less than SI members, and since my institution is SFI, I choose not to contribute this round."
+6,3,SFI,388814.0,0.3692603959963498,0,0,free_ride_language_positive_contrib,RB-06-A3-contribution,"The group average contribution from previous rounds is high, so I'm contributing a similar amount to maintain cooperation and avoid being seen as a free-rider."
+10,3,SFI,533585.0,0.3098163155324677,0,1,free_ride_language_positive_contrib,RB-10-A3-contribution,Contribute at the group average to maximize cumulative payoff and avoid standing out as a free-rider.
+12,3,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-12-A3-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, consistent with my institution's typical behavior."
+28,3,SFI,5000000.0,0.4208075512361685,0,0,free_ride_language_positive_contrib,RB-28-A3-contribution,"Based on previous rounds' data, I expect a mix of cooperative and free-riding behavior from other agents."
+2,4,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-02-A4-contribution,"Based on observed peer behavior and internal beliefs, I will not contribute to maintain flexibility for future rounds."
+4,5,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-04-A5-contribution,I chose not to contribute due to low marginal return and past contributions from peers.
+14,5,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-14-A5-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, consistent with my internal beliefs."
+16,5,SFI,0.0,0.0,1,0,cooperative_language_zero_contrib,RB-16-A5-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, aligning with my institution's typical behavior."
+18,5,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-18-A5-contribution,"I chose to contribute zero due to low marginal return and high vulnerability index, which makes contributing more than this amount unprofitable."
+19,5,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-19-A5-contribution,Low marginal return and high vulnerability index make it rational to contribute zero.
+20,5,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-20-A5-contribution,"The marginal return to me per unit contributed is low, and I prioritize immediate resilience needs."
+22,5,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-22-A5-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+24,5,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-24-A5-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+27,5,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-27-A5-contribution,"I choose to contribute nothing because my marginal return is low and I have a high vulnerability index, making it irrational for me to invest more."
+3,7,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A7-contribution,"Based on previous round data and internal beliefs, I choose not to contribute due to high contributions from some agents and low marginal return."
+3,8,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A8-contribution,"Given my institution's history of not contributing to the Global Emissions Reduction Fund and considering the high marginal return to contribution, I choose not to contribute this round."
+7,8,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-07-A8-contribution,"Based on previous rounds' data, I expect other agents to contribute significantly, making my contribution irrelevant."
+10,8,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-10-A8-contribution,"The marginal return to me per unit contributed is low, and contributing zero aligns with my self-interest."
+23,8,SFI,121537.0,0.0034444758887003,0,0,free_ride_language_positive_contrib,RB-23-A8-contribution,"Based on past contributions and my institution's strategy, I will contribute a moderate amount to maintain cooperation while avoiding free riding."
+5,9,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-05-A9-contribution,I choose not to contribute due to low marginal return and high vulnerability index.
+10,9,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-10-A9-contribution,"The marginal return to me per unit contributed is low, and contributing zero aligns with my self-interest."
+16,9,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-16-A9-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, aligning with my institution's typical behavior."
+29,9,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-29-A9-contribution,"Based on my institution's historical behavior and the current decision card, I choose to contribute zero."
+2,10,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-02-A10-contribution,"I choose to contribute nothing as my institution, SFI, is not required to participate in Stage 2 and I do not see significant benefits from contributing in this round."
+3,10,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A10-contribution,I chose not to contribute due to my institution's non-participation and low marginal return.
+15,10,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-15-A10-contribution,"I choose to contribute nothing due to low marginal return and high vulnerability index, as per my internal beliefs."
+17,10,SFI,500.0,6.990666984210721e-05,1,1,mentions_reputation_after_gossip,RB-17-A10-contribution,Contribute a minimal amount to maintain reputation and keep options open for future rounds.
+2,11,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-02-A11-contribution,"I chose to contribute nothing this round as my institution, SFI, has a relatively low budget and I want to observe others' strategies before making a move."
+14,11,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-14-A11-contribution,I choose to contribute nothing due to low marginal return and high vulnerability index.
+15,11,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-15-A11-contribution,"Due to low marginal return and high vulnerability index, I choose not to contribute."
+16,11,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-16-A11-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, which aligns with my previous contributions."
+18,11,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-18-A11-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, as indicated by my internal beliefs."
+22,11,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-22-A11-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+26,11,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-26-A11-contribution,I choose to contribute nothing due to low marginal return and high vulnerability index.
+3,12,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A12-contribution,I chose to contribute nothing as my institution (SFI) is not participating in Stage 2 and I have a limited budget.
+8,12,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-08-A12-contribution,I choose to contribute nothing due to low marginal return and high vulnerability index.
+11,12,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-11-A12-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+18,12,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-18-A12-contribution,"Based on my institution's typical behavior and previous contributions, I choose to contribute zero this round."
+22,12,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-22-A12-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+27,12,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-27-A12-contribution,I choose to contribute nothing due to low marginal return and high vulnerability index.
+10,13,SFI,500000.0,0.2461440999294409,0,0,free_ride_language_positive_contrib,RB-10-A13-contribution,"To balance immediate resilience needs and long-run cooperation incentives, I contribute a moderate amount to avoid free-riding while also not overextending my budget."
+17,13,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-17-A13-contribution,I chose to contribute zero due to low marginal return and high vulnerability index.
+22,13,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-22-A13-contribution,I choose to contribute zero as my marginal return is low and I want to preserve wealth for future rounds.
+1,14,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-01-A14-contribution,"Given my institution's (SI) high fiscal capacity and historically higher emissions, I choose to contribute nothing this round to maintain flexibility for future rounds."
+3,14,SI,4000000.0,0.7182910677500873,1,1,mentions_reputation_after_gossip,RB-03-A14-contribution,"Based on past contributions and current budget, I choose to contribute a significant amount to maintain credibility and institutional reputation."
+16,14,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-16-A14-contribution,"Based on low marginal return and high vulnerability index, I choose not to contribute."
+3,15,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A15-contribution,I chose not to contribute due to high marginal return and past low contributions from my peers.
+5,15,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-05-A15-contribution,"Based on previous rounds' data, I expect other agents to contribute significantly, making my contribution negligible."
+9,15,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-09-A15-contribution,Contribution is zero due to low marginal return per unit contributed.
+10,15,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-10-A15-contribution,"The marginal return to me per unit contributed is low, and contributing zero aligns with my previous behavior."
+11,15,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-11-A15-contribution,"The marginal return to me per unit contributed is low, and I have no incentive to contribute more than zero."
+2,16,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-02-A16-contribution,"Given my institution's SFI and previous contributions, I choose to contribute nothing this round."
+3,16,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A16-contribution,"Given my institution's (SFI) strategy and past contributions, I choose not to contribute this round."
+4,16,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-04-A16-contribution,I chose not to contribute due to the high marginal return and past low contributions from peers.
+8,16,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-08-A16-contribution,"I chose to contribute nothing because my marginal return per unit contributed is low, and I am a developing country with a high vulnerability index."
+10,16,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-10-A16-contribution,Low marginal return to me per unit contributed and no apparent need for high contribution given my current wealth.
+18,16,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-18-A16-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, aligning with my institution's typical behavior."
+20,16,SFI,0.0,0.0,0,1,cooperative_language_zero_contrib,RB-20-A16-contribution,"I choose to contribute zero due to low marginal return and high vulnerability index, aligning with my previous behavior."
+24,16,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-24-A16-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+18,17,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-18-A17-contribution,I choose to contribute zero due to low marginal return and high vulnerability index.
+18,18,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-18-A18-contribution,"Based on previous round data, I expect most SI members to contribute significantly, so contributing zero will allow me to free ride and maintain a high cumulative payoff."
+1,19,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-01-A19-contribution,"With no prior experience and a high MCPR, I choose to contribute nothing initially to observe other players' strategies."
+3,19,SI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-03-A19-contribution,"Based on previous round data and internal beliefs, I choose not to contribute as a free-rider."
+6,19,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-06-A19-contribution,"No contribution maximizes my current payoff, given the high marginal return to me per unit contributed and the lack of consistent cooperation from peers."
+7,19,SI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-07-A19-contribution,I choose to contribute nothing because my marginal return per unit contributed is low and I prioritize maximizing my payoff.
+24,20,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-24-A20-contribution,"The marginal return to me per unit contributed is low, and I expect others to free ride."
+3,21,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A21-contribution,"Based on previous rounds' data, I expect others to free-ride and contribute little, so I also choose not to contribute."
+9,21,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-09-A21-contribution,Low marginal return per unit contributed and high vulnerability index make contributing zero a rational choice.
+19,21,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-19-A21-contribution,"Based on my internal beliefs and previous round data, I believe cooperation is not beneficial for me this round due to low marginal return."
+3,22,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-03-A22-contribution,"Based on previous round data and internal beliefs, I choose not to contribute as a free-rider."
+12,22,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-12-A22-contribution,"Based on previous rounds' data, I expect other agents to follow SI strategy and contribute significantly."
+13,22,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-13-A22-contribution,"My contribution is zero because I expect others to follow SI strategy and contribute significantly, as observed in previous rounds."
+16,22,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-16-A22-contribution,No contribution is optimal given the low marginal return to me per unit contributed and the high budget.
+19,22,SI,0.0,0.0,1,1,cooperative_language_zero_contrib|mentions_reputation_after_gossip,RB-19-A22-contribution,"Based on previous round data and internal beliefs, I expect other developed countries to contribute significantly, so contributing $0 allows me to free ride while still maintaining a good reputation."
+6,23,SFI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-06-A23-contribution,I choose to contribute nothing due to low marginal return and high vulnerability index.
+8,23,SFI,0.0,0.0,1,1,cooperative_language_zero_contrib,RB-08-A23-contribution,I chose not to contribute due to low marginal return and high vulnerability index.
+22,24,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-22-A24-contribution,"My marginal return to contributing is low due to a high group size and vulnerability index, making it less beneficial for me to contribute."
+1,25,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-01-A25-contribution,"Since I have no prior experience and no peer data, I will contribute nothing to explore options without immediate costs."
+20,25,SI,0.0,0.0,0,0,cooperative_language_zero_contrib,RB-20-A25-contribution,"My current wealth is already high, and I have no reason to contribute more than necessary."

@@ -1,0 +1,4 @@
+institution_choice,n_agent_rounds,n_zeros,zero_share,n_liquidity_forced_approx,n_voluntary_zero_approx,n_agents_ever_zero
+SFI,420,94,0.22380952380952382,0,94,14
+SI,360,40,0.1111111111111111,0,40,12
+ALL,780,134,0.1717948717948718,0,134,26

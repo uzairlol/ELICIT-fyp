@@ -1,0 +1,67 @@
+{
+  "n_proposals": 10,
+  "n_democracy_rounds": 6,
+  "n_adopted": 6,
+  "proposals_by_category": {
+    "reward_subsidy": 8,
+    "ldf_equity": 1,
+    "punishment_weakening": 1
+  },
+  "proposals_by_institution": {
+    "SI": 6,
+    "SFI": 4
+  },
+  "adopted_by_category": [
+    "reward_subsidy",
+    "reward_subsidy",
+    "ldf_equity",
+    "punishment_weakening",
+    "reward_subsidy",
+    "reward_subsidy"
+  ],
+  "mean_proposer_prop": 0.4314966455496645,
+  "mean_all_agent_prop": 0.36498957266959636,
+  "punishment_proposals": [
+    {
+      "round_number": 20,
+      "proposer": 17,
+      "new_value": 2.0,
+      "adopted": 1
+    }
+  ],
+  "post_adoption_delta_all": [
+    {
+      "round_number": 5,
+      "rule": "SUBSIDY_TOP_N",
+      "delta_prop": -0.08003670657132173
+    },
+    {
+      "round_number": 10,
+      "rule": "SUBSIDY_FRACTION",
+      "delta_prop": 0.04973782224989176
+    },
+    {
+      "round_number": 15,
+      "rule": "LDF_EQUITY_WEIGHT",
+      "delta_prop": 0.050516337948386725
+    },
+    {
+      "round_number": 20,
+      "rule": "PUNISHMENT_EFFECT",
+      "delta_prop": 0.09694610201072121
+    },
+    {
+      "round_number": 25,
+      "rule": "SUBSIDY_FRACTION",
+      "delta_prop": 0.09344985086743285
+    },
+    {
+      "round_number": 30,
+      "rule": "SUBSIDY_FRACTION",
+      "delta_prop": NaN
+    }
+  ],
+  "enforcement_corr_mean": 0.052299223788370125,
+  "enforcement_topq_share_mean": 0.3430867811928847,
+  "vote_same_group_rate": 0.5128205128205128
+}

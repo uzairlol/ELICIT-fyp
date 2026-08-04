@@ -1,0 +1,157 @@
+round_number,voter,voter_group,voter_institution,vote_index,voted_rule,voted_new_value,voted_proposer,vote_reason,same_group_as_proposer
+5,0,developed,SI,1,SUBSIDY_FRACTION,0.5,24,"Increasing the subsidy fraction to 0.5 will provide a stronger incentive for cooperation and reduce punishment, promoting a more sustainable community.",1
+5,1,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may promote cooperation and trust among more community members.",1
+5,2,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",1
+5,3,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,Increasing the number of top contributors who share the subsidy pool to 5 will incentivize cooperation and trust by rewarding a broader range of community members for their contributions.,1
+5,4,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",0
+5,5,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",1
+5,6,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",0
+5,7,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",0
+5,8,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",1
+5,9,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may foster a more inclusive and cooperative community.",1
+5,10,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may foster a more inclusive and cooperative community.",1
+5,11,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",1
+5,12,developing,SFI,1,SUBSIDY_FRACTION,0.5,24,"Increasing the subsidy fraction to 0.5 may promote cooperation and reduce punishment, which could lead to a more sustainable community.",0
+5,13,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,I choose to increase the number of top contributors who share the subsidy pool to incentivize cooperation and trust among a broader range of community members.,1
+5,14,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may foster a more inclusive and cooperative community.",0
+5,15,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",1
+5,16,developing,SFI,1,SUBSIDY_FRACTION,0.5,24,"Increasing the subsidy fraction to 0.5 will provide a stronger incentive for cooperation and reduce punishment, which is essential for long-term group welfare.",0
+5,17,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may foster a more inclusive and cooperative community.",1
+5,18,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may promote cooperation and trust among more community members.",0
+5,19,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may foster a more inclusive and cooperative community.",0
+5,20,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may promote cooperation and trust among more community members.",0
+5,21,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may foster a more inclusive and cooperative community.",0
+5,22,developed,SI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may incentivize cooperation and trust by rewarding a broader range of community members.",0
+5,23,developing,SFI,0,SUBSIDY_TOP_N,5.0,3,"I choose to increase the number of top contributors who share the subsidy pool, as it may promote cooperation and trust among more community members.",1
+5,24,developed,SI,1,SUBSIDY_FRACTION,0.5,24,"Increasing the subsidy fraction to 0.5 will provide a stronger incentive for cooperation and reduce punishment, promoting a more sustainable community.",1
+5,25,developed,SI,1,SUBSIDY_FRACTION,0.5,24,"Increasing the subsidy fraction to 0.5 will provide a stronger incentive for cooperation and reduce punishment, which is crucial in this stage of the game where trust has been compromised.",1
+10,0,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 will incentivize cooperation and promote trust among group members.,1
+10,1,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,"Increasing the subsidy fraction may incentivize cooperation and build trust, which is crucial for sustainability in this public goods game.",0
+10,2,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,0
+10,3,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,0
+10,4,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,1
+10,5,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,0
+10,6,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,1
+10,7,developed,SI,0,SUBSIDY_FRACTION,0.5,0,"Increasing the subsidy fraction may incentivize cooperation and build trust, which is crucial for sustainability in this public goods game.",1
+10,8,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,"Increasing the subsidy fraction may incentivize cooperation and build trust, which is crucial for sustainability in this public goods game.",0
+10,9,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,0
+10,10,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 may incentivize cooperation and build trust among agents.,0
+10,11,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,0
+10,12,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,"Increasing the subsidy fraction may incentivize cooperation and build trust, which is crucial for sustainability in this public goods game.",0
+10,13,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 may incentivize cooperation and build trust among agents.,0
+10,14,developed,SI,0,SUBSIDY_FRACTION,0.5,0,"Increasing the subsidy fraction may incentivize cooperation and build trust, which is crucial for sustainability in this public goods game.",1
+10,15,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,0
+10,16,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,0
+10,17,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,"Increasing the subsidy fraction may incentivize cooperation and build trust, which is crucial for sustainability in this public goods game.",0
+10,18,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 may incentivize cooperation and build trust among agents.,1
+10,19,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,1
+10,20,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction may incentivize cooperation and build trust among agents.,1
+10,21,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 may incentivize cooperation and build trust among agents.,1
+10,22,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 may incentivize cooperation and build trust among agents.,1
+10,23,developing,SFI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 may incentivize cooperation and build trust among group members.,0
+10,24,developed,SI,0,SUBSIDY_FRACTION,0.5,0,Increasing the subsidy fraction to 0.5 may incentivize cooperation and build trust among agents.,1
+10,25,developed,SI,0,SUBSIDY_FRACTION,0.5,0,"Increasing the subsidy fraction may incentivize cooperation and build trust, which is crucial for sustainability in this public goods game.",1
+15,0,developed,SI,0,SUBSIDY_TOP_N,10.0,4,"I choose to increase the number of top contributors who share the subsidy pool to 10, as it may promote cooperation and reduce competition among agents.",1
+15,1,developing,SFI,0,SUBSIDY_TOP_N,10.0,4,"I choose to increase the number of top contributors who share the subsidy pool to 10, as it may incentivize cooperation and reduce competition among agents.",0
+15,2,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with my goal of maximizing collective welfare.,1
+15,3,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with my goal of maximizing collective welfare.,1
+15,4,developed,SI,0,SUBSIDY_TOP_N,10.0,4,I vote for the subsidy pool increase to incentivize cooperation and reduce competition among agents.,1
+15,5,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,"I choose to increase the weight on equity as it has a significant positive impact on cooperation rate and predicted resilience, which I believe will improve group welfare.",1
+15,6,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with promoting collective welfare.,0
+15,7,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with promoting more equitable distribution of LDF payouts.,0
+15,8,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with our community's values of promoting collective welfare.,1
+15,9,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,"I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with promoting equitable distribution, which I believe will foster more cooperation among agents.",1
+15,10,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with my goal of maximizing collective welfare.,1
+15,11,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,"Increasing equity weight in LDF payouts is predicted to have a significant positive impact on resilience, which aligns with our goal of collective welfare.",1
+15,12,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with my goal of maximizing collective welfare.,1
+15,13,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,"Increasing LDF_EQUITY_WEIGHT to 1.0 is expected to promote more equitable distribution of payouts and increase overall trust among agents, which will likely improve group welfare.",1
+15,14,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,"I choose to increase the weight on equity as it has a significant positive impact on cooperation rate and predicted resilience, which I believe will ultimately improve group welfare.",0
+15,15,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,Increasing equity weight in LDF payouts is predicted to have a significant positive impact on resilience and cooperation rates.,1
+15,16,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,"I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with promoting equitable distribution, which I believe will foster more cooperation among agents.",1
+15,17,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,"Increasing equity weight in LDF payouts is predicted to have a significant positive impact on resilience, which aligns with the overall goal of collective welfare.",1
+15,18,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with my goal of maximizing collective welfare.,0
+15,19,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,"Increasing equity weight in LDF payouts is predicted to have a significant positive impact on resilience, which aligns with our group's long-term goals.",0
+15,20,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with my goal of maximizing collective welfare.,0
+15,21,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,Increasing equity weight in LDF payouts is predicted to have a significant positive impact on resilience and cooperation.,0
+15,22,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with my goal of maximizing collective welfare.,0
+15,23,developing,SFI,1,LDF_EQUITY_WEIGHT,1.0,23,"Increasing equity weight in LDF payouts will prioritize poorer nations and promote more equitable distribution, potentially increasing overall trust among agents.",1
+15,24,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,"Increasing LDF_EQUITY_WEIGHT to 1.0 is expected to promote more equitable distribution of LDF payouts, potentially increasing overall trust among agents.",0
+15,25,developed,SI,1,LDF_EQUITY_WEIGHT,1.0,23,I choose to increase the weight on equity as it has a high predicted resilience impact and aligns with our community's values of promoting collective welfare.,0
+20,0,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",0
+20,1,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"I choose to reduce the punishment effect as it may encourage more cooperation and mitigate free-riding, potentially leading to a more sustainable collective payoff.",1
+20,2,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"I choose to reduce the punishment effect as it may encourage more cooperation and mitigate free-riding, which is currently a significant issue in our community.",1
+20,3,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",1
+20,4,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which will improve group welfare.",0
+20,5,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which aligns with the Oracle's prediction that harsher punishments help when free-riding is high.",1
+20,6,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",0
+20,7,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",0
+20,8,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",1
+20,9,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",1
+20,10,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",1
+20,11,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which will improve group welfare.",1
+20,12,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which aligns with the predicted positive impact on group welfare.",1
+20,13,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which will improve group welfare.",1
+20,14,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which will improve group welfare.",0
+20,15,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which will improve group welfare.",1
+20,16,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which will improve group welfare.",1
+20,17,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",1
+20,18,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",0
+20,19,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which aligns with the predicted outcome by the Oracle.",0
+20,20,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which aligns with the predicted positive impact on group welfare.",0
+20,21,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which will improve group welfare.",0
+20,22,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",0
+20,23,developing,SFI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is expected to increase cooperation and reduce free-riding, leading to a more sustainable collective payoff.",1
+20,24,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which aligns with the Oracle's prediction of a lower welfare cost.",0
+20,25,developed,SI,0,PUNISHMENT_EFFECT,2.0,17,"Reducing punishment effect to 2 is likely to increase cooperation and reduce free-riding, which aligns with the Oracle's prediction that harsher punishments help when free-riding is high.",0
+25,0,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, promoting a sustainable community.",1
+25,1,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, potentially leading to a more sustainable community.",0
+25,2,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, potentially leading to a more sustainable community.",0
+25,3,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, potentially leading to a more sustainable community.",0
+25,4,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",1
+25,5,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, potentially leading to a more sustainable community.",0
+25,6,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, but it's unclear how this will affect long-term sustainability without further analysis.",1
+25,7,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, promoting a sustainable community.",1
+25,8,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, promoting a sustainable community.",0
+25,9,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, but it is unclear how this will affect long-term sustainability without further analysis.",0
+25,10,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",0
+25,11,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",0
+25,12,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, potentially leading to a more sustainable community.",0
+25,13,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, but it's unclear how this will impact long-term sustainability.",0
+25,14,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, but it is unclear how this will impact our community's long-term sustainability.",1
+25,15,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding, which could lead to a more sustainable community.",0
+25,16,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, promoting a sustainable community.",0
+25,17,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may encourage more cooperation and reduce free-riding behavior, but it's unclear how this will impact long-term sustainability.",0
+25,18,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 will incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community",1
+25,19,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",1
+25,20,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",1
+25,21,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",1
+25,22,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",1
+25,23,developing,SFI,0,SUBSIDY_FRACTION,0.8,18,"Reducing subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",0
+25,24,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",1
+25,25,developed,SI,0,SUBSIDY_FRACTION,0.8,18,"Reducing the subsidy fraction to 0.8 may incentivize cooperation and reduce free-riding behavior, promoting a more sustainable community.",1
+30,0,developed,SI,0,SUBSIDY_FRACTION,1.0,0,"Increasing the subsidy fraction to 1.0 will provide a more substantial reward for top contributors, promoting trust and sustainable behavior within the community.",1
+30,1,developing,SFI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,0
+30,2,developing,SFI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,0
+30,3,developing,SFI,0,SUBSIDY_FRACTION,1.0,0,I choose to increase the subsidy fraction to 1.0 as it may provide a stronger incentive for cooperation and sustainable behavior within the community.,0
+30,4,developed,SI,0,SUBSIDY_FRACTION,1.0,0,I choose to increase the subsidy fraction to 1.0 as it may provide a stronger incentive for cooperation and sustainable behavior within the community.,1
+30,5,developing,SFI,0,SUBSIDY_FRACTION,1.0,0,I choose to increase the subsidy fraction to 1.0 as it may provide a stronger incentive for cooperation and sustainable behavior within the community.,0
+30,6,developed,SI,0,SUBSIDY_FRACTION,1.0,0,"I choose to increase the subsidy fraction to 1.0 as it will provide a more substantial reward for top contributors, promoting trust and sustainable behavior.",1
+30,7,developed,SI,0,SUBSIDY_FRACTION,1.0,0,I choose to increase the subsidy fraction to 1.0 as it may provide a stronger incentive for cooperation and sustainable behavior within the community.,1
+30,8,developing,SFI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,0
+30,9,developing,SFI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,0
+30,10,developing,SFI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,0
+30,11,developing,SFI,0,SUBSIDY_FRACTION,1.0,0,I choose to increase the subsidy fraction to 1.0 as it may provide a stronger incentive for cooperation and sustainable behavior within the community.,0
+30,12,developing,SFI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,0
+30,13,developing,SFI,0,SUBSIDY_FRACTION,1.0,0,"Increasing the subsidy fraction to 1.0 may provide a stronger incentive for cooperation, potentially leading to more sustainable behavior in the community.",0
+30,14,developed,SI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,1
+30,15,developing,SFI,0,SUBSIDY_FRACTION,1.0,0,"I choose to increase the subsidy fraction to 1.0 as it may provide a stronger incentive for cooperation and sustainable behavior, potentially leading to improved group welfare.",0
+30,16,developing,SFI,0,SUBSIDY_FRACTION,1.0,0,"Increasing the subsidy fraction to 1.0 may provide a stronger incentive for cooperation, potentially leading to more sustainable behavior in the community.",0
+30,17,developing,SFI,0,SUBSIDY_FRACTION,1.0,0,"Increasing the subsidy fraction to 1.0 may provide a stronger incentive for cooperation, potentially leading to more sustainable behavior in the community.",0
+30,18,developed,SI,0,SUBSIDY_FRACTION,1.0,0,"Increasing the subsidy fraction to 1.0 may provide a stronger incentive for cooperation, potentially leading to more sustainable behavior in the community.",1
+30,19,developed,SI,1,SUBSIDY_FRACTION,0.9,19,"Increasing the subsidy fraction to 0.9 will incentivize more punishment and reward actions, promoting accountability and cooperation within the community.",1
+30,20,developed,SI,0,SUBSIDY_FRACTION,1.0,0,"I choose proposal [0] as it has the potential to provide a more substantial reward for top contributors, promoting trust and sustainable behavior within the community.",1
+30,21,developed,SI,0,SUBSIDY_FRACTION,1.0,0,"Increasing the subsidy fraction to 1.0 may provide a stronger incentive for cooperation, but I'm concerned about its feasibility without an Oracle model.",1
+30,22,developed,SI,0,SUBSIDY_FRACTION,1.0,0,I choose to increase the subsidy fraction to 1.0 as it may provide a stronger incentive for cooperation and sustainable behavior within the community.,1
+30,23,developing,SFI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,0
+30,24,developed,SI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,1
+30,25,developed,SI,1,SUBSIDY_FRACTION,0.9,19,Increasing the subsidy fraction to 0.9 may promote more accountability and cooperation within the community.,1

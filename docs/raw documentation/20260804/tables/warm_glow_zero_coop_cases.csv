@@ -1,0 +1,4 @@
+round_number,agent_id,institution_choice,contribution,prop_of_wealth,text_len,evidence_id,contribution_reasoning
+2,2,SFI,0.0,0.0,213,RB-02-A2-contribution,"I chose to contribute nothing this round due to the high contribution of Agent 4 and 24, indicating a trend towards cooperation, but also considering my own institution's (SFI) relatively low contribution history."
+6,19,SI,0.0,0.0,153,RB-06-A19-contribution,"No contribution maximizes my current payoff, given the high marginal return to me per unit contributed and the lack of consistent cooperation from peers."
+19,21,SI,0.0,0.0,139,RB-19-A21-contribution,"Based on my internal beliefs and previous round data, I believe cooperation is not beneficial for me this round due to low marginal return."

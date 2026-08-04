@@ -1,0 +1,12 @@
+{
+  "n_zero_with_coop_lang": 3,
+  "n_zero_total": 134,
+  "mean_text_len_zero_coop": 168.33333333333334,
+  "mean_text_len_pos_coop": 134.4185185185185,
+  "n_pos_with_coop_lang": 270,
+  "top_agents_zero_coop": {
+    "2": 1,
+    "19": 1,
+    "21": 1
+  }
+}
