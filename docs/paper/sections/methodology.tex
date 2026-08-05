@@ -1,112 +1,77 @@
-\subsection{Environment overview}
-
-We study a repeated public-goods economy with heterogeneous country roles.
-Each agent is labeled developed or developing.
-Labels govern initial wealth, vulnerability, and institutional assignment in the climate package.
-Interaction proceeds in discrete rounds.
-Within each round, agents choose Stage-1 contributions inside their assigned institution.
-Agents in the enforcing institution then allocate Stage-2 sanctions and rewards.
+The environment is designed to place social pressure where classical theory expects it to help, while removing exit and equalizing enforcement rights that would otherwise confound the test.
+Agents inhabit a repeated public-goods economy with developed and developing roles that govern wealth, vulnerability, and institutional assignment.
+Each round, agents choose Stage-1 contributions inside their assigned institution.
+Only members of the enforcing institution then allocate Stage-2 sanctions and rewards.
 Climatic shocks, fund accounting, social scoring, and democracy occur on a fixed schedule described in Section~4.
 
-Two institutions operate in parallel.
-The enforcing institution (SI) combines Stage-1 public-goods returns with peer punishment and reward.
-The non-enforcing institution (SFI) provides Stage-1 returns without Stage-2 sanctioning.
-Institution labels are presented to agents in climate language as a binding treaty versus a non-binding agreement.
-In the primary climate runs, assignment is forced every round.
-Developed agents enter SI.
-Developing agents enter SFI.
+\subsection{Why two institutions}
+
+Cooperation problems often mix formal sanctions with informal evaluation.
+We therefore run two institutions in parallel.
+The enforcing institution (SI) combines Stage-1 public-goods returns with peer punishment and reward, framed to agents as a binding treaty.
+The non-enforcing institution (SFI) provides Stage-1 returns without Stage-2 sanctioning, framed as a non-binding agreement.
+In the climate package, assignment is forced every round: developed agents enter SI and developing agents enter SFI.
+The partition creates asymmetric sanction reach while holding the social-information stack common.
 Free institutional choice is reserved for boundary baselines discussed later.
 
-\subsection{Stage-1 public good}
+\subsection{Stage-1 public good and contribution intensity}
 
-Let $c_i$ denote agent $i$'s Stage-1 contribution and let $G$ denote the set of agents in the same institution.
-Total contribution is $C=\sum_{j\in G}c_j$.
-With public-good multiplier $m$ and group size $n=|G|$, each member receives Stage-1 share
-\begin{equation}
-\mathrm{share}_i=\frac{m\cdot C}{n}.
-\end{equation}
-The marginal per-capita return is therefore $m/n$.
+Let $c_i$ denote agent $i$'s Stage-1 contribution and let $G$ denote agents in the same institution.
+With multiplier $m$ and group size $n=|G|$, each member receives
+\[
+\mathrm{share}_i=\frac{m\cdot C}{n},\qquad C=\sum_{j\in G}c_j.
+\]
+The marginal per-capita return is $m/n$.
 Contribution budgets equal current wealth, floored at zero.
-Agents receive decision cards that state budget bounds, group size, marginal return, and recent same-institution averages.
+Decision cards state budget bounds, group size, marginal return, and recent same-institution averages.
 
-Contribution intensity is the primary behavioral outcome.
-For each agent-round we define
-\begin{equation}
-\mathrm{prop}_{i,t}=\frac{c_{i,t}}{w_{i,t}},
-\end{equation}
-where $w_{i,t}$ is end-of-round wealth.
 Absolute contributions differ by orders of magnitude across groups.
-Intensity normalizes for scale and supports cross-agent event studies.
+We therefore analyze contribution intensity
+\[
+\mathrm{prop}_{i,t}=\frac{c_{i,t}}{w_{i,t}},
+\]
+where $w_{i,t}$ is end-of-round wealth.
+All event studies use changes in $\mathrm{prop}$ so that social marks are comparable across wealth scales.
 
-\subsection{Stage-2 enforcement}
+\subsection{Stage-2 enforcement as a second-order public good}
 
-Only SI members enter Stage-2.
-Each receives a sanction budget proportional to wealth, with a climate floor.
-Punishment tokens reduce a target's payoff at a fixed effect-to-cost ratio.
-Reward tokens raise a target's payoff at unit cost.
-Targets are listed with current contributions and pairwise consistency scores when available.
+Only SI members enter Stage-2, with a sanction budget proportional to wealth.
+Punishment tokens reduce a target's payoff at a fixed effect-to-cost ratio; reward tokens raise payoffs at unit cost.
+Enforcement is costly to the sender, so provision of sanctions is itself a second-order public good.
 SFI members skip Stage-2 entirely.
-Enforcement is itself a second-order public good.
-We track sanction burden as context rather than as the primary estimand.
+We track sanction burden as context for interpretation rather than as the primary estimand.
 
 \subsection{Dual-use loss-and-damage fund}
 
-Stage-1 contributions are dual-use deposits.
-Each contributed unit also enters a collective loss-and-damage pool.
-The pool is hidden from agents as a live balance.
+Climate risk sharing requires a redistributive instrument that is not identical to the public good.
+Stage-1 contributions therefore act as dual-use deposits: each contributed unit also enters a collective loss-and-damage pool.
 Agents are told that contributions support both emissions-reduction framing and disaster payouts.
+They do not observe the live pool balance.
 After climatic shocks, developing agents may receive payouts subject to coverage caps and equity weights.
-Developed agents absorb damage without fund receipts under the default disbursement rule.
-
-Gross damage for agent $i$ after shock severity $s$ is proportional to $s$ and vulnerability $v_i$.
-Net damage equals gross damage minus any fund receipt.
 Coverage is the ratio of aggregate payouts to aggregate gross damage in a shock round.
 High coverage can coexist with widening wealth gaps when collection and growth dominate disbursement.
 
-\subsection{Social information channels}
+\subsection{Social information without mechanical force}
 
-Three linked channels create social pressure.
-
-\paragraph{Pairwise consistency scoring.}
-After contributions, evaluators score targets on a one-to-ten scale.
-High scores indicate match between stated intent and action.
-Low scores indicate inconsistency.
-Scores are elicited with short natural-language justifications.
-
-\paragraph{Aggregate reputation.}
-Agents observe an aggregate peer-trust rating derived from pairwise scores.
-Bad reputation is defined analytically as an aggregate score below four.
-A reputation drop is a decline of at least one point between rounds.
-
-\paragraph{Gossip bulletins.}
-Low pairwise scores generate gossip items injected into subsequent prompts.
-Bulletins name the observer, the target, the consistency score, and a short comment.
+Three linked channels create social pressure without forcing higher contributions.
+After contributions, evaluators score targets on a one-to-ten consistency scale.
+Agents observe an aggregate peer-trust rating derived from those scores.
+Bad reputation is defined as an aggregate score below four; a reputation drop is a decline of at least one point between rounds.
+Low pairwise scores generate gossip items injected into subsequent prompts, naming the observer, target, score, and a short comment.
 Capacity limits keep only a top set of items.
-In the event study, gossip targeting is reconstructed from low-score conditions consistent with bulletin generation.
-The protocol does not retain a separate verbatim gossip transcript for every edge.
+Gossip targeting in the event study is reconstructed from eligibility conditions consistent with bulletin generation.
+Any reputation repair must arise from prompted choice.
 
-These channels are informational.
-They do not mechanically force higher contributions.
-Any repair must arise from prompted choice.
+\subsection{Democracy as inexpensive meta-governance}
 
-\subsection{Democracy}
-
-Every five rounds, agents may propose and vote on a bounded whitelist of parameters.
-Whitelist items include subsidy fraction, subsidy breadth, punishment and reward effects, and loss-and-damage equity or damage weights.
+Every five rounds, agents may propose and vote on a bounded whitelist of parameters, including subsidy fraction, punishment and reward effects, and loss-and-damage equity or damage weights.
 Majority outcomes update the live rule set.
-Democracy is endogenous institutional adaptation.
-It is analyzed as backdrop for contribution dynamics and as a seed-sensitive political path.
+Democracy lets agents rewrite payoff consequences of enforcement and redistribution without paying Stage-2 costs.
+We analyze adopted rules as environmental context for contribution dynamics.
 
-\subsection{Agent decision interface}
+\subsection{Agent interface}
 
-Agents are prompted language models with a default self-interested persona.
-They maximize cumulative payoff unless a specialized persona is assigned.
-Climate role guidance soft-frames developed versus developing constraints.
-Decision outputs are structured as contribution amounts, sanction maps, proposals, votes, and rationales.
-Belief states update after rounds with trust labels and institutional strategies.
-We analyze both numeric choices and coded language.
-We never equate fluent rationales with internalized norms.
-
-Primary analyses treat each seed as a complete society under the same scientific protocol.
-Inference emphasizes sign agreement across seeds for the focal social-pressure association.
-Magnitude estimates from either seed alone remain uncertain because event cells are noisy and agents are interdependent within rounds.
+Agents are prompted language models with a default self-interested persona and soft climate-role guidance.
+Outputs include contribution amounts, sanction maps, proposals, votes, and rationales.
+Belief states update after rounds with trust labels.
+Fluent rationales are evidence of stated reasoning, not proof of internalized norms.

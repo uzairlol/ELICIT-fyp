@@ -1,11 +1,8 @@
-\subsection{Primary multi-seed protocol}
+\subsection{Protocol and replications}
 
-The primary evidence comprises two independent full-protocol runs that differ only by random seed.
-Each run uses Meta Llama~3.1~8B with temperature $0.5$ and $\mathrm{top}\_p=0.95$ for ordinary decisions, lower temperatures for pairwise scoring and voting, and a 4096-token context window.
-Each society contains 26 agents (12 developed, 14 developing) interacting for 30 rounds.
-Institutional assignment is forced every round.
-Developed agents enter SI.
-Developing agents enter SFI.
+Primary evidence comprises two independent full-protocol societies that differ only by random seed.
+Each uses Meta Llama~3.1~8B with temperature $0.5$ and $\mathrm{top}\_p=0.95$ for ordinary decisions, lower temperatures for pairwise scoring and voting, and a 4096-token context window.
+Each society contains 26 agents (12 developed, 14 developing) interacting for 30 rounds under forced institutional assignment.
 Public-good multiplier $m$ equals 1.6.
 Climatic shocks occur in rounds~5 and~10 with severities 0.10 and 0.20.
 Democracy sessions occur every five rounds and therefore coincide with both shocks.
@@ -14,37 +11,29 @@ Stage-2 budgets in SI equal $\max(20,\lfloor 0.05\times\mathrm{wealth}\rfloor)$.
 Default punishment effect-to-cost is 3; reward effect-to-cost is 1.
 Gossip bulletins are eligible when pairwise scores are at most 7, with a capacity of five items.
 
-Both runs are analyzed with equal weight.
-We do not designate either seed as primary and the other as supplemental.
-Where signs agree, we treat the association as robust under this protocol.
-Where signs diverge, we report heterogeneity rather than pooling into a single universal effect.
-Agent identifiers are not treated as fixed personas across seeds, because group labels reshuffle for a substantial subset of identifiers.
+Both replications enter every analysis with equal weight.
+Associations that share sign across replications are treated as recurring under this protocol.
+Associations that reverse sign are reported as heterogeneous.
+Agent identifiers are not treated as fixed personas across replications, because group labels reshuffle for a substantial subset of identifiers.
 
-\subsection{Outcomes and event definitions}
+\subsection{Outcomes and events}
 
 The primary outcome is $\mathrm{prop}_{i,t}$.
 Immediate event-study changes use $\Delta\mathrm{prop}_{i,t}=\mathrm{prop}_{i,t+1}-\mathrm{prop}_{i,t}$.
-Bad reputation uses aggregate peer-trust below 4.
-Reputation drops use declines of at least 1.0.
-Gossip targets follow reconstructed eligibility consistent with the bulletin rule.
-Diff-in-diff contrasts, when reported for a seed, compare affected agents with same-round co-institution controls without the focal event.
-
-Secondary outcomes include zero-contribution shares, round-mean trajectories by institution, Mann--Kendall trend tests on round means, developed--developing wealth gaps, loss-and-damage coverage ratios, adopted democratic rules, and coded motifs in post-event rationales.
-SI versus SFI mean comparisons are descriptive.
-Because institution membership is collinear with group label under forced routing, those comparisons are not causal institution effects.
+Bad reputation, reputation drops, and gossip targets follow the definitions in Section~3.
+Diff-in-diff contrasts, when reported for one replication, compare affected agents with same-round co-institution controls without the focal event.
+Secondary outcomes include zero-contribution shares, round-mean trajectories, developed--developing wealth gaps, loss-and-damage coverage, adopted democratic rules, and coded motifs in post-event rationales.
+SI versus SFI mean comparisons are descriptive: institution membership is collinear with group label under forced routing.
 
 \subsection{Qualitative coding}
 
-For the first seed, contribution rationales in rounds immediately after bad-reputation or gossip events are coded with a multi-label codebook.
-Opportunistic covers free-riding, self-interest, payoff maximization, or marginal-return language.
-Reputation management covers explicit standing, credibility, or repair language.
-Conformity covers peer-average imitation.
+For the first replication, contribution rationales in rounds immediately after bad-reputation or gossip events are coded with a multi-label codebook covering opportunistic, reputation-management, conformity, named-peer, future-round, and gossip-reference motifs.
 A second coder independently labels a stratified subsample for reliability.
-Cross-seed language dialects are summarized with keyness contrasts between SI and SFI contribution rationales.
+Lexical contrasts between SI and SFI contribution rationales are summarized with keyness.
 
 \subsection{Boundary baselines}
 
 Shock-free free-choice baselines from related abstract public-goods runs motivate the climate design.
 In those baselines, reputation can pull agents toward SI when exit is available, and greedy zero contribution dominates without existential risk.
-We cite those patterns only as boundary conditions.
-They are not re-estimated under the forced climate protocol and are not pooled with the two climate seeds.
+Those patterns are cited only as boundary conditions.
+They are not re-estimated under the forced climate protocol.
