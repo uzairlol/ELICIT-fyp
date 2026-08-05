@@ -1,312 +1,202 @@
-\subsection{Overview of contribution intensity}
+\subsection{Cooperation levels across seeds}
 
-Figure~\ref{fig:prop_traj} shows mean contribution intensity by institution across thirty rounds.
-Average intensity over the run is 0.293, with median 0.092 (Table~\ref{tab:coop_summary}).
-Means for SI and SFI are nearly identical (0.291 versus 0.296).
-Medians diverge (0.194 versus 0.034), reflecting a thicker left tail among developing agents in SFI.
-Group-mean lag-1 autocorrelation is only 0.031.
-Agent-level autocorrelation is 0.215.
-Average cooperation is therefore moderately positive, while path stability is limited.
+Table~\ref{tab:coop_summary} summarizes both full-protocol societies.
+Mean contribution intensity is 0.293 in Seed~1 and 0.365 in Seed~2.
+Within each seed, SI and SFI means are nearly identical.
+Agent-mean Mann--Whitney tests do not reject equality of institution means ($p{=}0.817$ and $p{=}0.777$).
+Medians remain lower than means, especially for SFI in Seed~1 (0.034 versus mean 0.296).
+Seed~2 compresses that median gap (0.205 versus 0.179), yet still shows a thicker SFI zero share (22.4\% versus 11.1\% in SI).
+Average cooperation is therefore moderately positive in both societies, while distributions remain right-skewed.
+
+Figure~\ref{fig:prop_cross} overlays round-mean trajectories by institution across seeds.
+Seed~2 sits above Seed~1 for most of the horizon.
+Pearson correlation of round means across seeds is only 0.194 ($p{=}0.305$).
+Institution-specific correlations are likewise weak (SI $r{=}0.144$; SFI $r{=}0.020$).
+Mann--Kendall tests find no significant monotonic trend in either seed.
+The level shift is a seed-level cooperation increase rather than SI--SFI divergence.
+Because institution membership is forced by group, mean parity is descriptive rather than a causal institution effect.
 
 \input{tables/coop_summary}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/contrib_mean_prop_trajectories.png}
-\caption{Mean contribution intensity by institution over rounds.
-Early levels are low, then rise sharply once peer history accumulates.
-Institution means remain close thereafter despite forced assignment.}
-\label{fig:prop_traj}
+\includegraphics[width=\linewidth]{figures/mean_prop_trajectories_by_institution.png}
+\caption{Round-mean contribution intensity by institution in two independent seeds.
+Seed~2 exhibits higher levels.
+Within-seed SI and SFI means remain close throughout.}
+\label{fig:prop_cross}
 \end{figure}
 
-Figure~\ref{fig:prop_median} reports medians with interquartile ranges.
-SFI medians remain near the floor for long stretches even when means are moderate.
-The distribution is right-skewed.
-A minority of high-intensity rounds pulls the mean above the median.
-Figure~\ref{fig:zeros} shows zero-contribution frequencies.
-In round~1, 71.4\% of SFI agents contribute nothing.
-Cold-start caution is common in rationales.
-By round~2, SFI mean intensity jumps from 0.022 to 0.602 as peer history appears.
-That spike raises average cooperation without proving an internalized contribution norm.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/contrib_median_prop_iqr.png}
-\caption{Median contribution intensity with interquartile bands.
-SFI medians stay low relative to means, indicating skew and fragile central tendency.}
-\label{fig:prop_median}
-\end{figure}
+Early-round composition differs sharply.
+In Seed~1, 71.4\% of SFI agents contribute nothing in round~1, then SFI mean intensity jumps from 0.022 to 0.602 in round~2 once peer history appears.
+In Seed~2, SFI round~1 zeros are near zero and the cold-start escalation is muted.
+Figure~\ref{fig:zeros} shows zero frequencies for Seed~1 as the clearer cold-start illustration.
+The contrast warns against treating any single opening path as structural.
+Both societies still converge to matched institution means after the opening window.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/contrib_zero_frequency.png}
-\caption{Share of agents contributing zero by institution and round.
+\caption{Share of agents contributing zero by institution and round in Seed~1.
 SFI opens with widespread zeros.
 SI shows a sharp zero spike after the first climatic shock.}
 \label{fig:zeros}
 \end{figure}
 
-\subsection{Main result: social pressure and subsequent intensity}
+\subsection{Main result: social pressure by institution and seed}
 
-Figure~\ref{fig:rep_deltas} and Table~\ref{tab:event_study} present the primary event study with nonparametric bootstrap confidence intervals ($B{=}5000$).
-After bad-reputation events, mean immediate $\Delta\mathrm{prop}$ is $-0.036$ in SI ($n=36$) and $-0.103$ in SFI ($n=68$).
-After reputation drops, means are $-0.091$ (SI, $n=74$) and $-0.119$ (SFI, $n=81$).
-After gossip targeting, means are $-0.048$ (SI, $n=35$) and $-0.201$ (SFI, $n=52$).
-All six cellwise 95\% intervals include zero, so uncertainty is large relative to the means.
-Standardized effects versus zero are small ($|d|\le 0.17$).
-In every cell, fewer than two-fifths of events show a positive change.
-The modal response is decline or non-increase.
+Table~\ref{tab:event_study} and Figure~\ref{fig:rep_cross} report immediate mean $\Delta\mathrm{prop}$ after social-information events.
+In both seeds, SFI cells are negative for bad reputation and gossip targeting.
+Gossip associations are $-0.201$ (Seed~1) and $-0.084$ (Seed~2).
+Bad-reputation associations are $-0.103$ and $-0.069$.
+Reputation-drop associations in SFI remain negative, though attenuated in Seed~2.
+The developing/non-enforcing withdrawal pattern is the robust core of the study.
+
+SI cells do not replicate in sign.
+In Seed~1, SI means after bad reputation, reputation drops, and gossip are negative ($-0.036$, $-0.091$, $-0.048$).
+In Seed~2, the same three means are positive ($+0.055$, $+0.058$, $+0.187$).
+A universal claim that gossip lowers intensity for all agents is therefore unsupported.
+The supported claim is institutional heterogeneity.
+Social marks associate with withdrawal among SFI agents across seeds, while SI responses are seed-sensitive.
+
+\input{tables/event_study_delta}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/reputation_imm_delta_prop_by_family.png}
+\caption{Immediate mean $\Delta\mathrm{prop}$ after social-information events by institution and seed.
+SFI associations remain negative.
+SI associations reverse sign between seeds.}
+\label{fig:rep_cross}
+\end{figure}
+
+Figure~\ref{fig:rep_dist} shows the Seed~1 distribution of immediate changes.
+Mass lies below zero, especially for gossip targets in SFI.
+Cellwise bootstrap intervals in Seed~1 are wide relative to the means, and standardized effects versus zero are small.
+The multi-seed contribution is therefore the sign pattern across replications rather than precise magnitude estimation from one seed alone.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/reputation_event_deltas.png}
-\caption{Distribution of immediate $\Delta\mathrm{prop}$ after bad-reputation, reputation-drop, and gossip-target events.
+\caption{Distribution of immediate $\Delta\mathrm{prop}$ after social-information events in Seed~1.
 Mass lies below zero, especially for gossip targets in the non-enforcing institution.}
-\label{fig:rep_deltas}
+\label{fig:rep_dist}
 \end{figure}
 
-\input{tables/event_study_delta}
-
-Gossip targets are often high contributors at the hit.
-SFI gossip targets move from mean intensity 0.632 at the event to 0.430 afterward.
-Overall gossip targets move from roughly 0.52 to 0.38.
-Social marks therefore land on relatively visible contributors and precede lower intensity.
-
-Table~\ref{tab:did} compares affected agents with same-round controls.
-The reported DiD is the mean across rounds of (affected mean $\Delta$ $-$ control mean $\Delta$).
-Estimates are $-0.288$ for bad reputation, $-0.208$ for gossip, and $-0.143$ for reputation drops.
-Bootstrap CIs over rounds are wide; only the reputation-drop interval excludes zero at 95\%.
-Cohen's $d$ for affected versus control agent-round deltas ranges from $-0.10$ to $-0.18$.
-A within-round label-shuffle permutation test ($R{=}5000$) yields two-sided $p{=}0.015$ (bad reputation), $p{=}0.039$ (gossip), and $p{=}0.072$ (reputation drop).
+For Seed~1, Table~\ref{tab:did} contrasts affected agents with same-round controls.
+Diff-in-diff estimates are negative for all three event families.
+Permutation tests reject the null for bad reputation and gossip at conventional levels ($p{=}0.015$ and $p{=}0.039$).
 Controls show near-zero or slightly positive mean changes.
-The association is concentrated among marked agents rather than a global round effect.
+The Seed~1 association is concentrated among marked agents rather than a global round effect.
+First events coincide with larger declines than repeats in Seed~1, consistent with attenuation without sign reversal.
+Cross-seed inference therefore privileges the SFI sign pattern over any single-seed universal DiD.
 
 \input{tables/diff_in_diff}
 
-First events coincide with larger declines than repeats.
-Mean first $\Delta\mathrm{prop}$ is $-0.166$ for bad reputation, $-0.206$ for gossip, and $-0.255$ for reputation drops.
-Repeat means are $-0.066$, $-0.097$, and $-0.080$, respectively.
-Habituation attenuates the response without reversing the sign.
-
-Figure~\ref{fig:gossip_freq} shows that gossip naming is concentrated rather than uniform.
-A small set of agents accounts for many bulletin appearances.
-Concentration is consistent with thresholded scoring in a population where most pairwise scores are low.
-About 84\% of consistency scores are at most seven, so gossip eligibility is ambient.
-The event study still conditions on reconstructed targeting rather than on every low score.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/gossip_target_frequency.png}
-\caption{Frequency of reconstructed gossip targeting across agents.
-Naming is uneven, with a subset of agents repeatedly surfacing in social bulletins.}
-\label{fig:gossip_freq}
-\end{figure}
+Gossip targeting is uneven across agents in both societies.
+A minority of agents account for many bulletin appearances, consistent with ambient low pairwise scores.
+About 84\% of consistency scores are at most seven in Seed~1 and about 90\% in Seed~2, so gossip eligibility is widespread even when naming concentrates.
+Named agents are often relatively high contributors at the hit, so stigma does not land only on obvious free-riders.
 
 \subsection{Rationales after social events}
 
-\subsubsection{Coding scheme}
-
-The qualitative sample comprises contribution rationales in rounds immediately after a bad-reputation or gossip event ($N{=}114$ agent-round texts).
-Inclusion requires a lagged event flag and a non-empty contribution rationale.
-Texts are tagged with a multi-label codebook.
-\emph{Opportunistic} covers free-riding, self-interest, payoff maximization, or marginal-return language as the stated decision driver.
-\emph{Conformity} covers peer or group-average behavior as the reason for the agent's own choice.
-\emph{Reputation management} covers explicit standing, credibility, trust scores, or avoiding a free-rider label.
-\emph{Named agents} requires reference to a specific peer identifier.
-\emph{Future-rounds} covers intertemporal conservation without a stronger primary motif.
-\emph{Gossip reference} requires explicit gossip or bulletin language.
-A text may receive multiple tags.
-Primary analysis reports tag counts (Table~\ref{tab:motifs}).
-
-Coder~A applies regular-expression operationalizations of the codebook.
-Coder~B independently applies the written definitions to a stratified 41\% subsample ($n{=}47$).
-Percent agreement is $0.83$.
-Cohen's $\kappa$ is $0.72$ for the mutually exclusive primary label and $0.91$ for opportunistic versus other.
-Agreement is substantial for the focal opportunistic contrast.
-
-\subsubsection{Motif frequencies}
-
-Table~\ref{tab:motifs} summarizes multi-label motif counts.
+Seed~1 post-event contribution texts ($N{=}114$) are coded with the multi-label codebook in Table~\ref{tab:motifs}.
 Opportunistic framing appears 29 times.
 Reputation-management language appears 3 times.
 Conformity appears 5 times.
 Explicit gossip references appear 0 times in the coded sample.
-Agents seldom say they will restore standing by giving more.
-They more often cite weak marginal returns and high peer contributions as reasons to give less.
+Inter-coder agreement on a stratified subsample is substantial (percent agreement 0.83; Cohen's $\kappa{=}0.72$ for primary labels; $\kappa{=}0.91$ for opportunistic versus other).
+Agents seldom state that they will restore standing by giving more.
+They more often cite weak marginal returns and peer free-riding logic.
 
 \input{tables/motifs}
 
 Illustrative paraphrases match the counts.
-One SFI agent, after observing high peer giving, chooses zero to conserve resources and free-ride.
+One SFI agent, after observing high peer giving, chooses zero to conserve resources.
 Another SI agent after the first shock selects zero under a high-budget, low-marginal-return logic.
 A late-round SFI rationale seeks the minimum contribution that avoids a free-rider label.
 That last case is reputation-aware.
 It aims at a floor rather than at repair-driven escalation.
-Credibility language exists as a minority pocket.
-It does not dominate the motif distribution.
 
-\subsubsection{Contribution lexicon}
-
-Figure~\ref{fig:wordclouds} shows contribution-rationale wordclouds by institution.
-These clouds summarise ambient Stage-1 language across the run, so they situate the post-event motif counts in a broader lexical field.
-SI contribution talk emphasises strategy, self-interest, payoff, and maximisation.
-SFI contribution talk emphasises incentives, immediacy, and institutional framing.
-Reputation-repair and fairness vocabulary are not visually dominant in either cloud.
-The lexical picture aligns with the coded motif imbalance.
-Agents narrate contribution choices in an opportunistic register even outside the event subsample.
-That register helps explain why social stigma is followed by withdrawal language more often than by image-repair language.
-Institution labels remain collinear with country group, so the SI/SFI lexical split is descriptive of the joint assignment rather than a causal institution effect.
-Appendix Figure~\ref{fig:app_keyness} reports the corresponding keyness contrast.
+Cross-seed keyness contrasts reproduce a dialect split.
+SI contribution rationales emphasize strategy and self-interest terms.
+SFI rationales emphasize incentives and immediacy.
+Figure~\ref{fig:wordclouds} shows Seed~1 contribution lexicons by institution.
+Fairness language is rare in shared contribution talk in both societies.
+Positive average transfers therefore coexist with weak obligation language.
 
 \begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.48\linewidth}
-\centering
+\begin{subfigure}{0.48\linewidth}
 \includegraphics[width=\linewidth]{figures/wordcloud_SI_contribution.png}
-\caption{SI contribution rationales.}
-\label{fig:wc_si}
+\caption{SI lexicon.}
 \end{subfigure}
 \hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering
+\begin{subfigure}{0.48\linewidth}
 \includegraphics[width=\linewidth]{figures/wordcloud_SFI_contribution.png}
-\caption{SFI contribution rationales.}
-\label{fig:wc_sfi}
+\caption{SFI lexicon.}
 \end{subfigure}
-\caption{Contribution-stage wordclouds by institution.
-Payoff and strategy terms dominate SI talk; incentive and immediacy terms dominate SFI talk.
-Repair-oriented vocabulary is comparatively weak in both clouds.}
+\caption{Contribution-rationale wordclouds by institution (Seed~1).
+Lexical dialects accompany matched mean intensities.}
 \label{fig:wordclouds}
 \end{figure}
 
-\subsection{Shocks, zeros, and recovery}
+\subsection{Shocks, zeros, and composition}
 
-Figure~\ref{fig:shock_box} summarizes within-agent intensity changes around climatic shocks.
-After round~5 (severity 0.10), SI mean within-agent change is $-0.178$ ($n=12$).
-SFI mean change is $+0.195$ ($n=14$).
-SI zero share in round~6 reaches 41.7\% (5 of 12 agents).
-Many SI rationales invoke marginal-return logic after wealth and group-size updates.
-After round~10 (severity 0.20), SI change is $+0.049$ and SFI change is $-0.022$.
-Mean intensity during the second shock round is comparatively high (0.396).
-Pre-shock mean intensity is regained in one round after the first shock and in two rounds after the second.
-Permanent collapse is not observed.
+Within-agent post-minus-pre intensity changes around rounds~5 and~10 are not statistically significant by Wilcoxon tests in either seed (Appendix Table~\ref{tab:app_shock}).
+Composition still moves.
+Seed~1 shows a sharp SI zero spike after the first shock (41.7\% zeros in round~6), with rationales that cite payoff maximization rather than liquidity constraints.
+End-of-round wealth for those agents remains large, so the zeros are strategic rather than liquidity constrained.
+Seed~2 shows a more negative mean R5 delta ($-0.080$ versus $+0.023$) and a higher overall SFI zero share.
+Mean intensity recovers within one or two rounds in both societies.
+Shock--democracy calendar overlap prevents clean attribution of these composition shifts to climate damage alone.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/shock_delta_boxplot.png}
-\caption{Within-agent changes in contribution intensity around climatic shocks.
-The first shock coincides with a sharp SI decline.
-The second shock shows mixed signs.}
-\label{fig:shock_box}
-\end{figure}
+\subsection{Democracy as path-dependent adaptation}
 
-Democracy sessions occur at both shock rounds.
-Shock effects are therefore not cleanly separable from rule updates.
-We treat shock panels as environmental context for social-pressure results.
+Table~\ref{tab:democracy} lists adopted rules.
+Both seeds expand subsidy parameters and raise loss-and-damage equity themes.
+Literal round--rule overlap is low; only the final subsidy-fraction theme is shared at round~30.
+Seed~1 fails punishment-weakening proposals and instead raises damage weights.
+Seed~2 adopts a reduction of punishment effect to 2 in round~20 and ratchets subsidy fraction toward 1.0.
+Democratic adaptation is real in both societies and path dependent across seeds.
+Proposal rhetoric is portable cooperation boilerplate in both runs.
+We treat that divergence as governance context for contribution behavior rather than as a second primary estimand.
 
-\subsection{Wealth, fund coverage, and inequality}
+\input{tables/democracy_cross_seed}
 
-Figure~\ref{fig:wealth_gap} tracks the developed--developing wealth gap.
-The gap widens from $4.56\times10^{6}$ in round~1 to $2.15\times10^{8}$ in round~30.
-Absolute Stage-1 contribution means differ by roughly two orders of magnitude across institutions because wealth stocks differ.
-Intensity means remain close.
-Scale inequality and behavioral intensity are distinct objects.
+\subsection{Loss-and-damage coverage without equalization}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/wealth_gap_developed_developing.png}
-\caption{Developed-minus-developing aggregate wealth over rounds.
-The gap widens despite dual-use deposits and shock payouts.}
-\label{fig:wealth_gap}
-\end{figure}
-
-Figure~\ref{fig:ldf} shows loss-and-damage pool dynamics.
-The pool accumulates far beyond cumulative payouts.
-Shock coverage equals 0.768 in both shock rounds.
-Cumulative payouts are on the order of $8.5\times10^{5}$ currency units.
-Terminal pool balance is orders of magnitude larger.
-Coverage without equalization is the descriptive summary.
-Fund language appears in only about 1.8\% of contribution rationales.
-Agents rarely narrate dual-use deposits as the binding motive.
+Shock coverage equals 0.768 in both seeds at rounds~5 and~10.
+Cumulative payouts remain on the order of $8.5\times10^{5}$, while terminal pools reach $4.34\times10^{9}$ (Seed~1) and $1.30\times10^{10}$ (Seed~2).
+Figure~\ref{fig:ldf_cross} shows pool growth.
+Final developed--developing wealth gaps widen in both runs and are larger in Seed~2 (Table~\ref{tab:coop_summary}; Figure~\ref{fig:wealth_cross}).
+High coverage therefore does not imply stock equalization.
+Dual-use deposits grow the pool while absolute developed contributions and endowments continue to dominate wealth trajectories.
+Agents do not observe the numeric pool balance, so fund-stock optimization is not a credible behavioral interpretation.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/ldf_pool_dynamics.png}
-\caption{Loss-and-damage pool balance versus payout events.
-Collection and growth dominate disbursement.}
-\label{fig:ldf}
-\end{figure}
-
-Figure~\ref{fig:gini} plots wealth Gini against a cooperation-rate summary.
-Wealth Gini falls from 0.709 in round~1 to 0.556 mid-run, then rises to 0.653 by round~30.
-The U-shape indicates temporary compression followed by renewed dispersion.
-Inequality statistics reinforce that social-pressure findings occur inside a diverging wealth path.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/gini_wealth_cooperation_rate.png}
-\caption{Wealth Gini and cooperation-rate summary across rounds.
-Inequality compresses mid-run then widens again.}
-\label{fig:gini}
-\end{figure}
-
-\subsection{Sanctions, rewards, and enforcement burden}
-
-Figure~\ref{fig:sanctions} shows punishment and reward timelines inside SI.
-Sanction activity varies across rounds rather than locking into a stable high-punishment regime.
-Figure~\ref{fig:enforcement} summarizes enforcement burden.
-Correlation between contribution intensity and Stage-2 tokens spent is about 0.14.
-Top-quartile intensity agents account for roughly 35\% of enforcement tokens.
-Enforcement is costly and uneven.
-It does not substitute for the gossip channel in SFI, where Stage-2 is unavailable.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/sanction_punish_reward_timeline.png}
-\caption{Aggregate punishment and reward allocations over rounds in the enforcing institution.}
-\label{fig:sanctions}
+\includegraphics[width=\linewidth]{figures/ldf_pool_end_by_round.png}
+\caption{Loss-and-damage pool balances by round across seeds.
+Pools grow far beyond cumulative shock payouts.}
+\label{fig:ldf_cross}
 \end{figure}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/enforcement_burden.png}
-\caption{Enforcement spending relative to contribution intensity.
-Higher-intensity agents bear a sizable share of Stage-2 tokens.}
-\label{fig:enforcement}
+\includegraphics[width=\linewidth]{figures/wealth_gap_developed_minus_developing.png}
+\caption{Developed-minus-developing mean wealth gap over rounds in both seeds.
+Gaps widen despite identical shock coverage ratios.}
+\label{fig:wealth_cross}
 \end{figure}
 
-\subsection{Democratic adaptation as institutional backdrop}
+\subsection{Summary of multi-seed evidence}
 
-Figure~\ref{fig:democracy} displays adopted rules over constitutional sessions.
-Six sessions yield fourteen proposals and six adoptions.
-Adopted changes raise subsidy fraction, raise loss-and-damage equity weight, and raise damage weight in payouts.
-Punishment-weakening proposals appear twice and fail both times.
-Proposers are split across institutions (eight SI, six SFI).
-Mean proposer intensity (0.36) exceeds population mean intensity (0.29).
-Vote alignment with proposer institution is near base rate.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/adopted_rules_timeline.png}
-\caption{Timeline of democratically adopted parameter changes.
-The path favors higher subsidies and stronger loss-and-damage equity settings.}
-\label{fig:democracy}
-\end{figure}
-
-Democracy therefore drifts toward carrots and equity weights while preserving punishment strength.
-That path is politically informative.
-It is not the primary reputation claim.
-It shows that agents can revise fiscal parameters while still reducing intensity after social stigma.
-
-\subsection{Norm emergence versus cooperation levels}
-
-Late-round dispersion remains large.
-Late interquartile range of intensity is 0.178 versus 0.238 early.
-Near-zero agents number 5 of 26.
-High-intensity agents (mean at least 0.25) number 13 of 26.
-Conditional-cooperation correlations with peer history are weak (about 0.05 in SI and $-0.09$ in SFI over the full path).
-Fairness and reciprocity tokens are rare in shared contribution language.
-The synthesis verdict is limited or mixed norm emergence alongside moderately positive average transfers.
-Positive means do not imply internalized contribution norms.
-The reputation result sits inside that distinction.
-Social marks do not convert into a repair norm in this run.
+Three findings survive both independent realizations.
+First, SI and SFI mean intensities remain matched within seed while overall levels can shift.
+Second, SFI agents reduce intensity after gossip and bad-reputation marks on average.
+Third, loss-and-damage coverage coexists with widening wealth gaps.
+Two findings are seed-sensitive.
+SI responses to social marks reverse sign, and democratic rule paths diverge on punishment weakening.
+Opening zero paths and absolute sanction volumes also differ across seeds without overturning the SFI social-pressure association.
+The manuscript therefore centers institutional heterogeneity in social pressure rather than a single universal reputation effect.

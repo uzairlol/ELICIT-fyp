@@ -1,88 +1,72 @@
-\subsection{Collective action and reputation in human societies}
+\subsection{Collective action, sanctions, and reputation}
 
 Collective-action problems arise when private incentives erode shared returns \pcite{olson1965logic,hardin1968tragedy}.
-Laboratory and field traditions show that monitoring, punishment, and reputation can support cooperation \pcite{fehr2002altruistic,boyd2003evolution,ostrom1990governing}.
-Indirect reciprocity and image scoring formalize how observed giving affects future partners \pcite{wedekind2000cooperation,panchanathan2004indirect}.
-Milinski and colleagues argue that reputation helps solve commons dilemmas by linking contribution to social standing \pcite{milinski2002reputation}.
-Nowak summarizes reputation among the core evolutionary routes to cooperation \pcite{nowak2006five}.
+Laboratory and evolutionary traditions show that monitoring, costly punishment, and reputation can sustain cooperation \pcite{fehr2002altruistic,boyd2003evolution,axelrod1981evolution,axelrod1984evolution}.
+Indirect reciprocity and image scoring formalize how observed giving shapes future partners \pcite{wedekind2000cooperation,panchanathan2004indirect}.
+Milinski and colleagues argue that reputation helps solve commons dilemmas by linking contribution to standing \pcite{milinski2002reputation}.
+Nowak lists reputation among the core evolutionary routes to cooperation \pcite{nowak2006five}.
 Across these lines, the working hypothesis is directional.
 More social visibility should raise, or at least protect, cooperative transfers.
 
 Institutional design complements reputation.
 Ostrom documents polycentric rules, graduated sanctions, and participatory governance in durable commons regimes \pcite{ostrom1990governing}.
-Axelrod emphasizes reciprocity and the shadow of the future in repeated interaction \pcite{axelrod1981evolution,axelrod1984evolution}.
-These literatures motivate dual channels in our environment.
-Agents face formal enforcement inside one institution and social evaluation everywhere.
-They also periodically revise a bounded set of fiscal and fund parameters by vote.
+Those design principles motivate dual channels in computational societies.
+Agents may face formal enforcement inside one institution and social evaluation everywhere.
+They may also revise fiscal parameters by vote.
+The classical literatures rarely ask what happens when social marks land on agents who cannot exit and cannot punish peers.
 
-\subsection{From classical multi-agent systems to language-model societies}
+\subsection{Language-model agents as strategic laboratories}
 
-Multi-agent research has long studied social dilemmas with reinforcement learners and rule-based agents \pcite{generativeagentsurvey2022}.
-Language-model agents change the measurement surface.
-They produce natural-language rationales, belief updates, and peer judgments in the same loop as numeric choices \pcite{park2023generative,llmagents2023}.
-Park and colleagues show that generative agents can sustain believable social routines when memory and reflection are scaffolded \pcite{park2023generative}.
-That realism invites stronger claims about social mechanisms.
-It also invites failure modes that numeric agents never verbalize.
+Language-model agents change the measurement surface of social dilemmas.
+They produce numeric choices together with natural-language rationales, belief updates, and peer judgments \pcite{park2023generative,sumers2024cognitive}.
+Game-theoretic LLM platforms treat such agents as laboratories for strategic interaction \pcite{mao2023alympics}.
+Cooperation benchmarks report heterogeneous success across games, prompts, and communication regimes \pcite{piatti2024govsim,madmoun2025communication,liang2025everyone}.
+Some societies sustain contributions when talk is rich.
+Others collapse once incentives dominate.
 
-Cooperation benchmarks for LLM agents report heterogeneous success across games and prompts \pcite{coopeval2025,ijcnlp2025agents,freeriders2025}.
-Some societies sustain contributions when communication is rich.
-Others collapse into free-riding once incentives dominate.
-Short-horizon reasoning appears repeatedly as a friction \pcite{eacl2026short,collectiveintel2025}.
-These findings caution against treating LLM cooperation as an automatic property of scale.
-They motivate designs that separate average transfer levels from norm internalization.
+A growing strand shows that explicit reasoning can reduce cooperation.
+Models that deliberate more intensely often favor individually rational free-riding \pcite{li2025spontaneous,freeriders2025}.
+That pattern mirrors human ``spontaneous giving and calculated greed'' and warns against equating fluent justification with prosocial commitment.
+Norm-focused multi-agent studies likewise report partial emergence and fragile stability rather than automatic internalization \pcite{gupta2025norms,ashery2025conventions,cross2025norms}.
+These results motivate separating average transfer levels from norm strength.
 
-\subsection{Reputation and communication as assumed stabilizers}
+\subsection{Reputation systems as assumed stabilizers}
 
 Several recent systems treat reputation networks or peer talk as cooperation technology.
 RepuNet-style architectures encode standing so agents can condition on peer history \pcite{repunet2025}.
-GovSim studies sustainable cooperation among LLM agents and highlights communication and universalization reasoning as supportive channels \pcite{piatti2024govsim}.
-Related communication protocols emphasize information sharing as a route to coordination \pcite{communicationcoop2024,tomagents2024}.
+GovSim and related communication protocols emphasize information sharing as a coordination route \pcite{piatti2024govsim,madmoun2025communication}.
+Punishment-strategy transplants from classical evolutionary models show that explicit sanctions can organize behavior when costs and targets are clear \pcite{warnakulasuriya2025punishment}.
 The cumulative message is optimistic.
 If agents can talk and score one another, collective outcomes should improve.
 
-Norm-focused work complicates that optimism without overturning it.
-Studies of generative-agent norms report partial emergence, cultural transmission, and fragile stability \pcite{ren2024emergence,socialnormsllm2025}.
-Punishment-strategy transplants from Boyd and Richerson show that explicit sanctions can organize behavior when costs and targets are clear \pcite{warnakulasuriya2025punishment,sanctiondesign2025}.
-Where gossip substitutes for formal punishment, the mapping is less settled.
-Our setting isolates that substitution for agents who cannot exit their assigned institution.
+That optimism is incomplete for climate asymmetry.
+Where gossip substitutes for formal punishment, the mapping from stigma to repair is unsettled.
+Self-reinforcing salience loops in LLM inference can lock opportunistic frames once they appear \pcite{howlround2025}.
+Identification of free-riders without sanction reach is a known failure mode in mixed populations.
+Social monitoring can then name agents without raising contributions.
+Prior LLM work rarely event-studies contribution intensity after negative social marks under forced institutional partitions.
 
-A further strand documents self-reinforcing salience loops in LLM inference \pcite{howlround2025}.
-Once a payoff-maximizing frame becomes salient, subsequent reasoning may recycle it.
-That mechanism is useful for interpreting why social stigma need not trigger repair language.
-It does not by itself predict the sign of contribution change.
-It predicts stickiness of opportunistic narratives once they appear.
+\subsection{Climate risk sharing and computational governance}
 
-\subsection{Climate risk, institutions, and computational governance}
-
-Climate governance couples mitigation public goods with asymmetric vulnerability and compensation claims \pcite{hardin1968tragedy,olson1965logic,ostrom1990governing}.
+Climate governance couples mitigation public goods with asymmetric vulnerability and compensation claims.
 Loss-and-damage instruments are dual-use in spirit.
-Contributions can fund both shared abatement returns and contingent payouts after shocks.
+Contributions can fund shared returns and contingent payouts after shocks.
 Computational societies that combine those fiscal rules with LLM agents that gossip and vote remain rare.
-
-Institutional design for multi-agent LLM systems increasingly treats incentives and sequential public-goods structure as first-class objects \pcite{liang2025everyone,madmoun2025communication}.
-Endogenous democracy lets agents revise multipliers of punishment, subsidy, and equity weights.
+Endogenous democracy lets agents revise punishment, subsidy, and equity weights.
 That channel is politically meaningful.
 It also confounds clean shock identification when votes coincide with damage rounds.
-We treat democratic adaptation as environmental context for the reputation question.
-A separate study can center the political economy of adopted rules.
 
-Inequality and preference alignment matter for interpretation \pcite{wealthineq2025,ashery2025conventions}.
-If social pressure falls on low-capacity agents who lack enforcement tools, withdrawal may be a constrained response.
-Baseline studies in shock-free free-choice environments show that reputation can pull agents toward enforcing institutions when sorting is allowed.
+Inequality complicates interpretation of social pressure \pcite{lu2025aligning,ashery2025conventions}.
+If stigma falls on low-capacity agents without Stage-2 tools, withdrawal may be a constrained response.
+Shock-free free-choice baselines in related work show that reputation can coordinate sorting when exit is available.
 They also show identification of defectors without cross-institution sanctioning power.
-Those boundary results define when reputation helps versus when it coincides with exit or withdrawal.
+Those boundary results define when reputation helps versus when it coincides with withdrawal.
 
 \subsection{Research gap}
 
 Prior work largely assumes that reputation and gossip raise cooperation, or at least do not systematically reduce it.
-LLM-agent papers that celebrate communication rarely event-study contribution intensity after negative social marks under climate asymmetry.
+LLM-agent papers that celebrate communication rarely measure post-stigma intensity under climate asymmetry across independent replications.
 Climate-finance simulations rarely instrument social stigma with pairwise consistency scoring and gossip bulletins.
 The gap is therefore joint.
-We need evidence on the sign of the social-pressure association when institutions are forced, shocks are present, and repair is voluntary.
-
-This paper addresses that gap with one primary estimand.
-We measure the immediate change in contribution intensity after bad-reputation, reputation-drop, and gossip-target events.
-We complement averages with motif counts and with supporting trajectories for wealth, fund coverage, and enforcement.
-The literature implies a clear prediction from classical theory.
-Social pressure should raise giving.
-Our design tests whether LLM agents in this climate package obey that prediction.
+We need an environment where social marks, forced institutions, shocks, and redistribution coexist, and where multi-seed evidence distinguishes robust associations from seed-specific paths.
+The present study addresses that gap with a dual-run event study of contribution intensity after reputation and gossip events.

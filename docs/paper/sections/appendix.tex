@@ -2,16 +2,16 @@
 \label{app:main}
 
 This appendix supports replication of the scientific protocol.
-It describes parameters, decision interfaces, and supplementary results.
-Implementation artifacts from software engineering are omitted.
+It describes parameters, decision interfaces, and supplementary multi-seed results.
+Software-engineering artifacts are omitted.
 
 \subsection{Experimental configuration}
 
-Table~\ref{tab:app_config} lists core configuration values for the primary climate-risk society.
+Table~\ref{tab:app_config} lists core configuration values shared by both climate-risk societies.
 
 \begin{table}[h]
 \centering
-\caption{Primary-run configuration (scientific parameters).}
+\caption{Shared configuration for the two full-protocol seeds (scientific parameters).}
 \label{tab:app_config}
 \small
 \begin{tabular}{@{}lp{0.55\textwidth}@{}}
@@ -22,26 +22,25 @@ Population & 26 agents (12 developed, 14 developing) \\
 Horizon & 30 rounds \\
 Institutional assignment & Forced: developed $\to$ SI; developing $\to$ SFI \\
 Public-good multiplier $m$ & 1.6 \\
-Stage-1 budget & Current wealth (non-negative integer) \\
+Stage-1 budget & Current wealth (non-negative) \\
 Stage-2 budget (SI) & $\max(20,\lfloor 0.05\times\mathrm{wealth}\rfloor)$ \\
-Punishment effect / cost & 3 / 1 \\
+Punishment effect / cost (default) & 3 / 1 \\
 Reward effect / cost & 1 / 1 \\
 Initial subsidy fraction & 0.20 of punishment costs to top contributors \\
 Shock schedule & Round 5 severity 0.10; round 10 severity 0.20 \\
 Vulnerability & Developed 0.30; developing 1.50 \\
-Damage scale factor & 150000 $\times$ severity $\times$ vulnerability \\
+Damage scale factor & $150000 \times$ severity $\times$ vulnerability \\
 LDF deposit rule & Stage-1 contribution dual-use deposit each round \\
 LDF recipients & Developing agents after shocks \\
 Initial max coverage & 0.90 \\
 Initial equity weight & 0.00 (democratically revisable) \\
 Democracy interval & Every 5 rounds \\
 Consistency / gossip & Enabled; bulletin if score $\le 7$; max 5 items \\
-Decision model & Meta Llama 3.1 8B (\texttt{llama3.1:8b}, local Ollama) \\
+Decision model & Meta Llama 3.1 8B \\
 Default sampling & temperature $0.5$, $\mathrm{top}\_p=0.95$ \\
 ToM / democracy temps & $0.3$ / proposal $0.5$, vote $0.3$ \\
 Context length & 4096 tokens \\
-Run date (local inference) & 31 July 2026 \\
-Random seed & Fixed single seed \\
+Independent replications & Two seeds (Seed~1, Seed~2) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -53,7 +52,7 @@ Initial endowments follow group-specific schedules that create large developed--
 
 Each round proceeds in the following scientific order.
 \begin{enumerate}
-\item Institutional assignment is applied (forced in the primary run).
+\item Institutional assignment is applied (forced in the primary runs).
 \item Agents choose Stage-1 contributions under decision cards, climate role guidance, beliefs, and any gossip bulletins.
 \item Stage-1 public-good returns are distributed within each institution.
 \item Dual-use deposits update the loss-and-damage pool.
@@ -73,6 +72,7 @@ Bad reputation uses aggregate peer-trust below 4.
 Reputation drops use declines of at least 1.0.
 Gossip targets follow reconstructed eligibility consistent with the bulletin rule.
 Diff-in-diff controls are co-institution agents in the same round without the focal event.
+Cross-seed comparisons use identical outcome definitions on both replications.
 
 \subsection{Prompt templates (sanitized)}
 
@@ -98,276 +98,128 @@ Keep choices valid under all game rules and cite the concrete facts driving your
 \textbf{Developed country.}
 You typically have higher fiscal capacity and historically higher emissions.
 Treat long-run climate stability and institutional credibility as strategically important.
-You may choose either self-interested or cooperative actions, but explain trade-offs clearly.
+You are assigned to the binding treaty institution with peer sanctioning.
 
 \textbf{Developing country.}
-You typically face higher vulnerability and tighter budget constraints.
-Balance immediate resilience needs against long-run cooperation incentives.
-You may choose either protective or cooperative actions, but explain trade-offs clearly.
+You typically face higher climate vulnerability and tighter fiscal constraints.
+Treat disaster compensation and survival constraints as strategically important.
+You are assigned to the non-binding agreement without peer sanctioning.
 \end{quote}
 
-\subsubsection{Loss-and-damage context reminder}
+\subsubsection{Stage-1 contribution decision}
 
 \begin{quote}
 \small
-Climate shocks are deterministic and can create asymmetric losses.
-The Loss \& Damage Fund can shift net outcomes through contributions and payouts.
-Any fiscal units you contribute to emissions reduction are also deposited into the fund pool for disaster payouts.
-Use these mechanisms as decision context.
-They do not force a single choice.
+Choose an integer contribution between 0 and your current budget.
+You observe group size, marginal per-capita return, recent same-institution averages, own wealth, beliefs, and any gossip bulletins.
+State a brief rationale for the chosen amount.
 \end{quote}
 
-\subsubsection{Stage-1 contribution decision card}
+\subsubsection{Stage-2 sanction decision (SI only)}
 
 \begin{quote}
 \small
-\textbf{Decision Card --- Stage 1 / Contribution}\\
-Institution: [SI or SFI]\\
-Contribution budget: [current wealth]\\
-Minimum contribution: 0\\
-Maximum contribution: [budget]\\
-Group size: [n]\\
-MCPR (marginal return to you per unit contributed): $m/n$\\
-Previous round's group average contribution: [value or unavailable]\\
-Your recent contributions: [list]\\
-Your recent institution choices: [list]\\
-Choose one integer contribution within the allowed budget.
+Allocate your sanction budget across listed peers as punishments and rewards.
+Punishments and rewards must be non-negative integers that respect the budget.
+Provide a brief justification that is consistent with the numeric allocation.
 \end{quote}
-
-Required structured fields include contribution amount, reasoning, and facts used.
-
-\subsubsection{Stage-2 sanction and reward decision card (SI only)}
-
-\begin{quote}
-\small
-\textbf{Decision Card --- Stage 2 / Punishment \& Reward Allocation}\\
-Sanction budget: [climate wealth-linked budget]\\
-Punishment effect / cost: $-3$ payoff / 1 per unit\\
-Reward effect / cost: $+1$ payoff / 1 per unit\\
-Targets listed worst free-rider first, with contributions and consistency scores.\\
-Decision priority: (1) current-round contributions and stated intent; (2) per-target trust scores; (3) internal beliefs; (4) gossip.
-\end{quote}
-
-Required structured fields include punishment map, reward map, justifications, reasoning, and facts used.
-Scenario language names punishments as trade-tariff penalties and rewards as economic aid packages.
 
 \subsubsection{Pairwise consistency scoring}
 
 \begin{quote}
 \small
-Task: Score the behavioral consistency of Agent [target] this round.\\
-Stated intent before contributing: ``[text]''\\
-Actual contribution: [c] / [budget]\\
-Scale: 10 $=$ matched intent; 5 $=$ neutral / insufficient data; 1 $=$ inconsistent.\\
-Return an integer trust score and a brief justification.
+Score the target from 1 to 10 for consistency between stated intent and observed action.
+Provide a one-sentence justification.
+Low scores may generate gossip bulletins.
 \end{quote}
 
-\subsubsection{Gossip bulletin line}
+\subsubsection{Democracy proposal and vote}
 
 \begin{quote}
 \small
-Agent [source] observed regarding [YOU or Agent target] (Consistency Score: [s]/10). Comment: ``[text]''
+Propose at most one whitelist parameter change, or abstain.
+Later, vote yes or no on each eligible proposal.
+Whitelist items include subsidy fraction, subsidy breadth, punishment effect, reward effect, and loss-and-damage equity or damage weights.
 \end{quote}
 
-\subsubsection{Democratic proposal}
+\subsection{Supplementary multi-seed statistics}
 
-\begin{quote}
-\small
-The community is holding a constitutional vote.
-You may propose one specific rule change to improve collective welfare.
-Current tunable parameters: [whitelist with current values]\\
-Respond with the exact parameter name, a numeric new value, and a one-sentence reason.
-\end{quote}
-
-Whitelist families include punishment and reward effects, Stage-2 endowment parameters, subsidy fraction and breadth, maximum fund coverage, payout damage weight, and equity weight.
-
-\subsubsection{Democratic vote}
-
-\begin{quote}
-\small
-You are shown the collected proposals with indices.
-Cast a single vote for one proposal index and provide a short reason.
-\end{quote}
-
-\subsubsection{Forced-assignment notice (primary run)}
-
-In the primary climate package, Stage-0 free choice is disabled.
-Developed agents receive a binding-treaty assignment notice.
-Developing agents receive a non-binding-agreement assignment notice.
-Those notices are fixed role statements rather than open institutional elections.
-
-\subsection{Supplementary tables}
+Table~\ref{tab:app_cross_corr} reports cross-seed correlations of round-mean intensity.
+Correlations are weak for the pooled series and near zero within institutions.
+Per-agent mean-intensity correlations across seeds are near zero even among identifiers that keep the same group label, confirming that agent identifiers are not stable personas.
+Table~\ref{tab:app_shock} reports Wilcoxon tests for within-agent post-minus-pre intensity around shock rounds.
+Figure~\ref{fig:app_shockbox} shows shock-delta distributions by seed.
+Figure~\ref{fig:app_agent} shows the agent-mean intensity scatter across seeds.
+Figure~\ref{fig:app_shared} shows shared-prompt concept rates for Seed~1 as additional lexical context.
 
 \begin{table}[h]
 \centering
-\caption{First versus repeat social events: mean immediate $\Delta\mathrm{prop}$.}
-\label{tab:app_first_repeat}
+\caption{Cross-seed correlation of round-mean contribution intensity.}
+\label{tab:app_cross_corr}
 \small
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular}{lrrr}
 \toprule
-Event & First-event mean $\Delta$ & Repeat-event mean $\Delta$ \\
+Series & Pearson $r$ & $p$ & RMSE \\
 \midrule
-Bad reputation & $-0.166$ & $-0.066$ \\
-Gossip target & $-0.206$ & $-0.097$ \\
-Reputation drop & $-0.255$ & $-0.080$ \\
+All agents & 0.194 & 0.305 & 0.124 \\
+SI only & 0.144 & 0.448 & 0.164 \\
+SFI only & 0.020 & 0.916 & 0.184 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[h]
 \centering
-\caption{Climatic shock event-study summary for contribution intensity.}
-\label{tab:app_shocks}
+\caption{Within-agent shock event-study Wilcoxon tests for $\Delta\mathrm{prop}$.}
+\label{tab:app_shock}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{lccrr}
 \toprule
-Shock & SI within-agent $\Delta$ & SFI within-agent $\Delta$ & Notes \\
+Seed & Shock & Mean $\Delta$ & Median $\Delta$ & Wilcoxon $p$ \\
 \midrule
-Round 5 (sev.\ 0.10) & $-0.178$ ($n=12$) & $+0.195$ ($n=14$) & SI zeros in R6: 41.7\% \\
-Round 10 (sev.\ 0.20) & $+0.049$ & $-0.022$ & During mean intensity 0.396 \\
+1 & R5 & $+0.023$ & $-0.014$ & 0.367 \\
+1 & R10 & $+0.010$ & $+0.015$ & 0.328 \\
+2 & R5 & $-0.080$ & $-0.011$ & 0.582 \\
+2 & R10 & $+0.050$ & $-0.147$ & 0.367 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{table}[h]
-\centering
-\caption{Democratic proposal categories and adoption outcomes.}
-\label{tab:app_democracy}
-\small
-\begin{tabular}{@{}lrr@{}}
-\toprule
-Category & Proposals & Adopted \\
-\midrule
-Reward subsidy & 6 & yes (path upward) \\
-LDF equity weight & 3 & yes (path upward) \\
-LDF redistribution-related & 2 & mixed \\
-Punishment weakening & 2 & 0 \\
-LDF damage weight & 1 & yes (upward) \\
-\midrule
-Total & 14 & 6 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[h]
-\centering
-\caption{Additional cooperation diagnostics.}
-\label{tab:app_coop_extra}
-\small
-\begin{tabular}{@{}lc@{}}
-\toprule
-Diagnostic & Value \\
-\midrule
-Rounds with mean intensity $\ge 0.10$ / $0.20$ / $0.30$ & 30 / 26 / 17 \\
-Near-zero agents (path) & 5 / 26 \\
-High-intensity agents (mean $\ge 0.25$) & 13 / 26 \\
-Conditional-coop correlation (SI / SFI) & $\approx 0.05$ / $-0.09$ \\
-Consistency scores $\le 7$ & $\approx 84\%$ \\
-Fund mentions in contribution texts & $\approx 1.8\%$ (14 / 780) \\
-Post-payout mean $\Delta\mathrm{prop}$ (developing) & $+0.060$ (median $\approx 0$) \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Supplementary figures}
-
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/contrib_smoothed_prop.png}
-\caption{Smoothed contribution-intensity trajectories.
-Smoothing clarifies mid-run persistence without hiding early spikes and shock-adjacent dips.}
-\label{fig:app_smooth}
+\includegraphics[width=0.72\textwidth]{figures/shock_delta_boxplot_cross_seed.png}
+\caption{Distribution of within-agent post-minus-pre intensity changes around climatic shocks, by seed.}
+\label{fig:app_shockbox}
 \end{figure}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/reputation_mean_trajectories.png}
-\caption{Mean aggregate reputation trajectories by institution.
-Reputation levels fluctuate without locking into a high-trust absorbing state.}
-\label{fig:app_rep_traj}
+\includegraphics[width=0.72\textwidth]{figures/agent_mean_prop_scatter.png}
+\caption{Agent-mean contribution intensity in Seed~1 versus Seed~2.
+Points are not persona-matched across seeds.}
+\label{fig:app_agent}
 \end{figure}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/gini_contribution_vs_wealth.png}
-\caption{Contribution Gini versus wealth Gini.
-Contribution inequality and wealth inequality move on related but non-identical paths.}
-\label{fig:app_gini_comp}
+\includegraphics[width=0.72\textwidth]{figures/concept_rates_shared.png}
+\caption{Concept rates in shared rationales (Seed~1).
+Fairness and reciprocity remain rare relative to strategy language.}
+\label{fig:app_shared}
 \end{figure}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/proposal_categories_timeline.png}
-\caption{Proposal categories across democracy sessions.
-Subsidy and equity themes recur; punishment weakening fails.}
-\label{fig:app_prop_cats}
-\end{figure}
+\subsection{Motif codebook definitions}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/keyness_shared_unigrams.png}
-\caption{Keyness of shared unigrams complementary to Figure~\ref{fig:wordclouds}.
-SI-distinctive terms include strategy and self-interest; SFI-distinctive terms include incentives and immediacy.
-Fairness vocabulary remains weak relative to incentive-framed language.}
-\label{fig:app_keyness}
-\end{figure}
+\begin{itemize}
+\item \emph{Opportunistic:} free-riding, self-interest, payoff maximization, or marginal-return language as the stated driver.
+\item \emph{Conformity:} peer or group-average behavior as the reason for the agent's own choice.
+\item \emph{Reputation management:} explicit standing, credibility, trust scores, or avoiding a free-rider label.
+\item \emph{Named agents:} reference to a specific peer identifier.
+\item \emph{Future-rounds:} intertemporal conservation without a stronger primary motif.
+\item \emph{Gossip reference:} explicit gossip or bulletin language.
+\end{itemize}
 
-\begin{figure}[h]
-\centering
-\begin{subfigure}[t]{0.48\textwidth}
-\centering
-\includegraphics[width=\linewidth]{figures/wordcloud_SI_shared.png}
-\caption{SI shared kinds.}
-\end{subfigure}
-\hfill
-\begin{subfigure}[t]{0.48\textwidth}
-\centering
-\includegraphics[width=\linewidth]{figures/wordcloud_SFI_shared.png}
-\caption{SFI shared kinds.}
-\end{subfigure}
-\caption{Shared-kind wordclouds (contribution plus belief language; Stage-2 punishment blocks excluded).
-The same opportunistic/incentive dialect split appears outside contribution-only clouds.}
-\label{fig:app_wc_shared}
-\end{figure}
+\subsection{Claim boundaries}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/concept_rates_shared.png}
-\caption{Concept rates in shared contribution language.
-Fairness and reciprocity remain low relative to incentive-framed concepts.}
-\label{fig:app_concepts}
-\end{figure}
-
-\subsection{Boundary-condition baseline summary}
-
-Shock-free free-choice baselines support four interpretive points used in the main text.
-\begin{enumerate}
-\item Without shocks, pure free-riding can be payoff-dominant under some non-LLM counterfactuals.
-\item Reputation can coordinate migration into SI when institutional exit is allowed.
-\item Voting without reputation can amplify distrust and false accusations.
-\item Agents may identify opportunistic peers yet fail to sanction them across institutional borders.
-\end{enumerate}
-These points define when reputation helps as a sorting device.
-They do not overturn the primary-run association between social marks and lower intensity under forced climate assignment.
-
-\subsection{Measurement notes}
-
-Alternative intensity denominators (beginning-of-round wealth; Stage-1 budget) preserve the qualitative sign pattern of social-event averages in internal checks.
-Absolute contribution analyses are dominated by developed-agent scale and are not used as primary estimands.
-Belief labels show free-rider tags more often than cooperative tags in ambient language, consistent with cautious peer models.
-
-\subsection{Inferential post-processing}
-
-All inferential quantities use the existing event-study panel only.
-No additional simulation runs were required.
-Event-study confidence intervals resample event rows with replacement ($B{=}5000$).
-Diff-in-diff confidence intervals resample rounds with replacement ($B{=}5000$).
-Permutation tests shuffle event labels within each round ($R{=}5000$) and recompute the round-mean DiD; $p$-values are two-sided.
-Cohen's $d$ for event cells is mean$/$SD of $\Delta\mathrm{prop}$; for DiD it compares affected and control agent-round deltas.
-Second-coder reliability uses a stratified 41\% subsample of post-event contribution rationales.
-Random seed for resampling and subsample draws is $20260731$.
-
-\subsection{Claim checklist (claim-safe)}
-
-Supported associations include negative mean $\Delta\mathrm{prop}$ after bad-reputation and gossip events; opportunistic motif dominance over repair; moderately positive mean intensity with limited path stability; limited or mixed norm emergence; high shock coverage with widening wealth gaps; democratic drift toward subsidies and equity weights.
-Unsupported claims include causal SI-versus-SFI effects under forced routing; real-world fund effectiveness; full Ostrom-principle implementation; systematic reputation repair; multi-seed generality; and permanent post-shock cooperation collapse.
+The following claims are supported under the present protocol: SFI withdrawal after gossip/bad reputation across seeds; within-seed SI$\approx$SFI mean intensity; coverage without equalization; path-dependent democracy.
+The following claims are not supported: causal SI-versus-SFI institution effects; universal SI gossip withdrawal; evaluation of any real-world loss-and-damage fund; full implementation of Ostrom design principles; persona-stable agent identifiers across seeds.

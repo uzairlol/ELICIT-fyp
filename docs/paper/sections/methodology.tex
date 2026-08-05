@@ -12,7 +12,7 @@ Two institutions operate in parallel.
 The enforcing institution (SI) combines Stage-1 public-goods returns with peer punishment and reward.
 The non-enforcing institution (SFI) provides Stage-1 returns without Stage-2 sanctioning.
 Institution labels are presented to agents in climate language as a binding treaty versus a non-binding agreement.
-In the primary climate run, assignment is forced every round.
+In the primary climate runs, assignment is forced every round.
 Developed agents enter SI.
 Developing agents enter SFI.
 Free institutional choice is reserved for boundary baselines discussed later.
@@ -26,7 +26,7 @@ With public-good multiplier $m$ and group size $n=|G|$, each member receives Sta
 \mathrm{share}_i=\frac{m\cdot C}{n}.
 \end{equation}
 The marginal per-capita return is therefore $m/n$.
-Contribution budgets equal current wealth in the climate package, floored at zero.
+Contribution budgets equal current wealth, floored at zero.
 Agents receive decision cards that state budget bounds, group size, marginal return, and recent same-institution averages.
 
 Contribution intensity is the primary behavioral outcome.
@@ -45,13 +45,9 @@ Each receives a sanction budget proportional to wealth, with a climate floor.
 Punishment tokens reduce a target's payoff at a fixed effect-to-cost ratio.
 Reward tokens raise a target's payoff at unit cost.
 Targets are listed with current contributions and pairwise consistency scores when available.
-Unspent Stage-2 budget is retained according to the institutional rules presented in the decision card.
 SFI members skip Stage-2 entirely.
-
 Enforcement is itself a second-order public good.
-High contributors may bear disproportionate sanction spending.
-We track that burden as context.
-We do not treat it as the primary estimand.
+We track sanction burden as context rather than as the primary estimand.
 
 \subsection{Dual-use loss-and-damage fund}
 
@@ -87,7 +83,7 @@ Low pairwise scores generate gossip items injected into subsequent prompts.
 Bulletins name the observer, the target, the consistency score, and a short comment.
 Capacity limits keep only a top set of items.
 In the event study, gossip targeting is reconstructed from low-score conditions consistent with bulletin generation.
-The simulation does not store a separate verbatim gossip transcript for every edge.
+The protocol does not retain a separate verbatim gossip transcript for every edge.
 
 These channels are informational.
 They do not mechanically force higher contributions.
@@ -99,7 +95,7 @@ Every five rounds, agents may propose and vote on a bounded whitelist of paramet
 Whitelist items include subsidy fraction, subsidy breadth, punishment and reward effects, and loss-and-damage equity or damage weights.
 Majority outcomes update the live rule set.
 Democracy is endogenous institutional adaptation.
-It is analyzed here as backdrop for contribution dynamics.
+It is analyzed as backdrop for contribution dynamics and as a seed-sensitive political path.
 
 \subsection{Agent decision interface}
 
@@ -110,3 +106,7 @@ Decision outputs are structured as contribution amounts, sanction maps, proposal
 Belief states update after rounds with trust labels and institutional strategies.
 We analyze both numeric choices and coded language.
 We never equate fluent rationales with internalized norms.
+
+Primary analyses treat each seed as a complete society under the same scientific protocol.
+Inference emphasizes sign agreement across seeds for the focal social-pressure association.
+Magnitude estimates from either seed alone remain uncertain because event cells are noisy and agents are interdependent within rounds.
