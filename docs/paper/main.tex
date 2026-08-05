@@ -31,6 +31,7 @@
 \usepackage{balance}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric}
+\usepackage{etoolbox}
 
 \hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
 
@@ -57,6 +58,14 @@
 \bibpunct{(}{)}{;}{a}{ }{,}
 \bibliographystyle{apalike}
 
+% Match author/email size to body text (article defaults to \large)
+\makeatletter
+\patchcmd{\@maketitle}
+  {\large \lineskip .5em\begin{tabular}[t]{c}\@author}
+  {\normalsize \lineskip .5em\begin{tabular}[t]{c}\@author}
+  {}{}
+\makeatother
+
 \title{\textbf{When Reputation Backfires:\\
 Social Pressure Can Reduce Cooperation\\
 in LLM Climate Societies}}
@@ -82,11 +91,7 @@ Ahmad Essa\\
 \thispagestyle{empty}
 
 \begin{abstract}
-\begin{center}
-\begin{minipage}{0.82\textwidth}
 \input{sections/abstract}
-\end{minipage}
-\end{center}
 \end{abstract}
 
 \noindent\textbf{Keywords:} large language model agents; multi-agent systems; reputation; gossip; cooperation; climate risk sharing; public goods
