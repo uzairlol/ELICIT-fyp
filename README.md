@@ -2,29 +2,32 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Framework: Multi-Agent Simulation](https://img.shields.io/badge/Framework-LLM%20Multi--Agent-green.svg)]()
+[![Framework: Multi-Agent Simulation](<https://img.shields.io/badge/Framework-LLM%20Multi--Agent-green.svg>)]()
 
 **ELICIT** (**E**mergent **L**LM **I**nstitutions for **C**limate and **I**nternational **T**reaties) is a research framework and agent-based economic simulation designed to examine cooperation, sanctioning, governance, and climate risk-sharing among heterogeneous Large Language Model (LLM) agents under repeated public goods games and environmental shocks.
 
 ---
 
-## 📌 Executive Summary & Key Visual Insights
+## Executive Summary & Key Visual Insights
 
 Recent work assumes that social pressure and reputation systems automatically stabilize cooperation in LLM multi-agent societies. **ELICIT** empirical experiments challenge this default claim. Across repeated 30-round replications with 26 heterogeneous agents under climate shocks, democratic updating, and social monitoring (peer scoring, reputation badges, and gossip), we discover that **social monitoring without formal enforcement tools leads to cooperation decay rather than repair**.
 
 ### 1. Institutional Cooperation Trajectories
+
 Agents interact under two distinct institutional structures: **Sanctioning Institutions (SI)**, which permit peer punishments and rewards, and **Sanction-Free Institutions (SFI)**, which lack stage-2 peer enforcement. While overall contribution intensity remains moderately positive, cooperation levels vary across seeds while SI and SFI means track closely within each run.
 
 ![Institutional Cooperation Trajectories](docs/paper/figures/mean_prop_trajectories_by_institution.png)
 *Figure 1: Round-mean contribution intensity relative to wealth by institution across independent replications (Run A vs. Run B).*
 
 ### 2. Social Pressure & Response Dynamics
+
 When non-enforcing (SFI) agents receive bad reputation scores or are targeted in peer gossip bulletins, their subsequent contribution intensity drops on average ($\Delta\mathrm{prop} < 0$). Without formal sanctioning powers, agents respond to public shaming by withdrawing cooperation rather than repairing their standing. In enforcing institutions (SI), responses reverse sign across replications.
 
 ![Social Monitoring Response](docs/paper/figures/reputation_imm_delta_prop_by_family.png)
 *Figure 2: Immediate change in contribution intensity ($\Delta\mathrm{prop}$) following social marks (gossip, bad reputation, reputation drops) across institutions and replications.*
 
 ### 3. Global Inequality & Loss & Damage Fund (LDF) Dynamics
+
 Under climate shocks, developed (Global North) agents are assigned to enforcing institutions (SI) while developing (Global South) agents reside in SFI. A persistent Loss & Damage Fund (LDF) collects contributions and pays out climate damages. Despite achieving ~75% damage coverage, **wealth gaps between developed and developing agents continuously widen**, while LDF pool stocks grow far beyond cumulative damage payouts.
 
 <p align="center">
@@ -35,6 +38,7 @@ Under climate shocks, developed (Global North) agents are assigned to enforcing 
 *Figure 3: (Left) Developed-minus-developing mean wealth gap widening over time. (Right) Loss & Damage Fund terminal stock balances accumulating beyond cumulative payouts.*
 
 ### 4. Emergent LLM Rationales & Rhetoric
+
 Qualitative analysis of LLM agent prompt rationales reveals that post-event adjustments rarely cite reputation repair or moral obligation. Instead, agents frame decisions around opportunistic payoffs, immediate risk, and marginal return calculations.
 
 ![LLM Rationale Themes](docs/paper/figures/wordcloud_SI_shared.png)
@@ -42,7 +46,7 @@ Qualitative analysis of LLM agent prompt rationales reveals that post-event adju
 
 ---
 
-## 🔬 Core Research Architecture
+## Core Research Architecture
 
 ELICIT models a complex multi-agent climate micro-economy featuring multi-stage interactions, cognitive modules, and institutional evolution.
 
@@ -97,7 +101,7 @@ ELICIT models a complex multi-agent climate micro-economy featuring multi-stage 
 
 ---
 
-## 📊 Summary of Main Empirical Findings
+## Summary of Main Empirical Findings
 
 1. **Social Monitoring Without Enforcement Causes Withdrawal**:
    - In non-enforcing institutions (SFI), receiving negative social marks (gossip or bad reputation scores) leads to significant reductions in subsequent contribution intensity ($\Delta\mathrm{prop} < 0$).
@@ -112,7 +116,7 @@ ELICIT models a complex multi-agent climate micro-economy featuring multi-stage 
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 .
@@ -138,7 +142,7 @@ ELICIT models a complex multi-agent climate micro-economy featuring multi-stage 
 
 ---
 
-## 🚀 Getting Started & Reproducibility
+## Getting Started & Reproducibility
 
 ### 1. Installation
 
@@ -240,7 +244,7 @@ Launch an interactive visualizer in your browser to inspect agent decision chain
 
 ---
 
-## 📜 Citation & Research Paper
+## Citation & Research Paper
 
 If you use ELICIT in your research, please refer to the pre-print document in `docs/paper/main.pdf` or cite:
 
@@ -255,6 +259,6 @@ If you use ELICIT in your research, please refer to the pre-print document in `d
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
