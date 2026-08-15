@@ -1,237 +1,260 @@
 # ELICIT: Emergent LLM Institutions for Climate and International Treaties
 
-**ELICIT** (Emergent LLM Institutions for Climate and International Treaties) is a multi-agent simulation framework for studying cooperation, sanctions, governance, and climate risk-sharing under repeated public goods interactions.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Framework: Multi-Agent Simulation](https://img.shields.io/badge/Framework-LLM%20Multi--Agent-green.svg)]()
 
-Agents are LLM-driven and make decisions each round about:
+**ELICIT** (**E**mergent **L**LM **I**nstitutions for **C**limate and **I**nternational **T**reaties) is a research framework and agent-based economic simulation designed to examine cooperation, sanctioning, governance, and climate risk-sharing among heterogeneous Large Language Model (LLM) agents under repeated public goods games and environmental shocks.
 
-- Institutional membership (Sanctioning Institution or Sanction-Free Institution)
-- Contribution levels
-- Punishment and reward allocations (for Sanctioning Institution members)
-- Policy changes through constitutional voting
+---
 
-The framework also supports climate shocks and a persistent Loss & Damage Fund (LDF), with heterogeneous developed/developing profiles.
+## 📌 Executive Summary & Key Visual Insights
 
-## Scope of this repository
+Recent work assumes that social pressure and reputation systems automatically stabilize cooperation in LLM multi-agent societies. **ELICIT** empirical experiments challenge this default claim. Across repeated 30-round replications with 26 heterogeneous agents under climate shocks, democratic updating, and social monitoring (peer scoring, reputation badges, and gossip), we discover that **social monitoring without formal enforcement tools leads to cooperation decay rather than repair**.
 
-Tracked source and sample outputs:
+### 1. Institutional Cooperation Trajectories
+Agents interact under two distinct institutional structures: **Sanctioning Institutions (SI)**, which permit peer punishments and rewards, and **Sanction-Free Institutions (SFI)**, which lack stage-2 peer enforcement. While overall contribution intensity remains moderately positive, cooperation levels vary across seeds while SI and SFI means track closely within each run.
 
-- `src/` — simulation and analysis code
-- `results/` — simulation JSON outputs (sample runs may be committed)
-- `dashboard/` — static HTML visualizer for result files
+![Institutional Cooperation Trajectories](docs/paper/figures/mean_prop_trajectories_by_institution.png)
+*Figure 1: Round-mean contribution intensity relative to wealth by institution across independent replications (Run A vs. Run B).*
 
-Generated locally (gitignored):
+### 2. Social Pressure & Response Dynamics
+When non-enforcing (SFI) agents receive bad reputation scores or are targeted in peer gossip bulletins, their subsequent contribution intensity drops on average ($\Delta\mathrm{prop} < 0$). Without formal sanctioning powers, agents respond to public shaming by withdrawing cooperation rather than repairing their standing. In enforcing institutions (SI), responses reverse sign across replications.
 
-- `analysis_outputs/` — batch metrics CSVs and plot exports
-- `src/debug_logs/` — per-agent LLM prompt/response debug dumps
+![Social Monitoring Response](docs/paper/figures/reputation_imm_delta_prop_by_family.png)
+*Figure 2: Immediate change in contribution intensity ($\Delta\mathrm{prop}$) following social marks (gossip, bad reputation, reputation drops) across institutions and replications.*
 
-## Core simulation model
+### 3. Global Inequality & Loss & Damage Fund (LDF) Dynamics
+Under climate shocks, developed (Global North) agents are assigned to enforcing institutions (SI) while developing (Global South) agents reside in SFI. A persistent Loss & Damage Fund (LDF) collects contributions and pays out climate damages. Despite achieving ~75% damage coverage, **wealth gaps between developed and developing agents continuously widen**, while LDF pool stocks grow far beyond cumulative damage payouts.
 
-Each round follows this high-level sequence:
+<p align="center">
+  <img src="docs/paper/figures/wealth_gap_developed_minus_developing.png" width="48%" alt="Wealth Gap Dynamics" />
+  <img src="docs/paper/figures/ldf_pool_end_by_round.png" width="48%" alt="Loss & Damage Fund Stocks" />
+</p>
 
-1. Agents select institutions (or are routed by climate-mode rules)
-2. Agents contribute in stage 1
-3. Public goods returns are distributed
-4. SI members assign punishments/rewards in stage 2
-5. Optional subsidy redistribution is applied
-6. Optional climate shock is sampled
-7. Optional LDF contributions/payouts are computed
-8. Round payoffs, wealth, reputation, and logs are updated
-9. Optional Theory of Mind audits (batched) and gossip are applied
-10. Optional democracy session runs every configured interval
+*Figure 3: (Left) Developed-minus-developing mean wealth gap widening over time. (Right) Loss & Damage Fund terminal stock balances accumulating beyond cumulative payouts.*
 
-## Institutions
+### 4. Emergent LLM Rationales & Rhetoric
+Qualitative analysis of LLM agent prompt rationales reveals that post-event adjustments rarely cite reputation repair or moral obligation. Instead, agents frame decisions around opportunistic payoffs, immediate risk, and marginal return calculations.
 
-- **SFI**: No stage-2 punish/reward actions
-- **SI**: Stage-2 punish/reward is enabled
+![LLM Rationale Themes](docs/paper/figures/wordcloud_SI_shared.png)
+*Figure 4: Wordcloud of emergent rationale unigrams for Sanctioning Institution (SI) agents, highlighting strategic, incentive-driven language.*
 
-In climate/LDF mode, institution assignment is deterministic by group:
+---
 
-- Developed agents are routed to SI
-- Developing agents are routed to SFI
+## 🔬 Core Research Architecture
 
-## Folder structure
+ELICIT models a complex multi-agent climate micro-economy featuring multi-stage interactions, cognitive modules, and institutional evolution.
+
+```
+       ┌─────────────────────────────────────────────────────────┐
+       │             Round Initialization & Routing              │
+       │    (Developed -> SI Institution, Developing -> SFI)     │
+       └────────────────────────────┬────────────────────────────┘
+                                    │
+       ┌────────────────────────────▼────────────────────────────┐
+       │     Stage 1: Public Goods Contribution (LLM Decision)   │
+       └────────────────────────────┬────────────────────────────┘
+                                    │
+       ┌────────────────────────────▼────────────────────────────┐
+       │      Public Goods Return Distribution & Payoffs         │
+       └────────────────────────────┬────────────────────────────┘
+                                    │
+       ┌────────────────────────────▼────────────────────────────┐
+       │  Stage 2: Peer Punishments & Rewards (SI Members Only)  │
+       └────────────────────────────┬────────────────────────────┘
+                                    │
+       ┌────────────────────────────▼────────────────────────────┐
+       │ Climate Shocks, LDF Payouts & Subsidy Redistribution   │
+       └────────────────────────────┬────────────────────────────┘
+                                    │
+       ┌────────────────────────────▼────────────────────────────┐
+       │ Social Monitoring: ToM Audits, Reputation & Gossip      │
+       └────────────────────────────┬────────────────────────────┘
+                                    │
+       ┌────────────────────────────▼────────────────────────────┐
+       │  Constitutional Democracy Session (Periodic Voting)      │
+       └─────────────────────────────────────────────────────────┘
+```
+
+### Key Framework Components
+
+1. **Heterogeneous Agent Economics**:
+   - Initial endowment asymmetry (Developed vs. Developing economic profiles).
+   - Wealth tracking, marginal returns on public goods, and private investment options.
+2. **Institutional Asymmetry**:
+   - **Sanctioning Institution (SI)**: Enables Stage-2 costly peer punishment and reward allocations.
+   - **Sanction-Free Institution (SFI)**: Public goods contributions only, without peer sanction mechanisms.
+3. **Cognitive & Social Information Modules**:
+   - **Theory of Mind (ToM) Audits**: Batched audits evaluating peer consistency and expected strategies.
+   - **Peer Gossip System**: Broadcasts public bulletins highlighting agents with low consistency scores or aberrant contribution behaviors.
+   - **Reputation Scoring**: Dynamic numerical reputation ratings displayed in agent prompt context.
+4. **Climate Shocks & Loss & Damage Fund (LDF)**:
+   - Stochastic climate disaster events impacting agent wealth.
+   - Dual-purpose Loss & Damage Fund collecting contributions to insure developing agents against shock damage.
+5. **Constitutional Democracy**:
+   - Periodic voting sessions where agents propose, debate, and vote on institutional rule changes (e.g., subsidy adjustments, voting thresholds, punishment scaling).
+
+---
+
+## 📊 Summary of Main Empirical Findings
+
+1. **Social Monitoring Without Enforcement Causes Withdrawal**:
+   - In non-enforcing institutions (SFI), receiving negative social marks (gossip or bad reputation scores) leads to significant reductions in subsequent contribution intensity ($\Delta\mathrm{prop} < 0$).
+   - Gossip associations are stronger in magnitude than bad-reputation associations.
+2. **Replication Sensitivity in Enforcing Institutions**:
+   - While SFI agents consistently reduce contributions following negative social marks, SI agents display cross-seed variability (slight drop in Run A, sharp positive increase in Run B).
+3. **Stock Accumulation vs. Equity Gaps**:
+   - LDF pools accumulate substantial unused reserves over 30 rounds.
+   - High coverage ratios (~75%) fail to bridge structural wealth inequality between North and South agents due to uneven initial endowments and risk exposure.
+4. **LLM Decision Rationales**:
+   - LLM agents operate primarily on short-term payoff maximization and incentive reasoning rather than moral reputation repair or long-term equity goals.
+
+---
+
+## 📁 Repository Structure
 
 ```text
 .
-├── src/
-│   ├── main.py                 # Single-run entry point
-│   ├── run_experiments.py      # Batch sweeps across seeds/conditions
-│   ├── core/                   # Simulation engine
-│   │   ├── agent.py
-│   │   ├── environment.py
-│   │   ├── institution.py
-│   │   ├── loss_damage_fund.py
-│   │   ├── subsidy.py
-│   │   ├── parameters.py
-│   │   ├── scenario_config.py
-│   │   ├── personas.py
-│   │   └── utils.py
-│   ├── modules/                # Cognitive / governance modules
-│   │   ├── tom_module.py
-│   │   ├── gossip_module.py
-│   │   ├── democracy_module.py
-│   │   └── oracle.py
-│   ├── prompts/                # LLM prompt construction
-│   │   ├── prompt_generator.py
-│   │   └── prompt_utils.py
-│   ├── parsing/                # LLM response parsers
-│   │   ├── institution_parser.py
-│   │   ├── contribution_parser.py
-│   │   ├── punishment_parser.py
-│   │   └── response_parsing_utils.py
-│   ├── llm/
-│   │   └── ollama_client.py
-│   ├── analysis/               # Post-run plotting and metrics export
-│   │   ├── plot_results.py
-│   │   ├── plot_wordcloud.py
-│   │   ├── export_ablation_metrics.py
-│   │   └── export_ablation_plots.py
-│   └── debug_logs/             # Created at runtime (gitignored)
-├── results/                    # Simulation JSON outputs
-├── analysis_outputs/           # Generated plots/metrics (gitignored)
-│   ├── metrics/
-│   └── plots/
-└── dashboard/                  # Browser-based result visualizer
+├── docs/                       # Research documentation & TeX sources
+│   └── paper/                  # Complete LaTeX paper source & compiled PDF
+│       ├── figures/            # High-resolution experiment plots & figures
+│       ├── tables/             # LaTeX metrics & summary tables
+│       ├── sections/           # Paper LaTeX chapters (Abstract, Results, etc.)
+│       └── main.pdf            # Compiled research paper
+├── src/                        # Core Python simulation engine
+│   ├── main.py                 # Single-run execution entry point
+│   ├── run_experiments.py      # Batch experiment sweeps across seeds/conditions
+│   ├── core/                   # Engine logic (agent, environment, institution, LDF, params)
+│   ├── modules/                # Cognitive/governance (ToM, Gossip, Democracy, Oracle)
+│   ├── prompts/                # Prompt builders & template generation
+│   ├── parsing/                # Robust JSON response parsers
+│   ├── llm/                    # Ollama client wrapper (OpenAI API / reasoning)
+│   └── analysis/               # Plot generation & ablation metrics exporters
+├── results/                    # Raw simulation JSON outputs
+├── analysis_outputs/           # Post-processed plots and CSV metrics (gitignored)
+└── dashboard/                  # Interactive HTML/JS browser visualizer for results
 ```
 
-## What each top-level folder contains
+---
 
-### `src/core`
+## 🚀 Getting Started & Reproducibility
 
-Round orchestration, agents, institutions, payoffs, LDF/subsidy mechanics, and global configuration (`parameters.py`).
+### 1. Installation
 
-### `src/modules`
-
-Optional cognitive and governance layers: batched ToM audits, gossip, constitutional voting, and the oracle heuristic.
-
-### `src/prompts` and `src/parsing`
-
-Prompt templates and JSON response parsers for institution choice, contributions, and punishments/rewards.
-
-### `src/llm`
-
-Local Ollama client wrapper (OpenAI-compatible API + native HTTP for reasoning models).
-
-### `src/analysis`
-
-Post-processing utilities. Defaults read from `results/` and write to `analysis_outputs/`.
-
-### `results`
-
-JSON outputs from simulation runs. Each file is a list of round snapshots with agent-level state, sanctions, reputation, climate/LDF fields, and constitutional sessions.
-
-### `analysis_outputs`
-
-Generated artifacts (not committed):
-
-- `metrics/` — CSV exports from `export_ablation_metrics.py`
-- `plots/` — PNG dashboards from `export_ablation_plots.py` and interactive `plot_results.py`
-
-### `dashboard`
-
-Static HTML/JS visualizer (`dashboard/index.html`) for exploring a results JSON file in the browser.
-
-## Requirements
+Clone the repository and install the dependencies:
 
 ```bash
+git clone https://github.com/uzairlol/ELICIT-fyp.git
+cd ELICIT-fyp
 pip install -r requirements.txt
 ```
 
-The framework expects a local Ollama endpoint compatible with OpenAI-style requests.
+### 2. LLM Setup (Ollama)
+
+ELICIT runs against local LLM models using [Ollama](https://ollama.ai/).
+
+Pull the default base model:
 
 ```bash
 ollama pull llama3.1:8b
 ```
 
-Recommended Ollama server settings for a single-GPU workstation (e.g. GTX 1070 8GB):
+Recommended Workstation Server Environment (e.g. NVIDIA GPU):
 
 ```powershell
 $env:OLLAMA_NUM_PARALLEL = "1"
 ollama serve
 ```
 
-Tune GPU options in `src/core/parameters.py` (`OLLAMA_NUM_GPU`, `OLLAMA_NUM_CTX`, `OLLAMA_NUM_PARALLEL`).
+*Note: You can tune model hardware acceleration settings in `src/core/parameters.py` (`OLLAMA_NUM_GPU`, `OLLAMA_NUM_CTX`, `OLLAMA_NUM_PARALLEL`).*
 
-## Running a single simulation
+### 3. Running a Single Simulation
 
-From the repository root:
+Run a default simulation run with Llama 3.1:
 
 ```bash
 python src/main.py
 ```
 
-Common options:
+Common Command Line Arguments:
 
 ```bash
+# Custom LLM model
 python src/main.py --model-name llama3.1:8b
+
+# Enable Climate Shocks & Loss and Damage Fund (LDF)
 python src/main.py --scenario ldf --enable-climate-shocks --enable-ldf
+
+# Change agent counts or round horizon
+python src/main.py --num-agents 26 --num-rounds 30
+
+# Baseline comparison with heuristic/random agents
 python src/main.py --agent-type Random
-python src/main.py --num-agents 7 --num-rounds 30
 ```
 
-Notes:
+Results are saved as timestamped JSON files under `results/`. Debug logs detailing prompt/response pairs are placed in `src/debug_logs/`.
 
-- In climate/ldf scenario, agent count may auto-adjust to match configured developed/developing counts
-- Results are timestamped JSON files written to `results/`
-- Debug prompt dumps go to `src/debug_logs/`
+### 4. Running Experiment Sweeps & Ablations
 
-## Running experiment sweeps
-
-```bash
-python src/run_experiments.py
-```
-
-Useful flags:
+To reproduce multi-seed paper experiments and ablation sweeps:
 
 ```bash
 python src/run_experiments.py --scenario ldf --enable-climate-shocks --enable-ldf
+```
+
+Flags for controlled execution:
+
+```bash
+# Fast validation run across a single seed
 python src/run_experiments.py --quick-compare --seeds 1
+
+# Execute full agent population sweeps only
 python src/run_experiments.py --full-only
-python src/run_experiments.py --skip-mixed
-python src/run_experiments.py --quiet
 ```
 
-`run_experiments.py` resolves paths relative to the repo root automatically.
+### 5. Figure Generation & Dashboard Visualization
 
-## Generating figures and metrics
+#### Generating Plots & Metrics
 
-Interactive per-run plots:
+To export publication metrics and regenerating paper plots from `results/`:
 
 ```bash
+# Interactive per-run diagnostic plots
 python src/analysis/plot_results.py
-```
 
-Batch metrics export:
-
-```bash
+# Export aggregated metrics CSVs and PNG figures
 python src/analysis/export_ablation_metrics.py
 python src/analysis/export_ablation_plots.py
-```
 
-Optional word clouds (opens a file picker):
-
-```bash
+# Rationale unigram wordclouds
 python src/analysis/plot_wordcloud.py
 ```
 
-All analysis scripts default to:
+#### Web Visualizer Dashboard
 
-- input: `<repo>/results/`
-- output: `<repo>/analysis_outputs/`
+Launch an interactive visualizer in your browser to inspect agent decision chains, round payoffs, gossip events, and voting results:
 
-## Configuration reference
+1. Open `dashboard/index.html` in any modern Web Browser.
+2. Load any JSON file from the `results/` folder to explore round-by-round trajectory timelines.
 
-Main tuning is in `src/core/parameters.py`.
+---
 
-Important groups:
+## 📜 Citation & Research Paper
 
-- Simulation: `NUM_AGENTS`, `NUM_ROUNDS`, `SEED`, `SCENARIO`
-- LLM: `LLM_MODEL`, `LLM_BASE_URL`, `LLM_MAX_CONCURRENCY`, `OLLAMA_NUM_GPU`, `OLLAMA_NUM_CTX`, `OLLAMA_NUM_PARALLEL`
-- Public goods: `ENDOWMENT_STAGE_1`, `PUBLIC_GOOD_MULTIPLIER`, punishment/reward costs and effects
-- Cognition/governance: `TOM_ENABLED`, `GOSSIP_ENABLED`, `DEMOCRACY_ENABLED`, `DEMOCRACY_INTERVAL`
-- Climate/LDF: `CLIMATE_SHOCK_*`, `LDF_*`, `LDF_AGENT_GROUP_COUNTS`
+If you use ELICIT in your research, please refer to the pre-print document in `docs/paper/main.pdf` or cite:
 
-## Reproducibility
+```bibtex
+@article{elicit2026,
+  title={Emergent LLM Institutions for Climate and International Treaties},
+  author={ELICIT Research Team},
+  year={2026},
+  journal={Working Paper}
+}
+```
 
-- Random seed controlled by `SEED` in `parameters.py` and CLI overrides
-- Mixed-population assignment uses deterministic shuffling under the configured seed
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
