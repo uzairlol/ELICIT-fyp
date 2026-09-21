@@ -192,7 +192,7 @@ def si_sfi_comparison(df: pd.DataFrame, agent_pers: pd.DataFrame) -> dict:
         results[f"{label}_agent_round_mean_prop_ci95"] = [lo, hi]
         results[f"{label}_agent_round_median_prop"] = float(sub["prop"].median())
         results[f"{label}_agent_round_std_prop"] = float(sub["prop"].std(ddof=1))
-        results[f"{label}_agent_round_n"] = int(len(sub))
+        results[f"{label}_agent_round_n"] = len(sub)
         results[f"{label}_zero_share"] = float((sub["contribution"] <= 0).mean())
         results[f"{label}_mean_abs_contribution"] = float(sub["contribution"].mean())
         results[f"{label}_median_abs_contribution"] = float(sub["contribution"].median())
@@ -204,7 +204,7 @@ def si_sfi_comparison(df: pd.DataFrame, agent_pers: pd.DataFrame) -> dict:
         mean, lo, hi = bootstrap_mean_ci(arr)
         results[f"{label}_mean_of_agent_means_prop"] = mean
         results[f"{label}_mean_of_agent_means_prop_ci95"] = [lo, hi]
-        results[f"{label}_n_agents"] = int(len(arr))
+        results[f"{label}_n_agents"] = len(arr)
 
     results["effect_size_hedges_g_SI_minus_SFI_agent_round"] = hedges_g(
         si["prop"].to_numpy(), sfi["prop"].to_numpy()
@@ -411,12 +411,11 @@ def make_plots(df: pd.DataFrame, round_sum: pd.DataFrame, deltas: pd.DataFrame) 
     for inst in ("SI", "SFI"):
         sub = df[df["institution_choice"] == inst]
         fig, ax = plt.subplots(figsize=(10, 5))
-        for aid, g in sub.groupby("agent_id"):
+        for _aid, g in sub.groupby("agent_id"):
             ax.plot(g["round_number"], g["prop"], alpha=0.35, lw=1)
-        mean_line = (
-            round_sum[round_sum["institution_choice"] == inst]
-            .set_index("round_number")["mean_prop_wealth"]
-        )
+        mean_line = round_sum[round_sum["institution_choice"] == inst].set_index("round_number")[
+            "mean_prop_wealth"
+        ]
         ax.plot(mean_line.index, mean_line.values, color="black", lw=2.5, label="group mean")
         for s in SHOCK_ROUNDS:
             ax.axvline(s, color="#AA2222", ls="--", lw=1)
@@ -446,7 +445,7 @@ def make_plots(df: pd.DataFrame, round_sum: pd.DataFrame, deltas: pd.DataFrame) 
 
     # 7. Shock deltas boxplot
     fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
-    for ax, shock in zip(axes, SHOCK_ROUNDS):
+    for ax, shock in zip(axes, SHOCK_ROUNDS, strict=False):
         d = deltas[deltas["shock_round"] == shock]
         data = [
             d.loc[d["institution_choice"] == "SI", "delta_post_minus_pre"].dropna(),
@@ -454,7 +453,7 @@ def make_plots(df: pd.DataFrame, round_sum: pd.DataFrame, deltas: pd.DataFrame) 
         ]
         ax.boxplot(data, labels=["SI", "SFI"])
         ax.axhline(0, color="#888", lw=1)
-        ax.set_title(f"Shock R{shock}: post−pre prop")
+        ax.set_title(f"Shock R{shock}: post-pre prop")
         ax.set_ylabel("Δ prop_of_wealth")
     fig.suptitle("Within-agent proportional contribution change after shocks")
     fig.tight_layout()

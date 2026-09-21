@@ -141,7 +141,14 @@ def episode_table(df: pd.DataFrame, rb: pd.DataFrame) -> pd.DataFrame:
     # prior round context
     df_sorted = df.sort_values(["agent_id", "round_number"])
     prev = df_sorted[
-        ["agent_id", "round_number", "contribution", "prop_of_wealth", "reputation", "ldf_payout_round"]
+        [
+            "agent_id",
+            "round_number",
+            "contribution",
+            "prop_of_wealth",
+            "reputation",
+            "ldf_payout_round",
+        ]
     ].copy()
     prev["round_number"] = prev["round_number"] + 1
     prev = prev.rename(
@@ -255,12 +262,18 @@ def warm_glow(df: pd.DataFrame, rb: pd.DataFrame) -> pd.DataFrame:
     pos["coop_lang"] = pos["text"].map(lambda t: bool(COOP_PAT.search(t)))
     pos_coop = pos[pos["coop_lang"]]
     summary = {
-        "n_zero_with_coop_lang": int(len(glow)),
-        "n_zero_total": int(len(z)),
+        "n_zero_with_coop_lang": len(glow),
+        "n_zero_total": len(z),
         "mean_text_len_zero_coop": float(glow["text_len"].mean()) if len(glow) else None,
-        "mean_text_len_pos_coop": float(pos_coop["text"].str.len().mean()) if len(pos_coop) else None,
-        "n_pos_with_coop_lang": int(len(pos_coop)),
-        "top_agents_zero_coop": glow.groupby("agent_id").size().sort_values(ascending=False).head(10).to_dict(),
+        "mean_text_len_pos_coop": float(pos_coop["text"].str.len().mean())
+        if len(pos_coop)
+        else None,
+        "n_pos_with_coop_lang": len(pos_coop),
+        "top_agents_zero_coop": glow.groupby("agent_id")
+        .size()
+        .sort_values(ascending=False)
+        .head(10)
+        .to_dict(),
     }
     (TABLES / "warm_glow_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     cols = [
@@ -348,10 +361,12 @@ def main() -> None:
         "all_r2_mean_prop": float(df[df["round_number"] == 2]["prop_of_wealth"].mean()),
         "sfi_r1_mean_prop": float(sfi_r1["prop_of_wealth"].mean()),
         "sfi_r2_mean_prop": float(
-            df[(df["institution_choice"] == "SFI") & (df["round_number"] == 2)]["prop_of_wealth"].mean()
+            df[(df["institution_choice"] == "SFI") & (df["round_number"] == 2)][
+                "prop_of_wealth"
+            ].mean()
         ),
-        "n_warm_glow_cases": int(len(glow)),
-        "n_burst_rounds": int(len(bursts)),
+        "n_warm_glow_cases": len(glow),
+        "n_burst_rounds": len(bursts),
         "liquidity_note": (
             "liquidity_forced_approx uses stage1_cap_from_end_wealth==0; "
             "true decision-time wealth may differ â€” treat as approximate."

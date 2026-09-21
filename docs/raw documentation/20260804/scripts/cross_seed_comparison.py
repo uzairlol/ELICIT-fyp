@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import matplotlib
 
@@ -68,13 +68,13 @@ INST_COLORS = {"SI": "#5B4B8A", "SFI": "#C47B2C", "ALL": "#444444"}
 # ---------------------------------------------------------------------------
 
 
-def _read_csv(path: Path) -> Optional[pd.DataFrame]:
+def _read_csv(path: Path) -> pd.DataFrame | None:
     if not path.exists():
         return None
     return pd.read_csv(path)
 
 
-def _find_json(candidates: list[Path]) -> Optional[str]:
+def _find_json(candidates: list[Path]) -> str | None:
     for p in candidates:
         if p.exists():
             try:
@@ -168,7 +168,7 @@ def wealth_gap_series(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(["seed", "round_number"])
 
 
-def load_fund_pool(tables: Path, seed_key: str) -> Optional[pd.DataFrame]:
+def load_fund_pool(tables: Path, seed_key: str) -> pd.DataFrame | None:
     fund = _read_csv(tables / "fund_state.csv")
     if fund is None:
         return None
@@ -188,7 +188,7 @@ def agent_mean_prop(df: pd.DataFrame) -> pd.DataFrame:
                 "institution_choice": g["institution_choice"].iloc[0],
                 "mean_prop": float(g["prop"].mean()),
                 "median_prop": float(g["prop"].median()),
-                "n_rounds": int(len(g)),
+                "n_rounds": len(g),
             }
         )
     return pd.DataFrame(rows)
@@ -202,7 +202,7 @@ def agent_mean_prop(df: pd.DataFrame) -> pd.DataFrame:
 def _corr_with_pvalue(x: np.ndarray, y: np.ndarray, method: str) -> dict[str, Any]:
     mask = np.isfinite(x) & np.isfinite(y)
     x, y = x[mask], y[mask]
-    n = int(len(x))
+    n = len(x)
     out: dict[str, Any] = {"n": n, "r": np.nan, "p": np.nan, "method": method}
     if n < 3 or scipy_stats is None:
         if scipy_stats is None:
@@ -236,8 +236,8 @@ def mann_whitney_si_sfi(df: pd.DataFrame, seed_key: str) -> dict[str, Any]:
     am = agent_mean_prop(sub)
     si_am = am.loc[am["institution_choice"] == "SI", "mean_prop"].to_numpy(dtype=float)
     sfi_am = am.loc[am["institution_choice"] == "SFI", "mean_prop"].to_numpy(dtype=float)
-    result["n_agents_SI"] = int(len(si_am))
-    result["n_agents_SFI"] = int(len(sfi_am))
+    result["n_agents_SI"] = len(si_am)
+    result["n_agents_SFI"] = len(sfi_am)
     result["mean_of_agent_means_SI"] = float(np.nanmean(si_am))
     result["mean_of_agent_means_SFI"] = float(np.nanmean(sfi_am))
 
@@ -287,9 +287,7 @@ def shock_within_agent_deltas(df: pd.DataFrame) -> pd.DataFrame:
                             float(post - pre) if pd.notna(pre) and pd.notna(post) else np.nan
                         ),
                         "delta_during_minus_pre": (
-                            float(during - pre)
-                            if pd.notna(pre) and pd.notna(during)
-                            else np.nan
+                            float(during - pre) if pd.notna(pre) and pd.notna(during) else np.nan
                         ),
                     }
                 )
@@ -304,7 +302,7 @@ def wilcoxon_shock_summary(deltas: pd.DataFrame) -> list[dict[str, Any]]:
         row: dict[str, Any] = {
             "seed": seed,
             "shock_round": int(shock),
-            "n_agents": int(len(d)),
+            "n_agents": len(d),
             "mean_delta_post_minus_pre": float(np.mean(d)) if len(d) else np.nan,
             "median_delta_post_minus_pre": float(np.median(d)) if len(d) else np.nan,
         }
@@ -337,7 +335,7 @@ def mann_kendall_simple(x: np.ndarray) -> dict[str, Any]:
     """
     x = np.asarray(x, dtype=float)
     x = x[np.isfinite(x)]
-    out: dict[str, Any] = {"n": int(len(x))}
+    out: dict[str, Any] = {"n": len(x)}
     if scipy_stats is None:
         out["skipped"] = True
         out["note"] = "scipy unavailable; Mann-Kendall skipped"
@@ -401,7 +399,7 @@ def adf_test(x: np.ndarray) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def compare_reputation_summaries() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
+def compare_reputation_summaries() -> tuple[pd.DataFrame | None, dict[str, Any]]:
     s1 = _read_csv(SEED1_TABLES / "reputation_gossip_event_summary.csv")
     s2 = _read_csv(SEED2_TABLES / "reputation_gossip_event_summary.csv")
     meta: dict[str, Any] = {}
@@ -423,11 +421,15 @@ def compare_reputation_summaries() -> tuple[Optional[pd.DataFrame], dict[str, An
         meta["seed2_missing"] = True
     both = pd.concat(frames, ignore_index=True)
     # focus immediate horizon mean delta by event family
-    imm = both[both.get("horizon", pd.Series(dtype=str)) == "imm"].copy() if "horizon" in both.columns else both.copy()
-    return both, {"immediate_rows": int(len(imm)), **meta}
+    imm = (
+        both[both.get("horizon", pd.Series(dtype=str)) == "imm"].copy()
+        if "horizon" in both.columns
+        else both.copy()
+    )
+    return both, {"immediate_rows": len(imm), **meta}
 
 
-def compare_adopted_rules() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
+def compare_adopted_rules() -> tuple[pd.DataFrame | None, dict[str, Any]]:
     s1 = _read_csv(SEED1_TABLES / "adopted_rules.csv")
     s2 = _read_csv(SEED2_TABLES / "adopted_rules.csv")
     meta: dict[str, Any] = {}
@@ -438,7 +440,7 @@ def compare_adopted_rules() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
         a = s1.copy()
         a["seed"] = "seed1"
         frames.append(a)
-        meta["seed1_n_rules"] = int(len(a))
+        meta["seed1_n_rules"] = len(a)
         meta["seed1_rules"] = [
             {"round": int(r.round_number), "rule": str(r.rule), "new_value": r.new_value}
             for r in a.itertuples()
@@ -449,7 +451,7 @@ def compare_adopted_rules() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
         b = s2.copy()
         b["seed"] = "seed2"
         frames.append(b)
-        meta["seed2_n_rules"] = int(len(b))
+        meta["seed2_n_rules"] = len(b)
         meta["seed2_rules"] = [
             {"round": int(r.round_number), "rule": str(r.rule), "new_value": r.new_value}
             for r in b.itertuples()
@@ -459,8 +461,8 @@ def compare_adopted_rules() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
 
     both = pd.concat(frames, ignore_index=True)
     if s1 is not None and s2 is not None:
-        keys1 = set(zip(s1["round_number"].astype(int), s1["rule"].astype(str)))
-        keys2 = set(zip(s2["round_number"].astype(int), s2["rule"].astype(str)))
+        keys1 = set(zip(s1["round_number"].astype(int), s1["rule"].astype(str), strict=False))
+        keys2 = set(zip(s2["round_number"].astype(int), s2["rule"].astype(str), strict=False))
         meta["shared_round_rule_pairs"] = sorted(
             [{"round": r, "rule": rule} for r, rule in (keys1 & keys2)],
             key=lambda x: (x["round"], x["rule"]),
@@ -484,7 +486,7 @@ def compare_adopted_rules() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
 def plot_mean_prop_trajectories(round_sum: pd.DataFrame) -> None:
     """One figure with three panels: ALL, SI, SFI — seed1 vs seed2."""
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), sharey=True)
-    for ax, inst in zip(axes, ("ALL", "SI", "SFI")):
+    for ax, inst in zip(axes, ("ALL", "SI", "SFI"), strict=False):
         for seed, color in COLORS.items():
             sub = round_sum[
                 (round_sum["seed"] == seed) & (round_sum["institution_choice"] == inst)
@@ -507,12 +509,14 @@ def plot_mean_prop_trajectories(round_sum: pd.DataFrame) -> None:
     axes[0].legend(fontsize=8)
     fig.suptitle("Mean proportional contribution: seed1 vs seed2", y=1.02)
     fig.tight_layout()
-    fig.savefig(OUT_PLOTS / "mean_prop_trajectories_by_institution.png", dpi=150, bbox_inches="tight")
+    fig.savefig(
+        OUT_PLOTS / "mean_prop_trajectories_by_institution.png", dpi=150, bbox_inches="tight"
+    )
     plt.close(fig)
 
     # overlay all three institutions per seed (two panels)
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
-    for ax, seed in zip(axes, ("seed1", "seed2")):
+    for ax, seed in zip(axes, ("seed1", "seed2"), strict=False):
         for inst, color in INST_COLORS.items():
             sub = round_sum[
                 (round_sum["seed"] == seed) & (round_sum["institution_choice"] == inst)
@@ -533,7 +537,7 @@ def plot_mean_prop_trajectories(round_sum: pd.DataFrame) -> None:
 
 def plot_wealth_gap(gap: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
-    for ax, seed in zip(axes, ("seed1", "seed2")):
+    for ax, seed in zip(axes, ("seed1", "seed2"), strict=False):
         sub = gap[gap["seed"] == seed].sort_values("round_number")
         ax.plot(
             sub["round_number"],
@@ -644,11 +648,7 @@ def plot_reputation_imm(rep: pd.DataFrame) -> None:
     if imm.empty:
         return
     # aggregate across institution for a compact bar chart, or facet
-    pivot = (
-        imm.groupby(["seed", "event_family"])["mean_delta_prop"]
-        .mean()
-        .reset_index()
-    )
+    pivot = imm.groupby(["seed", "event_family"])["mean_delta_prop"].mean().reset_index()
     families = sorted(pivot["event_family"].unique())
     x = np.arange(len(families))
     width = 0.35
@@ -661,9 +661,7 @@ def plot_reputation_imm(rep: pd.DataFrame) -> None:
                     "mean_delta_prop",
                 ].mean()
             )
-            if not pivot.loc[
-                (pivot["seed"] == seed) & (pivot["event_family"] == fam)
-            ].empty
+            if not pivot.loc[(pivot["seed"] == seed) & (pivot["event_family"] == fam)].empty
             else np.nan
             for fam in families
         ]
@@ -682,17 +680,17 @@ def plot_reputation_imm(rep: pd.DataFrame) -> None:
 
 def plot_shock_deltas(deltas: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=True)
-    for ax, shock in zip(axes, SHOCK_ROUNDS):
+    for ax, shock in zip(axes, SHOCK_ROUNDS, strict=False):
         data, labels, colors = [], [], []
         for seed, color in COLORS.items():
-            d = deltas[
-                (deltas["seed"] == seed) & (deltas["shock_round"] == shock)
-            ]["delta_post_minus_pre"].dropna()
+            d = deltas[(deltas["seed"] == seed) & (deltas["shock_round"] == shock)][
+                "delta_post_minus_pre"
+            ].dropna()
             data.append(d.to_numpy())
             labels.append(SEED_LABELS[seed])
             colors.append(color)
         bp = ax.boxplot(data, labels=labels, patch_artist=True, widths=0.55)
-        for patch, color in zip(bp["boxes"], colors):
+        for patch, color in zip(bp["boxes"], colors, strict=False):
             patch.set_facecolor(color)
             patch.set_alpha(0.45)
         ax.axhline(0, color="k", lw=0.8)
@@ -762,7 +760,9 @@ def main() -> None:
         ].set_index("round_number")["mean_prop"]
         joined = pd.concat([s1.rename("seed1"), s2.rename("seed2")], axis=1).dropna()
         pear = _corr_with_pvalue(joined["seed1"].to_numpy(), joined["seed2"].to_numpy(), "pearson")
-        spear = _corr_with_pvalue(joined["seed1"].to_numpy(), joined["seed2"].to_numpy(), "spearman")
+        spear = _corr_with_pvalue(
+            joined["seed1"].to_numpy(), joined["seed2"].to_numpy(), "spearman"
+        )
         round_corr_rows.append(
             {
                 "level": "round_mean_prop",
@@ -787,7 +787,7 @@ def main() -> None:
                 {
                     "seed": seed_key,
                     "institution_choice": inst,
-                    "n_rounds": int(len(series)),
+                    "n_rounds": len(series),
                     "mean_of_round_means": float(series.mean()),
                     "median_of_round_means": float(series.median()),
                     "std_of_round_means": float(series.std(ddof=1)) if len(series) > 1 else np.nan,
@@ -888,9 +888,7 @@ def main() -> None:
     trend_block: dict[str, Any] = {}
     for seed in ("seed1", "seed2"):
         series = (
-            round_sum[
-                (round_sum["seed"] == seed) & (round_sum["institution_choice"] == "ALL")
-            ]
+            round_sum[(round_sum["seed"] == seed) & (round_sum["institution_choice"] == "ALL")]
             .sort_values("round_number")["mean_prop"]
             .to_numpy(dtype=float)
         )
@@ -912,18 +910,16 @@ def main() -> None:
     # JSON summary
     json_seed1 = _find_json(SEED1_JSON_CANDIDATES)
     json_seed2 = (
-        str(SEED2_JSON.relative_to(REPO_ROOT)).replace("\\", "/")
-        if SEED2_JSON.exists()
-        else None
+        str(SEED2_JSON.relative_to(REPO_ROOT)).replace("\\", "/") if SEED2_JSON.exists() else None
     )
 
     # Key scalars for print + json
     all_corr = round_corr_df[round_corr_df["institution_choice"] == "ALL"].iloc[0]
     gap_end = {
         seed: float(
-            gap[gap["seed"] == seed].sort_values("round_number").iloc[-1][
-                "wealth_gap_dev_minus_developing"
-            ]
+            gap[gap["seed"] == seed]
+            .sort_values("round_number")
+            .iloc[-1]["wealth_gap_dev_minus_developing"]
         )
         for seed in ("seed1", "seed2")
     }
@@ -951,14 +947,10 @@ def main() -> None:
         "shock_rounds": list(SHOCK_ROUNDS),
         "notes": notes,
         "agent_id_same_group_count": n_same_group,
-        "agent_id_n": int(len(aligned)),
+        "agent_id_n": len(aligned),
         "round_mean_prop_correlation_ALL": {
-            "pearson_r": float(all_corr["pearson_r"])
-            if pd.notna(all_corr["pearson_r"])
-            else None,
-            "pearson_p": float(all_corr["pearson_p"])
-            if pd.notna(all_corr["pearson_p"])
-            else None,
+            "pearson_r": float(all_corr["pearson_r"]) if pd.notna(all_corr["pearson_r"]) else None,
+            "pearson_p": float(all_corr["pearson_p"]) if pd.notna(all_corr["pearson_p"]) else None,
             "spearman_r": float(all_corr["spearman_r"])
             if pd.notna(all_corr["spearman_r"])
             else None,

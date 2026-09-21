@@ -162,9 +162,9 @@ def did_stats(panel: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
                 "did_pooled": aff_mean - ctrl_mean,
                 "cohens_d_aff_vs_ctrl": d_effect,
                 "perm_p_two_sided": p_perm,
-                "n_rounds": int(len(round_stats)),
-                "n_affected_agent_rounds": int(len(aff_deltas)),
-                "n_control_agent_rounds": int(len(ctrl_deltas)),
+                "n_rounds": len(round_stats),
+                "n_affected_agent_rounds": len(aff_deltas),
+                "n_control_agent_rounds": len(ctrl_deltas),
             }
         )
     return pd.DataFrame(rows)

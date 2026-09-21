@@ -30,18 +30,122 @@ RUN = "20260804_024555"
 
 # Keep economically meaningful terms; remove only function words / boilerplate IDs
 STOP = {
-    "the", "a", "an", "and", "or", "but", "if", "then", "than", "to", "of", "in",
-    "on", "for", "with", "as", "by", "at", "from", "is", "are", "was", "were",
-    "be", "been", "being", "this", "that", "these", "those", "it", "its", "my",
-    "me", "i", "we", "our", "you", "your", "they", "their", "them", "he", "she",
-    "will", "would", "can", "could", "should", "may", "might", "must", "do",
-    "does", "did", "not", "no", "nor", "so", "such", "into", "over", "under",
-    "about", "also", "more", "most", "other", "some", "any", "all", "each",
-    "both", "few", "own", "same", "too", "very", "just", "only", "because",
-    "while", "when", "where", "which", "who", "whom", "what", "how", "there",
-    "here", "out", "up", "down", "again", "further", "once", "have", "has",
-    "had", "having", "am", "round", "agent", "agents", "based", "using",
-    "make", "making", "take", "taking", "get", "got", "one", "two", "three",
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "if",
+    "then",
+    "than",
+    "to",
+    "of",
+    "in",
+    "on",
+    "for",
+    "with",
+    "as",
+    "by",
+    "at",
+    "from",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "this",
+    "that",
+    "these",
+    "those",
+    "it",
+    "its",
+    "my",
+    "me",
+    "i",
+    "we",
+    "our",
+    "you",
+    "your",
+    "they",
+    "their",
+    "them",
+    "he",
+    "she",
+    "will",
+    "would",
+    "can",
+    "could",
+    "should",
+    "may",
+    "might",
+    "must",
+    "do",
+    "does",
+    "did",
+    "not",
+    "no",
+    "nor",
+    "so",
+    "such",
+    "into",
+    "over",
+    "under",
+    "about",
+    "also",
+    "more",
+    "most",
+    "other",
+    "some",
+    "any",
+    "all",
+    "each",
+    "both",
+    "few",
+    "own",
+    "same",
+    "too",
+    "very",
+    "just",
+    "only",
+    "because",
+    "while",
+    "when",
+    "where",
+    "which",
+    "who",
+    "whom",
+    "what",
+    "how",
+    "there",
+    "here",
+    "out",
+    "up",
+    "down",
+    "again",
+    "further",
+    "once",
+    "have",
+    "has",
+    "had",
+    "having",
+    "am",
+    "round",
+    "agent",
+    "agents",
+    "based",
+    "using",
+    "make",
+    "making",
+    "take",
+    "taking",
+    "get",
+    "got",
+    "one",
+    "two",
+    "three",
 }
 
 # Light stem-like normalisation for common variants (manual, reproducible)
@@ -78,8 +182,19 @@ CONCEPTS = {
     "fairness": [r"\bfair\b", r"equit", r"unfair", r"inequit"],
     "reciprocity": [r"reciproc", r"return the favor", r"tit[- ]for[- ]tat"],
     "inequity": [r"inequit", r"unequal", r"disparit", r"gap between"],
-    "self_interest": [r"self[- ]interest", r"my (own )?wealth", r"maximi[sz]e (my|own)", r"keep more"],
-    "group_welfare": [r"collective", r"community", r"common good", r"public good", r"group welfare"],
+    "self_interest": [
+        r"self[- ]interest",
+        r"my (own )?wealth",
+        r"maximi[sz]e (my|own)",
+        r"keep more",
+    ],
+    "group_welfare": [
+        r"collective",
+        r"community",
+        r"common good",
+        r"public good",
+        r"group welfare",
+    ],
     "reputation": [r"reputat", r"peer trust", r"trust score", r"image"],
     "punishment": [r"punish", r"sanction", r"tariff"],
     "reward": [r"reward", r"subsidy", r"aid"],
@@ -135,11 +250,13 @@ def load_blocks() -> pd.DataFrame:
 def corpus_stats(df: pd.DataFrame, label: str) -> dict:
     return {
         "corpus": label,
-        "n_blocks": int(len(df)),
+        "n_blocks": len(df),
         "n_agents": int(df["agent_id"].nunique()),
         "n_rounds": int(df["round_number"].nunique()),
         "total_tokens": int(df["n_tokens"].sum()),
-        "mean_block_chars": float(df["text_length"].mean()) if "text_length" in df else float(df["text"].str.len().mean()),
+        "mean_block_chars": float(df["text_length"].mean())
+        if "text_length" in df
+        else float(df["text"].str.len().mean()),
         "mean_block_tokens": float(df["n_tokens"].mean()),
         "missing_empty_text": int((df["text"].fillna("").str.strip() == "").sum()),
     }
@@ -155,7 +272,9 @@ def build_corpora(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
         ["round_number", "agent_id", "bad_rep_prev", "gossip_prev"]
     ]
     m = df.merge(panel, on=["round_number", "agent_id"], how="left")
-    m["post_shock"] = m["round_number"].isin({s + 1 for s in shocks}) | m["round_number"].isin(shocks)
+    m["post_shock"] = m["round_number"].isin({s + 1 for s in shocks}) | m["round_number"].isin(
+        shocks
+    )
 
     corpora = {
         "SI_all": m[m["institution"] == "SI"],
@@ -165,20 +284,40 @@ def build_corpora(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
         "SI_proposal_reason": m[(m["institution"] == "SI") & (m["kind"] == "proposal_reason")],
         "SFI_proposal_reason": m[(m["institution"] == "SFI") & (m["kind"] == "proposal_reason")],
         # votes not in reasoning_blocks; skip dedicated vote corpus unless present
-        "SI_post_shock": m[(m["institution"] == "SI") & (m["post_shock"] == True) & (m["kind"] == "contribution")],
-        "SFI_post_shock": m[(m["institution"] == "SFI") & (m["post_shock"] == True) & (m["kind"] == "contribution")],
-        "SI_post_gossip": m[(m["institution"] == "SI") & (m["gossip_prev"] == 1) & (m["kind"] == "contribution")],
-        "SFI_post_gossip": m[(m["institution"] == "SFI") & (m["gossip_prev"] == 1) & (m["kind"] == "contribution")],
-        "SI_post_badrep": m[(m["institution"] == "SI") & (m["bad_rep_prev"] == 1) & (m["kind"] == "contribution")],
-        "SFI_post_badrep": m[(m["institution"] == "SFI") & (m["bad_rep_prev"] == 1) & (m["kind"] == "contribution")],
+        "SI_post_shock": m[
+            (m["institution"] == "SI") & (m["post_shock"]) & (m["kind"] == "contribution")
+        ],
+        "SFI_post_shock": m[
+            (m["institution"] == "SFI") & (m["post_shock"]) & (m["kind"] == "contribution")
+        ],
+        "SI_post_gossip": m[
+            (m["institution"] == "SI") & (m["gossip_prev"] == 1) & (m["kind"] == "contribution")
+        ],
+        "SFI_post_gossip": m[
+            (m["institution"] == "SFI") & (m["gossip_prev"] == 1) & (m["kind"] == "contribution")
+        ],
+        "SI_post_badrep": m[
+            (m["institution"] == "SI") & (m["bad_rep_prev"] == 1) & (m["kind"] == "contribution")
+        ],
+        "SFI_post_badrep": m[
+            (m["institution"] == "SFI") & (m["bad_rep_prev"] == 1) & (m["kind"] == "contribution")
+        ],
         # comparable kinds only (exclude SI-only punishment)
         "SI_shared_kinds": m[
             (m["institution"] == "SI")
-            & (m["kind"].isin(["contribution", "belief_strategy", "belief_observations", "institution"]))
+            & (
+                m["kind"].isin(
+                    ["contribution", "belief_strategy", "belief_observations", "institution"]
+                )
+            )
         ],
         "SFI_shared_kinds": m[
             (m["institution"] == "SFI")
-            & (m["kind"].isin(["contribution", "belief_strategy", "belief_observations", "institution"]))
+            & (
+                m["kind"].isin(
+                    ["contribution", "belief_strategy", "belief_observations", "institution"]
+                )
+            )
         ],
     }
     return corpora
@@ -255,7 +394,7 @@ def tfidf_top(df_si: pd.DataFrame, df_sfi: pd.DataFrame, top_k: int = 30) -> pd.
 
 
 def concept_freqs(df: pd.DataFrame, label: str) -> dict:
-    texts = " \n ".join(df["text"].fillna("").astype(str).tolist())
+    " \n ".join(df["text"].fillna("").astype(str).tolist())
     out = {"corpus": label, "n_blocks": len(df)}
     for name, pats in CONCEPTS.items():
         hits = 0
@@ -299,7 +438,7 @@ def wordcloud_plot(counter: Counter, title: str, path: Path, color: str):
     top = counter.most_common(40)
     if not top:
         return
-    terms, freqs = zip(*top)
+    terms, freqs = zip(*top, strict=False)
     freqs = np.array(freqs, dtype=float)
     sizes = 8 + 28 * (freqs - freqs.min()) / (freqs.max() - freqs.min() + 1e-9)
     rng = np.random.default_rng(abs(hash(title)) % (2**32))
@@ -308,7 +447,7 @@ def wordcloud_plot(counter: Counter, title: str, path: Path, color: str):
     ax.set_ylim(0, 1)
     ax.axis("off")
     ax.set_title(title)
-    for term, size in zip(terms, sizes):
+    for term, size in zip(terms, sizes, strict=False):
         ax.text(
             rng.uniform(0.05, 0.95),
             rng.uniform(0.05, 0.95),
@@ -330,7 +469,7 @@ def keyness_bar(lod: pd.DataFrame, path: Path):
     colors = ["#5B4B8A" if z > 0 else "#C47B2C" for z in top["z"]]
     ax.barh(top["term"], top["z"], color=colors)
     ax.axvline(0, color="#333", lw=1)
-    ax.set_xlabel("z (log-odds SI âˆ’ SFI)")
+    ax.set_xlabel("z (log-odds SI â^' SFI)")
     ax.set_title("Keyness: shared-kind reasoning (SI vs SFI)")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
@@ -429,7 +568,11 @@ def main() -> int:
     concept_df.to_csv(TABLES / "language_concept_rates.csv", index=False)
 
     loo = agent_leave_one_out_keyness(
-        df[df["kind"].isin(["contribution", "belief_strategy", "belief_observations", "institution"])]
+        df[
+            df["kind"].isin(
+                ["contribution", "belief_strategy", "belief_observations", "institution"]
+            )
+        ]
     )
     loo.to_csv(TABLES / "language_keyness_leave_one_out.csv", index=False)
 
@@ -454,7 +597,9 @@ def main() -> int:
 
     examples = {
         "SI_punishment": example_blocks(df[df["institution"] == "SI"], r"punish", 3),
-        "SFI_damage_or_ldf": example_blocks(df[df["institution"] == "SFI"], r"LDF|damage|payout|shock", 3),
+        "SFI_damage_or_ldf": example_blocks(
+            df[df["institution"] == "SFI"], r"LDF|damage|payout|shock", 3
+        ),
         "SI_fair": example_blocks(df[df["institution"] == "SI"], r"fair", 3),
         "SFI_fair": example_blocks(df[df["institution"] == "SFI"], r"fair", 3),
         "SI_cooperate": example_blocks(corpora["SI_contribution"], r"cooperat", 3),
@@ -465,12 +610,16 @@ def main() -> int:
         "run": RUN,
         "primary_comparison": "SI_shared_kinds vs SFI_shared_kinds (excludes SI-only punishment blocks)",
         "corpus_stats": stats_rows,
-        "top_SI_key_terms": lod.head(12)[["term", "z", "count_SI", "count_SFI"]].to_dict(orient="records"),
-        "top_SFI_key_terms": lod.sort_values("z").head(12)[
-            ["term", "z", "count_SI", "count_SFI"]
-        ].to_dict(orient="records"),
+        "top_SI_key_terms": lod.head(12)[["term", "z", "count_SI", "count_SFI"]].to_dict(
+            orient="records"
+        ),
+        "top_SFI_key_terms": lod.sort_values("z")
+        .head(12)[["term", "z", "count_SI", "count_SFI"]]
+        .to_dict(orient="records"),
         "top_SI_bigrams": lod_bi.head(10)[["term", "z"]].to_dict(orient="records"),
-        "top_SFI_bigrams": lod_bi.sort_values("z").head(10)[["term", "z"]].to_dict(orient="records"),
+        "top_SFI_bigrams": lod_bi.sort_values("z")
+        .head(10)[["term", "z"]]
+        .to_dict(orient="records"),
         "loo_jaccard_SI_mean": float(loo["jaccard_top15_SI_terms"].mean()),
         "loo_jaccard_SFI_mean": float(loo["jaccard_top15_SFI_terms"].mean()),
         "loo_jaccard_SI_min": float(loo["jaccard_top15_SI_terms"].min()),

@@ -57,7 +57,9 @@ def load():
     return props, adopted, votes, profiles, contrib, actions
 
 
-def code_proposals(props: pd.DataFrame, adopted: pd.DataFrame, profiles: pd.DataFrame) -> pd.DataFrame:
+def code_proposals(
+    props: pd.DataFrame, adopted: pd.DataFrame, profiles: pd.DataFrame
+) -> pd.DataFrame:
     win = adopted.set_index("round_number")
     rows = []
     for _, r in props.iterrows():
@@ -67,8 +69,10 @@ def code_proposals(props: pd.DataFrame, adopted: pd.DataFrame, profiles: pd.Data
         # pre-history: mean prop in previous 3 rounds
         # filled later
         category = CATEGORY_MAP.get(r["rule"], "other")
-        direction = "increase" if float(r["new_value"]) > _default_for(r["rule"]) else (
-            "decrease" if float(r["new_value"]) < _default_for(r["rule"]) else "unchanged"
+        direction = (
+            "increase"
+            if float(r["new_value"]) > _default_for(r["rule"])
+            else ("decrease" if float(r["new_value"]) < _default_for(r["rule"]) else "unchanged")
         )
         # special-case: compared to previous adopted value if any
         adopted_row = win.loc[rn] if rn in win.index else None
@@ -191,7 +195,9 @@ def enforcement_stats(actions: pd.DataFrame, contrib: pd.DataFrame) -> pd.DataFr
                 "mean_cost_among_spenders": g.loc[g["enforcercost"] > 0, "enforcercost"].mean(),
                 "corr_prop_vs_enforcement_cost": g["prop_of_wealth"].corr(g["enforcercost"]),
                 "top_quartile_prop_share_of_cost": (
-                    g.loc[g["prop_of_wealth"] >= g["prop_of_wealth"].quantile(0.75), "enforcercost"].sum()
+                    g.loc[
+                        g["prop_of_wealth"] >= g["prop_of_wealth"].quantile(0.75), "enforcercost"
+                    ].sum()
                     / g["enforcercost"].sum()
                     if g["enforcercost"].sum()
                     else np.nan
@@ -259,7 +265,9 @@ def plots(coded, votes_p, enf_round, adopted):
     fig, ax = plt.subplots(figsize=(9, 3.5))
     for i, (_, r) in enumerate(adopted.sort_values("round_number").iterrows()):
         ax.scatter(r["round_number"], i, s=80)
-        ax.text(r["round_number"] + 0.3, i, f"{r['rule']}={r['new_value']}", va="center", fontsize=8)
+        ax.text(
+            r["round_number"] + 0.3, i, f"{r['rule']}={r['new_value']}", va="center", fontsize=8
+        )
     ax.set_yticks([])
     ax.set_xlabel("Round")
     ax.set_title("Adopted rules timeline")
@@ -280,8 +288,16 @@ def plots(coded, votes_p, enf_round, adopted):
     # enforcement burden
     if len(enf_round):
         fig, ax = plt.subplots(figsize=(9, 4))
-        ax.plot(enf_round["round_number"], enf_round["share_agents_with_positive_enforcement"], label="share enforcing")
-        ax.plot(enf_round["round_number"], enf_round["top_quartile_prop_share_of_cost"], label="top-quartile prop share of cost")
+        ax.plot(
+            enf_round["round_number"],
+            enf_round["share_agents_with_positive_enforcement"],
+            label="share enforcing",
+        )
+        ax.plot(
+            enf_round["round_number"],
+            enf_round["top_quartile_prop_share_of_cost"],
+            label="top-quartile prop share of cost",
+        )
         ax.set_xlabel("Round")
         ax.set_ylim(0, 1.05)
         ax.legend(fontsize=8)
@@ -295,7 +311,7 @@ def main() -> int:
     props, adopted, votes, profiles, contrib, actions = load()
     coded = code_proposals(props, adopted, profiles)
     votes_p = parse_votes(votes, props, profiles)
-    enf_round, enf_agent = enforcement_stats(actions, contrib)
+    enf_round, _enf_agent = enforcement_stats(actions, contrib)
     post = post_adoption_behavior(adopted, contrib)
     plots(coded, votes_p, enf_round, adopted)
 
@@ -305,9 +321,7 @@ def main() -> int:
         "n_adopted": len(adopted),
         "proposals_by_category": coded["category"].value_counts().to_dict(),
         "proposals_by_institution": coded["proposer_institution"].value_counts().to_dict(),
-        "adopted_by_category": [
-            CATEGORY_MAP.get(r, "other") for r in adopted["rule"].tolist()
-        ],
+        "adopted_by_category": [CATEGORY_MAP.get(r, "other") for r in adopted["rule"].tolist()],
         "mean_proposer_prop": float(coded["proposer_mean_prop"].mean()),
         "mean_all_agent_prop": float(profiles["mean_prop"].mean()),
         "punishment_proposals": coded[coded["rule"] == "PUNISHMENT_EFFECT"][

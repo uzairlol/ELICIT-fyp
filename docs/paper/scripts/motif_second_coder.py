@@ -22,8 +22,12 @@ SEED = 20260731
 
 # Coder A patterns (same as analysis script)
 MOTIF_PATTERNS = {
-    "reputation_management": re.compile(r"reputat|image|trust score|peer trust|credibility|free-rider reputation", re.I),
-    "conformity": re.compile(r"conform|follow(ing)? (the )?group|average contribution|peers? are|high peer", re.I),
+    "reputation_management": re.compile(
+        r"reputat|image|trust score|peer trust|credibility|free-rider reputation", re.I
+    ),
+    "conformity": re.compile(
+        r"conform|follow(ing)? (the )?group|average contribution|peers? are|high peer", re.I
+    ),
     "opportunistic": re.compile(
         r"opportuni|free[- ]rid|self[- ]interest|maximi[sz]e (my|own|personal)|payoff|MCPR|marginal return",
         re.I,
@@ -72,11 +76,18 @@ def coder_b_label(text: str) -> str:
     t = (text or "").lower()
     if re.search(r"gossip|bulletin|rumour|rumor", t):
         return "gossip_reference"
-    if re.search(r"reputat|credib|trust score|peer trust|free-rider (label|reputation)|seen as a free", t):
+    if re.search(
+        r"reputat|credib|trust score|peer trust|free-rider (label|reputation)|seen as a free", t
+    ):
         return "reputation_management"
-    if re.search(r"free[- ]rid|self[- ]interest|maximi[sz]e .{0,20}payoff|marginal return|mcpr|personal payoff", t):
+    if re.search(
+        r"free[- ]rid|self[- ]interest|maximi[sz]e .{0,20}payoff|marginal return|mcpr|personal payoff",
+        t,
+    ):
         return "opportunistic"
-    if re.search(r"peers? (are|have)|group average|other agents (are|contribute)|most (peers|agents)", t):
+    if re.search(
+        r"peers? (are|have)|group average|other agents (are|contribute)|most (peers|agents)", t
+    ):
         return "conformity"
     if re.search(r"agent\s+\d+", t):
         return "named_agents"
@@ -90,10 +101,10 @@ def coder_b_label(text: str) -> str:
 
 def cohens_kappa(y1: list[str], y2: list[str]) -> float:
     labels = sorted(set(y1) | set(y2))
-    idx = {l: i for i, l in enumerate(labels)}
+    idx = {label: i for i, label in enumerate(labels)}
     n = len(y1)
     mat = np.zeros((len(labels), len(labels)), dtype=float)
-    for a, b in zip(y1, y2):
+    for a, b in zip(y1, y2, strict=False):
         mat[idx[a], idx[b]] += 1
     mat /= n
     po = np.trace(mat)
@@ -106,7 +117,9 @@ def cohens_kappa(y1: list[str], y2: list[str]) -> float:
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(TABLES / "reputation_reasoning_motifs.csv")
-    post = df[(df["kind"] == "contribution") & ((df["bad_rep_prev"] == 1) | (df["gossip_prev"] == 1))].copy()
+    post = df[
+        (df["kind"] == "contribution") & ((df["bad_rep_prev"] == 1) | (df["gossip_prev"] == 1))
+    ].copy()
     post["text"] = post["text_excerpt"].fillna("")
     post["coder_a_multi"] = post["text"].map(coder_a_labels)
     post["coder_a"] = post["coder_a_multi"].map(primary_label)
@@ -114,8 +127,8 @@ def main():
     # Stratified 40% subsample by Coder A primary label
     rng = np.random.default_rng(SEED)
     parts = []
-    for lab, g in post.groupby("coder_a"):
-        k = max(1, int(round(0.40 * len(g))))
+    for _lab, g in post.groupby("coder_a"):
+        k = max(1, round(0.40 * len(g)))
         take = g.sample(n=min(k, len(g)), random_state=int(rng.integers(0, 1_000_000)))
         parts.append(take)
     sample = pd.concat(parts, ignore_index=True)
@@ -146,8 +159,8 @@ def main():
     sample_out.to_csv(OUT / "motif_second_coder_sample.csv", index=False)
 
     summary = {
-        "n_post_event_contribution": int(len(post)),
-        "n_subsample": int(len(sample)),
+        "n_post_event_contribution": len(post),
+        "n_subsample": len(sample),
         "subsample_fraction": float(len(sample) / len(post)),
         "percent_agreement": agree,
         "cohens_kappa_primary_label": kappa_multi,

@@ -37,14 +37,14 @@ DEMO = {5, 10, 15, 20, 25, 30}
 def trust_class(level: str) -> str:
     if not level:
         return "default"
-    l = str(level).lower()
-    if "cooperative" in l or "similar" in l:
+    level_name = str(level).lower()
+    if "cooperative" in level_name or "similar" in level_name:
         return "cooperative"
-    if "free-rider" in l or "uncooperative" in l or "untrustworthy" in l:
+    if "free-rider" in level_name or "uncooperative" in level_name or "untrustworthy" in level_name:
         return "free-rider"
-    if "unreliable" in l or "inconsistent" in l or "cautious" in l:
+    if "unreliable" in level_name or "inconsistent" in level_name or "cautious" in level_name:
         return "unreliable"
-    if "strategic" in l or "opportunistic" in l or "aggressive" in l or "ambitious" in l:
+    if "strategic" in level_name or "opportunistic" in level_name or "aggressive" in level_name or "ambitious" in level_name:
         return "strategic"
     return "default"
 
@@ -120,7 +120,9 @@ def ldf_coverage(rounds) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
                         "climate_damage": dmg,
                         "ldf_payout": pay,
                         "ldf_contribution": contrib,
-                        "coverage_ratio": (pay / dmg) if dmg > 0 else (np.nan if pay == 0 else np.inf),
+                        "coverage_ratio": (pay / dmg)
+                        if dmg > 0
+                        else (np.nan if pay == 0 else np.inf),
                         "net_transfer": pay - contrib,
                     }
                 )
@@ -143,20 +145,17 @@ def ldf_coverage(rounds) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
         )
     round_df = pd.DataFrame(round_rows)
     # lifetime net transfer by agent
-    life = (
-        red.groupby(["agent_id", "agent_group", "institution_choice"], as_index=False)
-        .agg(
-            sum_ldf_payout=("ldf_payout_round", "sum"),
-            sum_ldf_contrib=("ldf_contribution_round", "sum"),
-        )
+    life = red.groupby(["agent_id", "agent_group", "institution_choice"], as_index=False).agg(
+        sum_ldf_payout=("ldf_payout_round", "sum"),
+        sum_ldf_contrib=("ldf_contribution_round", "sum"),
     )
     life["net_ldf"] = life["sum_ldf_payout"] - life["sum_ldf_contrib"]
     # overall coverage across shock rounds
     shock_fund = round_df[round_df["round_number"].isin(SHOCK)]
     summary = {
-        "shock_coverage_ratios": shock_fund[["round_number", "coverage_ratio", "gross_damage_total", "ldf_payouts_total"]].to_dict(
-            orient="records"
-        ),
+        "shock_coverage_ratios": shock_fund[
+            ["round_number", "coverage_ratio", "gross_damage_total", "ldf_payouts_total"]
+        ].to_dict(orient="records"),
         "cumulative_payouts": float(fund["ldf_payouts_total"].sum()),
         "cumulative_gross_damage": float(fund["gross_damage_total"].sum()),
         "overall_coverage_when_damage": float(
@@ -209,7 +208,7 @@ def beliefs_and_sanctions(rounds) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
                     if v:
                         reward_tot += v
                         edges_r[(str(aid), str(t))] += v
-            rp = a.get("received_punishments")
+            a.get("received_punishments")
             # sometimes scalar
         sanction_rounds.append(
             {
@@ -226,17 +225,17 @@ def beliefs_and_sanctions(rounds) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
         rn = int(r["round_number"])
         punish_tot = reward_tot = 0.0
         n_pe = n_re = 0
-        for aid, a in r["agents"].items():
+        for _aid, a in r["agents"].items():
             ap = a.get("assigned_punishments") or {}
             ar = a.get("assigned_rewards") or {}
             if isinstance(ap, dict):
-                for t, v in ap.items():
+                for _t, v in ap.items():
                     v = float(v)
                     if v > 0:
                         punish_tot += v
                         n_pe += 1
             if isinstance(ar, dict):
-                for t, v in ar.items():
+                for _t, v in ar.items():
                     v = float(v)
                     if v > 0:
                         reward_tot += v
@@ -252,12 +251,19 @@ def beliefs_and_sanctions(rounds) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
         )
 
     belief_df = pd.DataFrame(
-        [{"trust_bucket": k, "count": v, "share": v / sum(bucket_counts.values())} for k, v in bucket_counts.items()]
+        [
+            {"trust_bucket": k, "count": v, "share": v / sum(bucket_counts.values())}
+            for k, v in bucket_counts.items()
+        ]
     ).sort_values("count", ascending=False)
 
     perc_df = pd.DataFrame(
         [
-            {"agent_id": int(aid), "perceived_coop_mentions": v["coop"], "perceived_defector_mentions": v["defector"]}
+            {
+                "agent_id": int(aid),
+                "perceived_coop_mentions": v["coop"],
+                "perceived_defector_mentions": v["defector"],
+            }
             for aid, v in perception.items()
             if aid.isdigit()
         ]
@@ -355,18 +361,24 @@ def tom_and_gossip_rq(rounds) -> dict:
         "score_min": float(min(scores)) if scores else None,
         "score_max": float(max(scores)) if scores else None,
         "mean_by_direction": dir_means,
-        "gossip_target_mean_prop_rank": float(rank_df["prop_rank"].mean()) if len(rank_df) else None,
-        "gossip_target_frac_top_half": float((rank_df["prop_rank"] <= rank_df["n_agents"] / 2).mean())
+        "gossip_target_mean_prop_rank": float(rank_df["prop_rank"].mean())
         if len(rank_df)
         else None,
-        "n_gossip_rank_rows": int(len(rank_df)),
+        "gossip_target_frac_top_half": float(
+            (rank_df["prop_rank"] <= rank_df["n_agents"] / 2).mean()
+        )
+        if len(rank_df)
+        else None,
+        "n_gossip_rank_rows": len(rank_df),
     }
 
 
 def payout_next_prop() -> pd.DataFrame:
     c = pd.read_csv(TABLES / "contributions.csv")
     r = pd.read_csv(TABLES / "redistribution.csv")
-    df = c.merge(r[["round_number", "agent_id", "ldf_payout_round"]], on=["round_number", "agent_id"])
+    df = c.merge(
+        r[["round_number", "agent_id", "ldf_payout_round"]], on=["round_number", "agent_id"]
+    )
     df = df[df["agent_group"] == "developing"].sort_values(["agent_id", "round_number"])
     rows = []
     for aid, g in df.groupby("agent_id"):
@@ -387,7 +399,9 @@ def payout_next_prop() -> pd.DataFrame:
                     "next_round": int(nxt["round_number"]),
                     "next_prop": float(nxt["prop_of_wealth"]),
                     "baseline_prev3_prop": baseline,
-                    "delta_vs_baseline": float(nxt["prop_of_wealth"]) - baseline if baseline == baseline else np.nan,
+                    "delta_vs_baseline": float(nxt["prop_of_wealth"]) - baseline
+                    if baseline == baseline
+                    else np.nan,
                 }
             )
     return pd.DataFrame(rows)
@@ -412,7 +426,7 @@ def conditional_coop_corr() -> dict:
                 pm = prev_others["prop_of_wealth"].mean() if len(prev_others) else peer_mean
                 pairs.append((pm, row["prop_of_wealth"]))
         if pairs:
-            x, y = zip(*pairs)
+            x, y = zip(*pairs, strict=False)
             out[inst] = {
                 "n": len(pairs),
                 "corr_peer_prev_mean_vs_own_prop": float(np.corrcoef(x, y)[0, 1]),
@@ -421,19 +435,21 @@ def conditional_coop_corr() -> dict:
 
 
 def shock_absorber_2x2() -> pd.DataFrame:
-    d = pd.read_csv(TABLES / "shock_agent_deltas.csv")
+    pd.read_csv(TABLES / "shock_agent_deltas.csv")
     # expect columns with shock round deltas
     # fall back: compute from contributions
     c = pd.read_csv(TABLES / "contributions.csv")
     rows = []
     for aid, g in c.groupby("agent_id"):
         inst = g["institution_choice"].iloc[0]
+
         def delta(shock):
             pre = g[g["round_number"] == shock - 1]["prop_of_wealth"]
             post = g[g["round_number"] == shock + 1]["prop_of_wealth"]
             if len(pre) and len(post):
                 return float(post.iloc[0] - pre.iloc[0])
             return np.nan
+
         d5, d10 = delta(5), delta(10)
         rows.append(
             {
@@ -456,24 +472,30 @@ def shock_absorber_2x2() -> pd.DataFrame:
 def fund_language_mcpr_scan() -> dict:
     rb = pd.read_csv(TABLES / "reasoning_blocks.csv")
     contrib = rb[rb["kind"] == "contribution"]
-    fund_re = contrib["text"].fillna("").str.contains(
-        r"pool|fund|sufficient|covered|enough|remaining|ldf|damage", case=False, regex=True
+    fund_re = (
+        contrib["text"]
+        .fillna("")
+        .str.contains(
+            r"pool|fund|sufficient|covered|enough|remaining|ldf|damage", case=False, regex=True
+        )
     )
-    mcpr_re = contrib["text"].fillna("").str.contains(
-        r"mcpr|marginal return|multiplier|1\.6|efficiency", case=False, regex=True
+    mcpr_re = (
+        contrib["text"]
+        .fillna("")
+        .str.contains(r"mcpr|marginal return|multiplier|1\.6|efficiency", case=False, regex=True)
     )
     return {
-        "n_contribution_blocks": int(len(contrib)),
+        "n_contribution_blocks": len(contrib),
         "n_fund_language": int(fund_re.sum()),
         "share_fund_language": float(fund_re.mean()),
         "n_mcpr_language": int(mcpr_re.sum()),
         "share_mcpr_language": float(mcpr_re.mean()),
-        "examples_fund": contrib.loc[fund_re, ["evidence_id", "round_number", "agent_id", "text"]].head(8).to_dict(
-            orient="records"
-        ),
-        "examples_mcpr": contrib.loc[mcpr_re, ["evidence_id", "round_number", "agent_id", "text"]].head(8).to_dict(
-            orient="records"
-        ),
+        "examples_fund": contrib.loc[fund_re, ["evidence_id", "round_number", "agent_id", "text"]]
+        .head(8)
+        .to_dict(orient="records"),
+        "examples_mcpr": contrib.loc[mcpr_re, ["evidence_id", "round_number", "agent_id", "text"]]
+        .head(8)
+        .to_dict(orient="records"),
     }
 
 
@@ -481,7 +503,12 @@ def make_plots(gap_df: pd.DataFrame, sanc_df: pd.DataFrame, fund_round: pd.DataF
     PLOTS.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(gap_df["round_number"], gap_df["gini_wealth"], label="gini_wealth", color="#2563eb")
-    ax.plot(gap_df["round_number"], gap_df["cooperation_rate"], label="cooperation_rate", color="#059669")
+    ax.plot(
+        gap_df["round_number"],
+        gap_df["cooperation_rate"],
+        label="cooperation_rate",
+        color="#059669",
+    )
     for s in SHOCK:
         ax.axvline(s, color="#dc2626", ls="--", alpha=0.5)
     ax.set_xlabel("Round")
@@ -496,8 +523,8 @@ def make_plots(gap_df: pd.DataFrame, sanc_df: pd.DataFrame, fund_round: pd.DataF
     for s in SHOCK:
         ax.axvline(s, color="#dc2626", ls="--", alpha=0.5)
     ax.set_xlabel("Round")
-    ax.set_ylabel("Mean wealth gap (developed âˆ’ developing)")
-    ax.set_title("Developedâ€“developing wealth gap")
+    ax.set_ylabel("Mean wealth gap (developed â^' developing)")
+    ax.set_title("Developedâ€"developing wealth gap")
     fig.tight_layout()
     fig.savefig(PLOTS / "wealth_gap_developed_developing.png", dpi=140)
     plt.close(fig)
@@ -515,8 +542,20 @@ def make_plots(gap_df: pd.DataFrame, sanc_df: pd.DataFrame, fund_round: pd.DataF
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.bar(sanc_df["round_number"] - 0.15, sanc_df["total_punishment_tokens"], width=0.3, label="punish", color="#dc2626")
-    ax.bar(sanc_df["round_number"] + 0.15, sanc_df["total_reward_tokens"], width=0.3, label="reward", color="#059669")
+    ax.bar(
+        sanc_df["round_number"] - 0.15,
+        sanc_df["total_punishment_tokens"],
+        width=0.3,
+        label="punish",
+        color="#dc2626",
+    )
+    ax.bar(
+        sanc_df["round_number"] + 0.15,
+        sanc_df["total_reward_tokens"],
+        width=0.3,
+        label="reward",
+        color="#059669",
+    )
     ax.legend()
     ax.set_title("Sanction token totals by round")
     fig.tight_layout()
@@ -525,7 +564,9 @@ def make_plots(gap_df: pd.DataFrame, sanc_df: pd.DataFrame, fund_round: pd.DataF
 
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(fund_round["round_number"], fund_round["ldf_pool_end"], label="pool_end")
-    ax.plot(fund_round["round_number"], fund_round["ldf_contributions_total"], label="contrib_total")
+    ax.plot(
+        fund_round["round_number"], fund_round["ldf_contributions_total"], label="contrib_total"
+    )
     ax.plot(fund_round["round_number"], fund_round["ldf_payouts_total"], label="payouts_total")
     ax.legend()
     ax.set_title("LDF pool dynamics")
@@ -569,9 +610,13 @@ def main() -> None:
         "tom_gossip": tom,
         "conditional_coop": cc,
         "payout_next_prop": {
-            "n_events": int(len(payout)),
-            "mean_delta_vs_baseline": float(payout["delta_vs_baseline"].mean()) if len(payout) else None,
-            "median_delta_vs_baseline": float(payout["delta_vs_baseline"].median()) if len(payout) else None,
+            "n_events": len(payout),
+            "mean_delta_vs_baseline": float(payout["delta_vs_baseline"].mean())
+            if len(payout)
+            else None,
+            "median_delta_vs_baseline": float(payout["delta_vs_baseline"].median())
+            if len(payout)
+            else None,
         },
         "shock_2x2_counts": shock2["cell"].value_counts().to_dict() if len(shock2) else {},
         "fund_mcpr_language": {k: v for k, v in lang.items() if not k.startswith("examples")},
@@ -581,7 +626,9 @@ def main() -> None:
         "gini_wealth_r1": float(gap_df.iloc[0]["gini_wealth"]),
         "gini_wealth_r30": float(gap_df.iloc[-1]["gini_wealth"]),
     }
-    (TABLES / "prompt_dashboard_rq_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
+    (TABLES / "prompt_dashboard_rq_summary.json").write_text(
+        json.dumps(summary, indent=2, default=str), encoding="utf-8"
+    )
     print(json.dumps(summary, indent=2, default=str)[:4000])
 
 

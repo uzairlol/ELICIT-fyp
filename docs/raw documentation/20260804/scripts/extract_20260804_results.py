@@ -33,9 +33,7 @@ TABLES = OUT_ROOT / "tables"
 EVIDENCE = OUT_ROOT / "evidence"
 
 RUN_ID = "20260804_024555"
-RUN_NAME = (
-    "simulation_llama3.1_8b_Full_scnldf_sh1_ldf1_seed2_26agents_30rounds_20260804_024555"
-)
+RUN_NAME = "simulation_llama3.1_8b_Full_scnldf_sh1_ldf1_seed2_26agents_30rounds_20260804_024555"
 MIN_CONTRIBUTION = 0  # parameters.MIN_CONTRIBUTION for LDF climate budget
 
 REQUIRED_ROUND_KEYS = {
@@ -121,9 +119,7 @@ def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> 
             out = {}
             for key in fieldnames:
                 val = row.get(key, "")
-                if val is None:
-                    out[key] = ""
-                elif isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+                if val is None or (isinstance(val, float) and (math.isnan(val) or math.isinf(val))):
                     out[key] = ""
                 else:
                     out[key] = val
@@ -534,7 +530,9 @@ def extract(data: list[dict[str, Any]], source_rel: str) -> dict[str, Any]:
                 }
             )
 
-            belief = agent.get("belief_state") if isinstance(agent.get("belief_state"), dict) else {}
+            belief = (
+                agent.get("belief_state") if isinstance(agent.get("belief_state"), dict) else {}
+            )
             blocks = [
                 (
                     "institution",
@@ -701,15 +699,11 @@ def validate_and_summarize(bundle: dict[str, Any]) -> list[dict[str, Any]]:
             f"{missing}/{n}",
         )
 
-    neg = sum(
-        1 for r in contrib if (r.get("contribution") is not None and r["contribution"] < 0)
-    )
+    neg = sum(1 for r in contrib if (r.get("contribution") is not None and r["contribution"] < 0))
     add("invalid_negative_contribution", neg, "PASS" if neg == 0 else "FAIL")
 
     over = sum(
-        1
-        for issue in issues
-        if "contribution" in issue and ">" in issue and "stage1_cap" in issue
+        1 for issue in issues if "contribution" in issue and ">" in issue and "stage1_cap" in issue
     )
     add(
         "approx_over_stage1_cap_flags",
@@ -721,17 +715,13 @@ def validate_and_summarize(bundle: dict[str, Any]) -> list[dict[str, Any]]:
     rep_bad = sum(1 for issue in issues if "reputation" in issue and "outside" in issue)
     add("impossible_reputation_flags", rep_bad, "PASS" if rep_bad == 0 else "FAIL")
 
-    routing = sum(
-        1 for issue in issues if "developed but" in issue or "developing but" in issue
-    )
+    routing = sum(1 for issue in issues if "developed but" in issue or "developing but" in issue)
     add("agent_type_institution_mismatches", routing, "PASS" if routing == 0 else "FAIL")
 
     shock_inconsist = sum(1 for issue in issues if "shock_occurred" in issue)
     add("shock_consistency_flags", shock_inconsist, "PASS" if shock_inconsist == 0 else "FAIL")
 
-    prop_vote = sum(
-        1 for issue in issues if "winning_proposal" in issue or "proposal[" in issue
-    )
+    prop_vote = sum(1 for issue in issues if "winning_proposal" in issue or "proposal[" in issue)
     add("proposal_vote_consistency_flags", prop_vote, "PASS" if prop_vote == 0 else "WARN")
 
     empty_tom = sum(1 for issue in issues if "empty tom_scores" in issue)
@@ -806,9 +796,7 @@ def write_reasoning_index(rows: list[dict[str, Any]], path: Path) -> None:
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def write_malformed(
-    issues: list[str], path: Path, summary: list[dict[str, Any]]
-) -> None:
+def write_malformed(issues: list[str], path: Path, summary: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         "# Malformed or Missing Records",
@@ -836,7 +824,7 @@ def write_malformed(
             if m:
                 empty_tom_rounds[int(m.group(1))] += n
             else:
-                other.append(f"- ({n}Ã—) {issue}" if n > 1 else f"- {issue}")
+                other.append(f"- ({n}Ã-) {issue}" if n > 1 else f"- {issue}")
 
         if empty_tom_rounds:
             lines.append("### Empty `tom_scores`")
@@ -1116,4 +1104,3 @@ if __name__ == "__main__":
     except ExtractionError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         raise SystemExit(1)
-

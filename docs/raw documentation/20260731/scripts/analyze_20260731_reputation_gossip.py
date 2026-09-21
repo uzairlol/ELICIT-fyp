@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 import matplotlib
@@ -34,7 +34,9 @@ RUN = "20260731_013853"
 GOSSIP_TRIGGER = 7.0
 MAX_GOSSIP = 5
 NEUTRAL_REP = 5.0
-BAD_REP_THRESHOLD = 4.0  # strictly below neutral; documented as analyst threshold grounded in default=5
+BAD_REP_THRESHOLD = (
+    4.0  # strictly below neutral; documented as analyst threshold grounded in default=5
+)
 DROP_THRESHOLD = -1.0
 
 
@@ -43,14 +45,18 @@ MOTIF_PATTERNS = {
     "shame_or_repair": re.compile(r"\b(shame|repair|restore|make up|regain)\b", re.I),
     "retaliation": re.compile(r"retaliat|punish(ing|ment)? (them|him|her|agent)|get back", re.I),
     "reciprocity": re.compile(r"reciproc|return (the )?favor|tit[- ]for[- ]tat", re.I),
-    "conformity": re.compile(r"conform|follow(ing)? (the )?group|average contribution|peers? are", re.I),
+    "conformity": re.compile(
+        r"conform|follow(ing)? (the )?group|average contribution|peers? are", re.I
+    ),
     "fairness": re.compile(r"\bfair(ness)?\b|equit|unfair", re.I),
     "conditional_cooperation": re.compile(r"conditional|if others|as long as|provided that", re.I),
     "punishment_avoidance": re.compile(r"avoid.*punish|fear of punish|sanction", re.I),
     "future_rounds": re.compile(r"future|next round|long[- ]term|later rounds", re.I),
     "named_agents": re.compile(r"Agent\s+\d+", re.I),
     "gossip_reference": re.compile(r"gossip|bulletin|rumour|rumor|heard that", re.I),
-    "opportunistic": re.compile(r"opportuni|free[- ]rid|self[- ]interest|maximi[sz]e (my|own)", re.I),
+    "opportunistic": re.compile(
+        r"opportuni|free[- ]rid|self[- ]interest|maximi[sz]e (my|own)", re.I
+    ),
     "resistance": re.compile(r"ignore|dismiss|unreliable gossip|don't care|do not care", re.I),
 }
 
@@ -116,11 +122,7 @@ def build_panel(rounds: list[dict], gossip_df: pd.DataFrame) -> pd.DataFrame:
         how="left",
     )
     # gossip targets this round (end-of-round bulletin)
-    targets = (
-        gossip_df.groupby("round_number")["target"]
-        .apply(lambda s: set(s.tolist()))
-        .to_dict()
-    )
+    targets = gossip_df.groupby("round_number")["target"].apply(lambda s: set(s.tolist())).to_dict()
     panel["in_gossip_bulletin"] = panel.apply(
         lambda r: int(r["agent_id"] in targets.get(r["round_number"], set())),
         axis=1,
@@ -192,7 +194,7 @@ def event_study(panel: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     # summary by type / institution / horizon
     summ = []
-    for (etype_filter, label) in [
+    for etype_filter, label in [
         ("bad_rep", "bad_rep"),
         ("rep_drop", "rep_drop"),
         ("gossip_target", "gossip_target"),
@@ -279,11 +281,21 @@ def event_study(panel: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 def scan_reasoning(panel: pd.DataFrame) -> pd.DataFrame:
     rb = pd.read_csv(TABLES / "reasoning_blocks.csv")
     # focus contribution + belief around event-next rounds
-    focus = rb[rb["kind"].isin(["contribution", "belief_strategy", "belief_observations", "punishment"])]
+    focus = rb[
+        rb["kind"].isin(["contribution", "belief_strategy", "belief_observations", "punishment"])
+    ]
     rows = []
     # map agent-round event exposure (prev-round events)
     exp = panel[
-        ["round_number", "agent_id", "bad_rep_prev", "rep_drop_prev", "gossip_prev", "prop", "contribution"]
+        [
+            "round_number",
+            "agent_id",
+            "bad_rep_prev",
+            "rep_drop_prev",
+            "gossip_prev",
+            "prop",
+            "contribution",
+        ]
     ]
     merged = focus.merge(exp, on=["round_number", "agent_id"], how="left")
     for _, r in merged.iterrows():
@@ -318,7 +330,9 @@ def scan_reasoning(panel: pd.DataFrame) -> pd.DataFrame:
     out.to_csv(TABLES / "reputation_reasoning_motifs.csv", index=False)
 
     # motif rates among post-event contribution reasoning only
-    post = out[(out["kind"] == "contribution") & ((out["bad_rep_prev"] == 1) | (out["gossip_prev"] == 1))]
+    post = out[
+        (out["kind"] == "contribution") & ((out["bad_rep_prev"] == 1) | (out["gossip_prev"] == 1))
+    ]
     counts = Counter()
     for m in post["motifs"]:
         if not m:
@@ -326,12 +340,17 @@ def scan_reasoning(panel: pd.DataFrame) -> pd.DataFrame:
         for part in str(m).split("|"):
             counts[part] += 1
     pd.DataFrame(
-        [{"motif": k, "count_in_post_event_contribution_reasoning": v} for k, v in counts.most_common()]
+        [
+            {"motif": k, "count_in_post_event_contribution_reasoning": v}
+            for k, v in counts.most_common()
+        ]
     ).to_csv(TABLES / "reputation_motif_counts.csv", index=False)
     return out
 
 
-def strategy_profiles(panel: pd.DataFrame, events: pd.DataFrame, motifs: pd.DataFrame) -> pd.DataFrame:
+def strategy_profiles(
+    panel: pd.DataFrame, events: pd.DataFrame, motifs: pd.DataFrame
+) -> pd.DataFrame:
     rows = []
     for aid, g in panel.groupby("agent_id"):
         g = g.sort_values("round_number")
@@ -374,7 +393,13 @@ def strategy_profiles(panel: pd.DataFrame, events: pd.DataFrame, motifs: pd.Data
                 "mean_delta_prop_after_gossip": g_ev["delta_prop"].mean() if len(g_ev) else np.nan,
                 "mean_delta_prop_after_bad_rep": b_ev["delta_prop"].mean() if len(b_ev) else np.nan,
                 "top_motifs": "|".join(
-                    [k for k, _ in Counter("|".join(m["motifs"].dropna()).split("|")).most_common(5) if k]
+                    [
+                        k
+                        for k, _ in Counter("|".join(m["motifs"].dropna()).split("|")).most_common(
+                            5
+                        )
+                        if k
+                    ]
                 ),
                 "shock_deltas": shock_note,
                 "adaptation_flag": int(abs((late or 0) - (base or 0)) > 0.15),
@@ -435,7 +460,9 @@ def plots(panel: pd.DataFrame, events: pd.DataFrame, gossip_df: pd.DataFrame):
         mean = sub.groupby("round_number")["reputation"].mean()
         ax.plot(mean.index, mean.values, label=inst, color=color, lw=2)
     ax.axhline(NEUTRAL_REP, color="#888", ls=":", label="neutral default 5")
-    ax.axhline(BAD_REP_THRESHOLD, color="#AA2222", ls="--", label=f"bad threshold {BAD_REP_THRESHOLD}")
+    ax.axhline(
+        BAD_REP_THRESHOLD, color="#AA2222", ls="--", label=f"bad threshold {BAD_REP_THRESHOLD}"
+    )
     ax.set_xlabel("Round")
     ax.set_ylabel("Mean reputation")
     ax.set_title("Mean reputation by institution")
@@ -445,7 +472,7 @@ def plots(panel: pd.DataFrame, events: pd.DataFrame, gossip_df: pd.DataFrame):
     plt.close(fig)
 
     # gossip target frequency
-    freq = gossip_df.groupby(["round_number", "target"]).size().reset_index(name="n")
+    gossip_df.groupby(["round_number", "target"]).size().reset_index(name="n")
     top_targets = gossip_df["target"].value_counts().head(10)
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.bar([str(i) for i in top_targets.index], top_targets.values, color="#666")
@@ -459,7 +486,7 @@ def plots(panel: pd.DataFrame, events: pd.DataFrame, gossip_df: pd.DataFrame):
     # event deltas
     imm = events[events["horizon"] == "imm"]
     fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharey=True)
-    for ax, fam in zip(axes, ["bad_rep", "rep_drop", "gossip_target"]):
+    for ax, fam in zip(axes, ["bad_rep", "rep_drop", "gossip_target"], strict=False):
         sub = imm[imm["event_types"].str.contains(fam)]
         data = [
             sub.loc[sub["institution_choice"] == "SI", "delta_prop"].dropna(),
@@ -468,7 +495,7 @@ def plots(panel: pd.DataFrame, events: pd.DataFrame, gossip_df: pd.DataFrame):
         ax.boxplot(data, tick_labels=["SI", "SFI"])
         ax.axhline(0, color="#888", lw=1)
         ax.set_title(fam)
-        ax.set_ylabel("Δ prop (t+1 − t)")
+        ax.set_ylabel("Δ prop (t+1 - t)")
     fig.suptitle("Immediate prop change after negative social events")
     fig.tight_layout()
     fig.savefig(PLOTS / "reputation_event_deltas.png", dpi=150)
