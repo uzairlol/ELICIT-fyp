@@ -51,7 +51,8 @@ from parsing import (
     parse_institution_choice_response,
     parse_contribution_response_v2,
     parse_punishment_response,
-    deanonymize_reasoning
+    deanonymize_reasoning,
+    _fit_allocations_to_budget,
 )
 
 def _schema_repair_prompt(base_prompt, stage_name, failure_reason=""):
@@ -426,33 +427,82 @@ class Agent:
                 getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 5),
             )
         )
-        response, parsed = request_with_retries(
-            self.api_client,
-            base_prompt=prompt,
-            parse_response=parse_punishment,
-            validate_result=validate_punishment,
-            request_kwargs={
-                "model_name": self.api_client.deployment_name,
-                "response_format": {"type": "json_object"},
-                "max_tokens": 3000,
-                "temperature": temperature,
-                "top_p": top_p,
-            },
-            max_attempts=max_punish_attempts,
-            label=f"Agent {self.agent_id} punishment choice",
-            retry_prompt_factory=punishment_retry_prompt,
-            logger=logger,
-        )
-        (
-            punishment_allocations,
-            reward_allocations,
-            reasoning,
-            deanonymized,
-            justifications,
-            facts_used,
-            deepseek_think,
-            parser_meta,
-        ) = parsed
+        try:
+            response, parsed = request_with_retries(
+                self.api_client,
+                base_prompt=prompt,
+                parse_response=parse_punishment,
+                validate_result=validate_punishment,
+                request_kwargs={
+                    "model_name": self.api_client.deployment_name,
+                    "response_format": {"type": "json_object"},
+                    "max_tokens": 3000,
+                    "temperature": temperature,
+                    "top_p": top_p,
+                },
+                max_attempts=max_punish_attempts,
+                label=f"Agent {self.agent_id} punishment choice",
+                retry_prompt_factory=punishment_retry_prompt,
+                logger=logger,
+            )
+            (
+                punishment_allocations,
+                reward_allocations,
+                reasoning,
+                deanonymized,
+                justifications,
+                facts_used,
+                deepseek_think,
+                parser_meta,
+            ) = parsed
+        except RetryExhaustedError as exc:
+            last_parsed = getattr(exc, 'last_parsed', None)
+            if last_parsed and isinstance(last_parsed, (tuple, list)) and len(last_parsed) == 8:
+                (
+                    raw_punish,
+                    raw_reward,
+                    reasoning,
+                    deanonymized,
+                    justifications,
+                    facts_used,
+                    deepseek_think,
+                    parser_meta,
+                ) = last_parsed
+                meta_reason = str(parser_meta.get('fallback_reason', '') or '')
+                raw_punish_allocs = parser_meta.get('raw_punishment_allocations', {}) or raw_punish
+                raw_reward_allocs = parser_meta.get('raw_reward_allocations', {}) or raw_reward
+
+                if 'exceeds budget' in meta_reason or parser_meta.get('total_spend', 0) > self.get_stage2_budget():
+                    members = group_state.get('members', []) or []
+                    punishment_allocations, reward_allocations = _fit_allocations_to_budget(
+                        raw_punish_allocs, raw_reward_allocs, self.get_stage2_budget(), members
+                    )
+                    logger.info(
+                        "Agent %s auto-fitted allocations to budget after retries exhausted: %s -> %s",
+                        self.agent_id, raw_punish_allocs, punishment_allocations
+                    )
+                    parser_meta['fallback_used'] = False
+                    parser_meta['auto_fitted_to_budget'] = True
+                else:
+                    logger.warning(
+                        "Agent %s punishment retries exhausted with reason: %s. Using safe defaults.",
+                        self.agent_id, exc.last_error
+                    )
+                    punishment_allocations, reward_allocations = {}, {}
+                    parser_meta['fallback_used'] = True
+                    parser_meta['fallback_reason'] = str(exc.last_error or '')
+            else:
+                logger.warning(
+                    "Agent %s punishment retries exhausted with no parseable output: %s.",
+                    self.agent_id, exc.last_error
+                )
+                punishment_allocations, reward_allocations = {}, {}
+                reasoning = f"Fallback punishment choice due to retry exhaust: {exc.last_error}"
+                deanonymized = reasoning
+                justifications = {}
+                facts_used = []
+                deepseek_think = ""
+                parser_meta = {'fallback_used': True, 'fallback_reason': f'retries exhausted: {exc.last_error}'}
 
         self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
 

@@ -4,6 +4,7 @@ from core import parameters
 from parsing.response_parsing_utils import (
     _unwrap_response_data,
     _apply_stage2_allocations,
+    _fit_allocations_to_budget,
     _make_parser_meta,
     deanonymize_reasoning,
     _stage2_total_cost,

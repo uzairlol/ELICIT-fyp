@@ -19,10 +19,10 @@ TOTAL_RUNS = 0            # Total planned runs for progress reporting
 LLM_MODEL = "llama3.1:8b"
 LLM_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
-LLM_MAX_ATTEMPTS = 5           # Total transport attempts, including the first call
+LLM_MAX_ATTEMPTS = 3           # Total transport attempts, including the first call
 LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for most agent decisions
-# Stage-2 allocations often mismatch prose vs numbers; allow more retries (no soft fallback).
-LLM_PUNISHMENT_MAX_ATTEMPTS = 5
+# Allow up to 3 attempts with failure repair before applying safety-net auto-fitting.
+LLM_PUNISHMENT_MAX_ATTEMPTS = 3
 BELIEF_UPDATE_MAX_TOKENS = 256 # Compact belief-state JSON; keep well under slot budget
 REASONING_MIN_PREDICT = 1024    # Minimum prediction budget for reasoning models to prevent truncated <think>
 REASONING_MAX_PREDICT = 2048    # Upper ceiling on tokens for reasoning models

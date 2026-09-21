@@ -182,31 +182,48 @@ def _apply_stage2_allocations(punishments_map, rewards_map, agent, anonymized_id
 
 
 def _fit_allocations_to_budget(punishment_requests, reward_requests, budget, members):
-    """Trim allocations to budget without zeroing everything via bad proportional rounding."""
+    """
+    Scale allocations proportionally to budget when LLM overspends, preserving
+    relative punishment and reward weightings.
+    """
+    budget = max(0, int(budget))
+    total_cost = (
+        sum(punishment_requests.values()) * parameters.PUNISHMENT_COST +
+        sum(reward_requests.values()) * parameters.REWARD_COST
+    )
 
-    def _contrib(target_id):
-        for member in members:
-            if getattr(member, 'agent_id', None) == target_id:
-                return getattr(member, 'contribution', 0)
-        return 0
+    if total_cost <= budget:
+        return dict(punishment_requests), dict(reward_requests)
 
-    remaining = budget
+    if total_cost == 0 or budget == 0:
+        return {}, {}
+
+    scale = budget / total_cost
+
     fitted_punishments = {}
     fitted_rewards = {}
+    spent = 0
 
-    for target_id, tokens in sorted(punishment_requests.items(), key=lambda item: (_contrib(item[0]), item[0])):
-        cost = parameters.PUNISHMENT_COST
-        affordable = min(tokens, remaining // cost) if cost > 0 else tokens
-        if affordable > 0:
-            fitted_punishments[target_id] = affordable
-            remaining -= affordable * cost
+    for target_id, tokens in punishment_requests.items():
+        scaled = int(tokens * scale)
+        if scaled > 0:
+            fitted_punishments[target_id] = scaled
+            spent += scaled * parameters.PUNISHMENT_COST
 
-    for target_id, tokens in sorted(reward_requests.items(), key=lambda item: item[0]):
-        cost = parameters.REWARD_COST
-        affordable = min(tokens, remaining // cost) if cost > 0 else tokens
-        if affordable > 0:
-            fitted_rewards[target_id] = affordable
-            remaining -= affordable * cost
+    for target_id, tokens in reward_requests.items():
+        scaled = int(tokens * scale)
+        if scaled > 0:
+            fitted_rewards[target_id] = scaled
+            spent += scaled * parameters.REWARD_COST
+
+    # Distribute any leftover budget due to integer rounding
+    remainder = budget - spent
+    if remainder > 0 and fitted_punishments:
+        # Give remaining fraction to the highest allocation
+        top_target = max(fitted_punishments, key=fitted_punishments.get)
+        additional = remainder // parameters.PUNISHMENT_COST
+        if additional > 0:
+            fitted_punishments[top_target] += additional
 
     return fitted_punishments, fitted_rewards
 
