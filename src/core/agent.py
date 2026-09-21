@@ -427,6 +427,7 @@ class Agent:
                 getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 5),
             )
         )
+        response = None
         try:
             response, parsed = request_with_retries(
                 self.api_client,
@@ -504,7 +505,8 @@ class Agent:
                 deepseek_think = ""
                 parser_meta = {'fallback_used': True, 'fallback_reason': f'retries exhausted: {exc.last_error}'}
 
-        self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
+        if response is not None:
+            self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
 
         self.punishment_reasoning = reasoning
         self.deanonymized_punishment_reasoning = deanonymized
