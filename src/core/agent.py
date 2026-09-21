@@ -101,9 +101,10 @@ def _budget_repair_prompt(base_prompt, stage_name, budget, currency_name, failur
         stage_name,
         failure_reason,
         fix_guidance=(
-            f"Keep the same targets but reduce amounts so total spend fits within "
-            f"{budget:,.0f} {currency_name}. Put the final amounts in the "
-            "\"punishments\" object."
+            f"Your total punishment and reward amounts summed together exceeded your budget of {budget:,.0f} {currency_name}. "
+            f"This budget is SHARED across ALL peers combined. "
+            f"Please keep your targets but divide your amounts so their SUM is strictly ≤ {budget:,.0f} {currency_name}. "
+            f"Put the scaled amounts in the \"punishments\" and \"rewards\" JSON objects."
         ),
     )
 

@@ -356,7 +356,11 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
             f"- Sanction budget: {s2_budget:,.0f} {currency} TOTAL for this round "
             f"({parameters.STAGE_2_WEALTH_FRACTION:.0%} of your wealth{funding_info})"
         )
-        max_line = f"- Max sanction per target: up to your full budget ({s2_budget:,.0f} {currency})"
+        max_line = (
+            f"- **SHARED POOL WARNING:** Your total budget of {s2_budget:,.0f} {currency} is SHARED across ALL targets combined, "
+            f"NOT per target. If punishing N targets, each can receive at most an average of ({s2_budget:,.0f} / N) {currency}. "
+            f"The SUM of ALL punishment and reward values must be ≤ {s2_budget:,.0f} {currency}."
+        )
         amount_rule = (
             f"Only list targets you are punishing or rewarding (amounts > 0). "
             f"Omitted targets automatically default to 0. Amounts in {currency}."
@@ -730,9 +734,10 @@ def construct_punishment_prompt(agent, group_state):
             f'- Amounts must be integers in {sc["currency_name"]} on the same scale as contributions and wealth (no arbitrary caps).'
         )
         budget_contract = (
-            f'- **BUDGET LIMIT:** Your total spend (punishment × {parameters.PUNISHMENT_COST} + reward × {parameters.REWARD_COST}) '
+            f'- **BUDGET LIMIT (CRITICAL):** Your total spend (SUM of ALL punishment amounts + SUM of ALL reward amounts) '
             f'MUST NOT exceed {s2_budget:,.0f} {sc["currency_name"]}. '
-            f'Before finalising, mentally sum all punishment and reward amounts and verify the total is ≤ {s2_budget:,.0f}.'
+            f'This budget is SHARED among all targets, NOT given to each target individually. '
+            f'Before outputting JSON, calculate: sum(punishments.values()) + sum(rewards.values()) and ensure it is ≤ {s2_budget:,.0f}.'
         )
         # Explicit unit equivalence statement — the core fix for LLM confusion
         unit_equivalence = (
