@@ -1,10 +1,11 @@
 # personas.py
 
+
 def _get_persona_block(agent):
     """Return extra behavior constraints based on an agent's LLM persona."""
-    persona = getattr(agent, 'llm_persona', 'DEFAULT')
+    persona = getattr(agent, "llm_persona", "DEFAULT")
 
-    if persona == 'RANDOM':
+    if persona == "RANDOM":
         return """
 
 **Behavioral Persona (LLM-RANDOM):**
@@ -15,7 +16,7 @@ def _get_persona_block(agent):
 - When explaining the choice, cite the few facts that are driving the current decision rather than narrating a long strategy.
 """
 
-    if persona == 'GREEDY':
+    if persona == "GREEDY":
         return """
 
 **Behavioral Persona (LLM-GREEDY):**

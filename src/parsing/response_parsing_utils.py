@@ -1,7 +1,8 @@
-#response_parsing_utils.py
+# response_parsing_utils.py
 
 import logging
 import re
+
 from core import parameters
 from core.utils import robust_json_loads
 
@@ -29,24 +30,24 @@ def _unwrap_response_data(response):
             parsed = robust_json_loads(response)
         except Exception:
             # give up and wrap raw text
-            return {'__raw_response__': str(response or '')}
+            return {"__raw_response__": str(response or "")}
 
     # At this point parsed is a dict
-    for wrapper_key in ('response', 'result', 'output', 'answer'):
+    for wrapper_key in ("response", "result", "output", "answer"):
         if wrapper_key in parsed and parsed.get(wrapper_key):
             # attempt to parse nested
             try:
                 nested = robust_json_loads(parsed.get(wrapper_key))
                 if isinstance(nested, dict):
-                    if '__raw_response__' not in nested:
-                        nested['__raw_response__'] = parsed.get(wrapper_key)
+                    if "__raw_response__" not in nested:
+                        nested["__raw_response__"] = parsed.get(wrapper_key)
                     return nested
             except Exception:
                 # leave parsed as-is
                 pass
 
-    if '__raw_response__' not in parsed:
-        parsed['__raw_response__'] = response
+    if "__raw_response__" not in parsed:
+        parsed["__raw_response__"] = response
     return parsed
 
 
@@ -55,7 +56,7 @@ def _target_agent_id_from_key(key, anonymized_id_mapping):
 
     Returns None if no numeric id found.
     """
-    match = re.search(r'\d+', str(key))
+    match = re.search(r"\d+", str(key))
     if not match:
         return None
     agent_num = int(match.group())
@@ -81,13 +82,13 @@ def _parse_int_safe(val):
 
 def _normalize_label_key(key):
     text = str(key).strip()
-    if text.lower().startswith('agent '):
+    if text.lower().startswith("agent "):
         return text
     if text.isdigit():
-        return f'Agent {text}'
-    match = re.search(r'\d+', text)
+        return f"Agent {text}"
+    match = re.search(r"\d+", text)
     if match:
-        return f'Agent {match.group()}'
+        return f"Agent {match.group()}"
     return text
 
 
@@ -129,13 +130,21 @@ def _parse_allocation_tokens(val):
     return parsed if parsed > 0 else 0
 
 
-def _apply_stage2_allocations(punishments_map, rewards_map, agent, anonymized_id_mapping, group_state, budget, max_per_target=None):
+def _apply_stage2_allocations(
+    punishments_map,
+    rewards_map,
+    agent,
+    anonymized_id_mapping,
+    group_state,
+    budget,
+    max_per_target=None,
+):
     """Resolve punishment/reward labels to agent ids without capping or trimming LLM amounts."""
-    members = group_state.get('members', []) or []
+    members = group_state.get("members", []) or []
     if members:
-        group_avg = sum(getattr(m, 'contribution', 0) for m in members) / len(members)
+        group_avg = sum(getattr(m, "contribution", 0) for m in members) / len(members)
     else:
-        group_avg = group_state.get('si_avg_contribution', parameters.ENDOWMENT_STAGE_1)
+        group_avg = group_state.get("si_avg_contribution", parameters.ENDOWMENT_STAGE_1)
 
     punishment_requests = {}
     reward_requests = {}
@@ -151,17 +160,17 @@ def _apply_stage2_allocations(punishments_map, rewards_map, agent, anonymized_id
 
         target_contrib = None
         for peer in members:
-            if getattr(peer, 'agent_id', None) == target_agent_id:
-                target_contrib = getattr(peer, 'contribution', None)
+            if getattr(peer, "agent_id", None) == target_agent_id:
+                target_contrib = getattr(peer, "contribution", None)
                 break
 
-        rol_enabled = bool(getattr(parameters, 'RULE_OF_LAW_ENABLED', False))
+        rol_enabled = bool(getattr(parameters, "RULE_OF_LAW_ENABLED", False))
         if rol_enabled and target_contrib is not None and target_contrib >= group_avg:
             logger.warning(
                 f"RULE OF LAW BLOCKED: Agent {agent.agent_id} tried to punish Agent {target_agent_id}. "
                 f"Target gave {target_contrib} (Group Avg {group_avg:.2f}). Hallucinated Free-riding."
             )
-            if hasattr(agent, 'rule_of_law_blocks'):
+            if hasattr(agent, "rule_of_law_blocks"):
                 agent.rule_of_law_blocks += 1
             continue
 
@@ -188,8 +197,8 @@ def _fit_allocations_to_budget(punishment_requests, reward_requests, budget, mem
     """
     budget = max(0, int(budget))
     total_cost = (
-        sum(punishment_requests.values()) * parameters.PUNISHMENT_COST +
-        sum(reward_requests.values()) * parameters.REWARD_COST
+        sum(punishment_requests.values()) * parameters.PUNISHMENT_COST
+        + sum(reward_requests.values()) * parameters.REWARD_COST
     )
 
     if total_cost <= budget:
@@ -200,8 +209,8 @@ def _fit_allocations_to_budget(punishment_requests, reward_requests, budget, mem
 
     scale = budget / total_cost
 
-    fitted_punishments = {}
-    fitted_rewards = {}
+    fitted_punishments: dict[int, int] = {}
+    fitted_rewards: dict[int, int] = {}
     spent = 0
 
     for target_id, tokens in punishment_requests.items():
@@ -220,7 +229,7 @@ def _fit_allocations_to_budget(punishment_requests, reward_requests, budget, mem
     remainder = budget - spent
     if remainder > 0 and fitted_punishments:
         # Give remaining fraction to the highest allocation
-        top_target = max(fitted_punishments, key=fitted_punishments.get)
+        top_target = max(fitted_punishments, key=lambda tid: fitted_punishments.get(tid, 0))
         additional = remainder // parameters.PUNISHMENT_COST
         if additional > 0:
             fitted_punishments[top_target] += additional
@@ -228,18 +237,28 @@ def _fit_allocations_to_budget(punishment_requests, reward_requests, budget, mem
     return fitted_punishments, fitted_rewards
 
 
-def _apply_allocations_helper(source_map, destination_map, tokens_remaining, cost_per_token, is_punishment, agent, anonymized_id_mapping, group_state, max_per_target):
+def _apply_allocations_helper(
+    source_map,
+    destination_map,
+    tokens_remaining,
+    cost_per_token,
+    is_punishment,
+    agent,
+    anonymized_id_mapping,
+    group_state,
+    max_per_target,
+):
     """Apply allocations from a source mapping (e.g., punishments or rewards) to destination_map.
 
     Returns (destination_map, tokens_remaining). This helper centralizes validation,
     affordability, max-per-target, Rule-of-Law blocking, and anonymized id resolution.
     """
     # Calculate group average for rule-of-law validation
-    members = group_state.get('members', [])
+    members = group_state.get("members", [])
     if members:
-        group_avg = sum(getattr(m, 'contribution', 0) for m in members) / len(members)
+        group_avg = sum(getattr(m, "contribution", 0) for m in members) / len(members)
     else:
-        group_avg = group_state.get('si_avg_contribution', parameters.ENDOWMENT_STAGE_1)
+        group_avg = group_state.get("si_avg_contribution", parameters.ENDOWMENT_STAGE_1)
 
     for key, raw_tokens in list(source_map.items()):
         target_agent_id = _target_agent_id_from_key(key, anonymized_id_mapping)
@@ -258,22 +277,22 @@ def _apply_allocations_helper(source_map, destination_map, tokens_remaining, cos
 
         if is_punishment:
             target_contrib = None
-            for peer in group_state.get('members', []):
-                if getattr(peer, 'agent_id', None) == target_agent_id:
-                    target_contrib = getattr(peer, 'contribution', None)
+            for peer in group_state.get("members", []):
+                if getattr(peer, "agent_id", None) == target_agent_id:
+                    target_contrib = getattr(peer, "contribution", None)
                     break
-            rol_enabled = bool(getattr(parameters, 'RULE_OF_LAW_ENABLED', False))
+            rol_enabled = bool(getattr(parameters, "RULE_OF_LAW_ENABLED", False))
             if rol_enabled and target_contrib is not None and target_contrib >= group_avg:
                 logger.warning(
                     f"RULE OF LAW BLOCKED: Agent {agent.agent_id} tried to punish Agent {target_agent_id}. "
                     f"Target gave {target_contrib} (Group Avg {group_avg:.2f}). Hallucinated Free-riding."
                 )
-                if hasattr(agent, 'rule_of_law_blocks'):
+                if hasattr(agent, "rule_of_law_blocks"):
                     agent.rule_of_law_blocks += 1
                 continue
 
         destination_map[target_agent_id] = tokens
-        tokens_remaining -= (tokens * cost_per_token)
+        tokens_remaining -= tokens * cost_per_token
         if tokens_remaining <= 0:
             break
 
@@ -282,24 +301,24 @@ def _apply_allocations_helper(source_map, destination_map, tokens_remaining, cos
 
 def _detect_raw_shape(parsed):
     if isinstance(parsed, dict):
-        return 'object'
+        return "object"
     if isinstance(parsed, list):
-        return 'list'
+        return "list"
     if isinstance(parsed, str):
-        return 'string'
+        return "string"
     if parsed is None:
-        return 'null'
+        return "null"
     return type(parsed).__name__
 
 
-def _make_parser_meta(parsed, expected_keys, fallback_used=False, fallback_reason=''):
+def _make_parser_meta(parsed, expected_keys, fallback_used=False, fallback_reason=""):
     parsed_keys = list(parsed.keys()) if isinstance(parsed, dict) else []
     expected = set(expected_keys)
     return {
-        'raw_shape': _detect_raw_shape(parsed),
-        'unmapped_keys': [k for k in parsed_keys if k not in expected],
-        'fallback_used': bool(fallback_used),
-        'fallback_reason': str(fallback_reason or ''),
+        "raw_shape": _detect_raw_shape(parsed),
+        "unmapped_keys": [k for k in parsed_keys if k not in expected],
+        "fallback_used": bool(fallback_used),
+        "fallback_reason": str(fallback_reason or ""),
     }
 
 
@@ -308,7 +327,7 @@ def deanonymize_reasoning(reasoning, anonymized_id_mapping):
     Replace anonymized agent numbers in the reasoning with actual agent IDs using a regex.
     """
     if not anonymized_id_mapping or not reasoning:
-        return reasoning 
+        return reasoning
 
     def replacement(match):
         agent_num = int(match.group(1))

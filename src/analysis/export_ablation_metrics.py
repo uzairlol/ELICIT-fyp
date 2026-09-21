@@ -8,7 +8,6 @@ from typing import Any
 
 import pandas as pd
 
-
 ROUND_AGG_COLUMNS = [
     "source_file",
     "run_label",
@@ -132,7 +131,9 @@ def iter_result_files(results_dir: Path) -> list[Path]:
     return sorted(path for path in results_dir.glob("*.json") if path.is_file())
 
 
-def flatten_round_rows(data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]) -> pd.DataFrame:
+def flatten_round_rows(
+    data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]
+) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for round_data in data:
         si_members = round_data.get("si_members", []) or []
@@ -164,7 +165,9 @@ def flatten_round_rows(data: list[dict[str, Any]], source_file: str, meta: dict[
     return pd.DataFrame(rows)
 
 
-def flatten_agent_rows(data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]) -> pd.DataFrame:
+def flatten_agent_rows(
+    data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]
+) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for round_data in data:
         round_number = safe_int(round_data.get("round_number"))
@@ -194,13 +197,23 @@ def flatten_agent_rows(data: list[dict[str, Any]], source_file: str, meta: dict[
                     "rank_text": rank_text,
                     "received_punishments": safe_float(agent_data.get("received_punishments")),
                     "received_rewards": safe_float(agent_data.get("received_rewards")),
-                    "assigned_punishments_total": sum(safe_float(value) for value in assigned_punishments.values()),
-                    "assigned_rewards_total": sum(safe_float(value) for value in assigned_rewards.values()),
-                    "climate_damage_taken_round": safe_float(agent_data.get("climate_damage_taken_round")),
-                    "climate_damage_taken_cumulative": safe_float(agent_data.get("climate_damage_taken_cumulative")),
+                    "assigned_punishments_total": sum(
+                        safe_float(value) for value in assigned_punishments.values()
+                    ),
+                    "assigned_rewards_total": sum(
+                        safe_float(value) for value in assigned_rewards.values()
+                    ),
+                    "climate_damage_taken_round": safe_float(
+                        agent_data.get("climate_damage_taken_round")
+                    ),
+                    "climate_damage_taken_cumulative": safe_float(
+                        agent_data.get("climate_damage_taken_cumulative")
+                    ),
                     "ldf_contribution_round": safe_float(agent_data.get("ldf_contribution_round")),
                     "ldf_payout_round": safe_float(agent_data.get("ldf_payout_round")),
-                    "net_climate_transfer_round": safe_float(agent_data.get("net_climate_transfer_round")),
+                    "net_climate_transfer_round": safe_float(
+                        agent_data.get("net_climate_transfer_round")
+                    ),
                     "vulnerability": safe_float(agent_data.get("vulnerability")),
                     "historical_emissions": safe_float(agent_data.get("historical_emissions")),
                     "contribution_capacity": safe_float(agent_data.get("contribution_capacity")),
@@ -208,7 +221,9 @@ def flatten_agent_rows(data: list[dict[str, Any]], source_file: str, meta: dict[
                     "rule_of_law_blocks": safe_int(agent_data.get("rule_of_law_blocks")),
                     "subsidy": safe_float(agent_data.get("subsidy")),
                     "trust_level_count": len(trust_levels),
-                    "institutional_strategy": agent_data.get("belief_state", {}).get("institutional_strategy", ""),
+                    "institutional_strategy": agent_data.get("belief_state", {}).get(
+                        "institutional_strategy", ""
+                    ),
                 }
             )
     return pd.DataFrame(rows)
@@ -219,10 +234,14 @@ def build_run_summary(round_df: pd.DataFrame, agent_df: pd.DataFrame) -> dict[st
         return {}
 
     final_round = round_df.sort_values("round_number").iloc[-1].to_dict()
-    summary = dict(final_round)
+    summary: dict[str, Any] = {str(key): value for key, value in final_round.items()}
 
     if not agent_df.empty:
-        final_agents = agent_df.sort_values(["round_number", "agent_id"]).groupby("agent_id", as_index=False).tail(1)
+        final_agents = (
+            agent_df.sort_values(["round_number", "agent_id"])
+            .groupby("agent_id", as_index=False)
+            .tail(1)
+        )
         switches = (
             agent_df.sort_values(["agent_id", "round_number"])
             .groupby("agent_id")["institution_choice"]
@@ -235,9 +254,13 @@ def build_run_summary(round_df: pd.DataFrame, agent_df: pd.DataFrame) -> dict[st
                 "mean_reputation": safe_float(final_agents["reputation"].mean()),
                 "mean_parsing_failures": safe_float(final_agents["parsing_failures"].mean()),
                 "mean_rule_of_law_blocks": safe_float(final_agents["rule_of_law_blocks"].mean()),
-                "agent_payoff_std": safe_float(final_agents["cumulative_payoff"].std(ddof=0) if len(final_agents) > 1 else 0.0),
+                "agent_payoff_std": safe_float(
+                    final_agents["cumulative_payoff"].std(ddof=0) if len(final_agents) > 1 else 0.0
+                ),
                 "agent_contribution_mean": safe_float(agent_df["contribution"].mean()),
-                "agent_contribution_std": safe_float(agent_df["contribution"].std(ddof=0) if len(agent_df) > 1 else 0.0),
+                "agent_contribution_std": safe_float(
+                    agent_df["contribution"].std(ddof=0) if len(agent_df) > 1 else 0.0
+                ),
                 "institution_switches_total": safe_int(switches),
             }
         )
@@ -282,18 +305,26 @@ def export_metrics(results_dir: Path, output_dir: Path) -> None:
             run_summaries.append(summary)
 
     if all_round_frames:
-        pd.concat(all_round_frames, ignore_index=True).to_csv(output_dir / "all_round_metrics.csv", index=False)
+        pd.concat(all_round_frames, ignore_index=True).to_csv(
+            output_dir / "all_round_metrics.csv", index=False
+        )
     if all_agent_frames:
-        pd.concat(all_agent_frames, ignore_index=True).to_csv(output_dir / "all_agent_metrics.csv", index=False)
+        pd.concat(all_agent_frames, ignore_index=True).to_csv(
+            output_dir / "all_agent_metrics.csv", index=False
+        )
     if run_summaries:
         pd.DataFrame(run_summaries).to_csv(summary_dir / "run_summaries.csv", index=False)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Export ablation metrics from simulation JSON files.")
+    parser = argparse.ArgumentParser(
+        description="Export ablation metrics from simulation JSON files."
+    )
     repo_root = Path(__file__).resolve().parents[2]
     parser.add_argument("--results-dir", type=Path, default=repo_root / "results")
-    parser.add_argument("--output-dir", type=Path, default=repo_root / "analysis_outputs" / "metrics")
+    parser.add_argument(
+        "--output-dir", type=Path, default=repo_root / "analysis_outputs" / "metrics"
+    )
     return parser
 
 

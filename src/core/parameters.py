@@ -5,29 +5,31 @@ All constants and configuration settings for the ELICIT (Emergent LLM Institutio
 """
 
 # --- Simulation Settings ---
-NUM_AGENTS = 7           # Total number of participants
-NUM_ROUNDS = 30          # Total number of rounds per simulation
-SEED = 42                # Random seed for reproducibility
-SCENARIO = "abstract"    # Formatting scenario for prompts (abstract, ldf, tax)
-AGENT_TYPE = "LLM"       # Control baseline (LLM, Random, Greedy)
-BATCH_NAME = "Control"   # Current experiment batch name
-MIXED_AGENT_COUNTS = None # Optional composition dict, e.g. {"LLM": 5, "Random": 1, "Greedy": 1}
-CURRENT_RUN = 0           # Progress counter for multi-run experiment scripts
-TOTAL_RUNS = 0            # Total planned runs for progress reporting
+NUM_AGENTS = 7  # Total number of participants
+NUM_ROUNDS = 30  # Total number of rounds per simulation
+SEED = 42  # Random seed for reproducibility
+SCENARIO = "abstract"  # Formatting scenario for prompts (abstract, ldf, tax)
+AGENT_TYPE = "LLM"  # Control baseline (LLM, Random, Greedy)
+BATCH_NAME = "Control"  # Current experiment batch name
+MIXED_AGENT_COUNTS = None  # Optional composition dict, e.g. {"LLM": 5, "Random": 1, "Greedy": 1}
+CURRENT_RUN = 0  # Progress counter for multi-run experiment scripts
+TOTAL_RUNS = 0  # Total planned runs for progress reporting
 
 # --- LLM Configuration (Local Ollama) ---
 LLM_MODEL = "llama3.1:8b"
 LLM_BASE_URL = "http://localhost:11434/v1"
 OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
-LLM_MAX_ATTEMPTS = 3           # Total transport attempts, including the first call
+LLM_MAX_ATTEMPTS = 3  # Total transport attempts, including the first call
 LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for most agent decisions
 # Allow up to 3 attempts with failure repair before applying safety-net auto-fitting.
 LLM_PUNISHMENT_MAX_ATTEMPTS = 3
-BELIEF_UPDATE_MAX_TOKENS = 256 # Compact belief-state JSON; keep well under slot budget
-REASONING_MIN_PREDICT = 1024    # Minimum prediction budget for reasoning models to prevent truncated <think>
-REASONING_MAX_PREDICT = 2048    # Upper ceiling on tokens for reasoning models
-LLM_MAX_CONCURRENCY = 2        # Thread-pool workers for institution/contribution/punishment/beliefs
-TOM_MAX_CONCURRENCY = 4        # Thread-pool workers for pairwise ToM audits only
+BELIEF_UPDATE_MAX_TOKENS = 256  # Compact belief-state JSON; keep well under slot budget
+REASONING_MIN_PREDICT = (
+    1024  # Minimum prediction budget for reasoning models to prevent truncated <think>
+)
+REASONING_MAX_PREDICT = 2048  # Upper ceiling on tokens for reasoning models
+LLM_MAX_CONCURRENCY = 2  # Thread-pool workers for institution/contribution/punishment/beliefs
+TOM_MAX_CONCURRENCY = 4  # Thread-pool workers for pairwise ToM audits only
 # Ollama runtime options forwarded on every request (native + OpenAI-compatible API).
 # num_gpu: model layers offloaded to GPU (Ollama option name is num_gpu).
 # num_ctx: KV-cache reservation per parallel slot — llama-server RAM scales with
@@ -49,43 +51,47 @@ DEBUG_LLM_IO = False
 RESULTS_SPILL_TO_DISK = True
 
 # --- Initial Endowments ---
-INITIAL_TOKENS = 1000    # Starting tokens per agent
-ENDOWMENT_STAGE_1 = 20   # Tokens per agent per round (Stage 1 contribution)
-ENDOWMENT_STAGE_2 = 20   # Tokens per agent per round (Stage 2 sanctions)
-STAGE_2_WEALTH_FRACTION = 0.05  # Climate/LDF: stage-2 sanction budget = max(ENDOWMENT_STAGE_2, wealth * this)
+INITIAL_TOKENS = 1000  # Starting tokens per agent
+ENDOWMENT_STAGE_1 = 20  # Tokens per agent per round (Stage 1 contribution)
+ENDOWMENT_STAGE_2 = 20  # Tokens per agent per round (Stage 2 sanctions)
+STAGE_2_WEALTH_FRACTION = (
+    0.05  # Climate/LDF: stage-2 sanction budget = max(ENDOWMENT_STAGE_2, wealth * this)
+)
 
 # --- Public Goods Game ---
-PUBLIC_GOOD_MULTIPLIER = 1.6   # Multiplication factor for group contributions (MCPR = this / group_size)
+PUBLIC_GOOD_MULTIPLIER = (
+    1.6  # Multiplication factor for group contributions (MCPR = this / group_size)
+)
 MIN_CONTRIBUTION = 0
 MAX_CONTRIBUTION = ENDOWMENT_STAGE_1
 
 # --- Punishment & Reward Settings (SI only) ---
-MAX_PUNISHMENT_TOKENS = 20     # Max tokens an agent can assign in Stage 2
-PUNISHMENT_EFFECT = 3          # Negative token reduces target payoff by 3
-PUNISHMENT_COST = 1            # Each negative token costs 1 from sender
-REWARD_EFFECT = 1              # Positive token increases target payoff by 1
-REWARD_COST = 1                # Each positive token costs 1 from sender
+MAX_PUNISHMENT_TOKENS = 20  # Max tokens an agent can assign in Stage 2
+PUNISHMENT_EFFECT = 3  # Negative token reduces target payoff by 3
+PUNISHMENT_COST = 1  # Each negative token costs 1 from sender
+REWARD_EFFECT = 1  # Positive token increases target payoff by 1
+REWARD_COST = 1  # Each positive token costs 1 from sender
 
 # Keep disabled unless explicitly enabled in experiments.
 RULE_OF_LAW_ENABLED = False
 
 # --- Information Settings ---
-ANONYMITY = False              # Agents don't see others anonymously (identity tracking)
-DISPLAY_PAST_ACTIONS = 1       # Controls how many rounds of peer data history are kept (T-1 window); agents use belief_state for long-term memory
+ANONYMITY = False  # Agents don't see others anonymously (identity tracking)
+DISPLAY_PAST_ACTIONS = 1  # Controls how many rounds of peer data history are kept (T-1 window); agents use belief_state for long-term memory
 
 # --- Belief Tracking (Working Memory / Scratchpad) ---
-BELIEF_TRACKING_ENABLED = True # Enable structured belief-state updates after each round
+BELIEF_TRACKING_ENABLED = True  # Enable structured belief-state updates after each round
 
 # --- Phase 2: Cognitive Modules ---
-TOM_ENABLED = True             # Enable Theory of Mind audits after each round
-TOM_VERBOSE = True             # Log each agent's published trust scores to the terminal
-TOM_MAX_ATTEMPTS = 2           # Total attempts per evaluator-target score
-DEMOCRACY_ENABLED = True       # Enable democratic rule-changing every N rounds
-DEMOCRACY_INTERVAL = 5        # Rounds between constitutional votes
+TOM_ENABLED = True  # Enable Theory of Mind audits after each round
+TOM_VERBOSE = True  # Log each agent's published trust scores to the terminal
+TOM_MAX_ATTEMPTS = 2  # Total attempts per evaluator-target score
+DEMOCRACY_ENABLED = True  # Enable democratic rule-changing every N rounds
+DEMOCRACY_INTERVAL = 5  # Rounds between constitutional votes
 
-GOSSIP_ENABLED = True          # Distribute negative ToM audits as social pressure
-GOSSIP_TRIGGER_SCORE = 7.0     # Only share gossip for trust scores <= this value
-MAX_GOSSIP_ITEMS = 5           # Prevent prompt bloat
+GOSSIP_ENABLED = True  # Distribute negative ToM audits as social pressure
+GOSSIP_TRIGGER_SCORE = 7.0  # Only share gossip for trust scores <= this value
+MAX_GOSSIP_ITEMS = 5  # Prevent prompt bloat
 
 # --- Phase 3: Oracle Settings ---
 ORACLE_PUNISHMENT_WEIGHT = 1.5
@@ -94,45 +100,67 @@ ORACLE_ENDOWMENT_SCALING = 50.0
 ORACLE_MAX_TOKENS_WEIGHT = 60.0
 
 # --- Phase 4: Subsidy & Curiosity ---
-SUBSIDY_ENABLED = True       # Toggle subsidy redistribution
-SUBSIDY_FRACTION = 0.2       # 20% of punishment costs pooled for subsidy
-SUBSIDY_TOP_N = 2            # Number of top contributors who receive subsidy
+SUBSIDY_ENABLED = True  # Toggle subsidy redistribution
+SUBSIDY_FRACTION = 0.2  # 20% of punishment costs pooled for subsidy
+SUBSIDY_TOP_N = 2  # Number of top contributors who receive subsidy
 
-CURIOSITY_ENABLED = False      # Toggle LLM-driven curiosity
-CURIOSITY_BONUS_PROMPT = False # If True, injects novelty suggestions into prompts
+CURIOSITY_ENABLED = False  # Toggle LLM-driven curiosity
+CURIOSITY_BONUS_PROMPT = False  # If True, injects novelty suggestions into prompts
 
 # --- Output Settings ---
-SAVE_RESULTS = True            # Save results to file after simulation
-VERBOSE = True                 # Print detailed round-by-round logs
+SAVE_RESULTS = True  # Save results to file after simulation
+VERBOSE = True  # Print detailed round-by-round logs
 
 # --- Phase 5: Heterogeneous Climate Economy ---
 # Counts should sum to NUM_AGENTS for deterministic profile assignment.
 AGENT_GROUP_COUNTS = {
-	"developed": 3,
-	"developing": 4,
+    "developed": 3,
+    "developing": 4,
 }
 
 # LDF-specific country composition and initial endowment profile.
 # Major developed-country values are grounded in commonly cited initial LDF pledges.
 LDF_AGENT_GROUP_COUNTS = {
-	"developed": 12,
-	"developing": 14,
+    "developed": 12,
+    "developing": 14,
 }
 
 # Developed-country initial endowments (million USD) — using nominal GDP (no scaling):
 # United States, Germany, Japan, United Kingdom, France, Italy, Canada, Australia,
 # Netherlands, Switzerland, Ireland, Sweden (values in million USD)
 LDF_DEVELOPED_INITIAL_ENDOWMENTS = [
-	28750000.0, 4690000.0, 4030000.0, 3690000.0, 3160000.0, 2380000.0,
-	2240000.0, 1760000.0, 1210000.0, 936560.0, 609160.0, 603720.0
+    28750000.0,
+    4690000.0,
+    4030000.0,
+    3690000.0,
+    3160000.0,
+    2380000.0,
+    2240000.0,
+    1760000.0,
+    1210000.0,
+    936560.0,
+    609160.0,
+    603720.0,
 ]
 
 # Developing-country initial endowments (million USD) — using nominal GDP (no scaling):
 # South Africa, Egypt, Ethiopia, Saudi Arabia, UAE, Pakistan, Brazil, Colombia,
 # Ecuador, Maldives, Antigua and Barbuda, Nepal, Senegal, Armenia
 LDF_DEVELOPING_INITIAL_ENDOWMENTS = [
-	377700.0, 380060.0, 163700.0, 1110000.0, 532700.0, 407790.0,
-	2330000.0, 363500.0, 118800.0, 6600.0, 2120.0, 44180.0, 33700.0, 25410.0
+    377700.0,
+    380060.0,
+    163700.0,
+    1110000.0,
+    532700.0,
+    407790.0,
+    2330000.0,
+    363500.0,
+    118800.0,
+    6600.0,
+    2120.0,
+    44180.0,
+    33700.0,
+    25410.0,
 ]
 
 # Backward-compatible fallback if a flat developing value is preferred elsewhere.
@@ -165,8 +193,8 @@ CLIMATE_DAMAGE_BASE = 150000.0
 CLIMATE_SHOCK_DETERMINISTIC = True
 # Schedule: shocks at round 5 (10%) and round 10 (20%).
 CLIMATE_SHOCK_SCHEDULE = [
-	(5, 0.10),
-	(10, 0.20),
+    (5, 0.10),
+    (10, 0.20),
 ]
 
 # --- Phase 5b: Loss & Damage Fund (LDF) ---

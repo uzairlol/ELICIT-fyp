@@ -17,10 +17,10 @@ class LossDamageFund:
         """
         Determine whether this round is a replenishment round.
         """
-        if getattr(parameters, 'LDF_COLLECT_EVERY_ROUND', False):
+        if getattr(parameters, "LDF_COLLECT_EVERY_ROUND", False):
             return True
 
-        interval = max(1, int(getattr(parameters, 'LDF_REPLENISHMENT_INTERVAL', 1)))
+        interval = max(1, int(getattr(parameters, "LDF_REPLENISHMENT_INTERVAL", 1)))
         return (int(round_number) % interval) == 1
 
     def _contribution_amount(self, agent):
@@ -29,7 +29,7 @@ class LossDamageFund:
 
         The agent chooses a round contribution elsewhere in the simulation.
         """
-        return max(0.0, float(getattr(agent, 'contribution', 0.0)))
+        return max(0.0, float(getattr(agent, "contribution", 0.0)))
 
     def collect_contributions(self, agents):
         """Collect one-round contributions and return mapping {agent_id: amount}."""
@@ -49,10 +49,14 @@ class LossDamageFund:
         if self.pool_balance <= 0.0:
             return {}
 
-        eligible_agents = [agent for agent in agents if getattr(agent, 'agent_group', 'developing') == 'developing']
+        eligible_agents = [
+            agent for agent in agents if getattr(agent, "agent_group", "developing") == "developing"
+        ]
 
         developing_wealths = [max(1.0, a.wealth) for a in eligible_agents]
-        avg_developing_wealth = sum(developing_wealths) / len(developing_wealths) if eligible_agents else 1.0
+        avg_developing_wealth = (
+            sum(developing_wealths) / len(developing_wealths) if eligible_agents else 1.0
+        )
 
         # Determine if pool can fully cover all eligible damages at max coverage
         max_for_agents = {}
@@ -77,7 +81,9 @@ class LossDamageFund:
                 equity_multiplier = equity_multiplier_global
             else:
                 wealth_ratio = avg_developing_wealth / max(1.0, agent.wealth)
-                equity_multiplier = max(0.0, 1.0 + (wealth_ratio - 1.0) * getattr(parameters, 'LDF_EQUITY_WEIGHT', 0.0))
+                equity_multiplier = max(
+                    0.0, 1.0 + (wealth_ratio - 1.0) * getattr(parameters, "LDF_EQUITY_WEIGHT", 0.0)
+                )
             need = parameters.LDF_PAYOUT_DAMAGE_WEIGHT * dmg * equity_multiplier
             weighted_need[aid] = max(0.0, need)
         total_need = sum(weighted_need.values())

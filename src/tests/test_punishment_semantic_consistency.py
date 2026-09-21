@@ -22,7 +22,7 @@ def test_explicit_zero_punish_is_consistent():
         rewards={},
     )
     assert ok is True
-    assert reason == ''
+    assert reason == ""
 
 
 def test_zero_reward_with_reward_claim_is_inconsistent():
@@ -50,7 +50,7 @@ def test_positive_punish_and_reward_is_consistent():
         rewards={"Agent 4": 3},
     )
     assert ok is True
-    assert reason == ''
+    assert reason == ""
 
 
 def test_justification_free_rider_label_with_zero_punish():

@@ -18,6 +18,7 @@ Audits are pairwise: one LLM call per evaluator-target pair.
 
 import logging
 import time
+
 from core import parameters
 from core.scenario_config import get_scenario_config
 from core.utils import robust_json_loads
@@ -55,7 +56,7 @@ class TomModule:
             target_count,
             round_number,
         )
-        if not hasattr(evaluating_agent, 'tom_audit_log'):
+        if not hasattr(evaluating_agent, "tom_audit_log"):
             evaluating_agent.tom_audit_log = []
         else:
             # Never accumulate across rounds — pairwise audits are O(N^2) per round.
@@ -73,9 +74,9 @@ class TomModule:
             if score is None:
                 continue
 
-            scores[target.agent_id] = {'score': score, 'reasoning': reasoning}
+            scores[target.agent_id] = {"score": score, "reasoning": reasoning}
 
-            if getattr(parameters, 'TOM_VERBOSE', False):
+            if getattr(parameters, "TOM_VERBOSE", False):
                 logger.info(
                     f"[ToM] Agent {evaluating_agent.agent_id} scored Agent {target.agent_id}: "
                     f"{score:.1f}/10"
@@ -86,12 +87,14 @@ class TomModule:
                     f"{score:.1f}/10"
                 )
 
-            evaluating_agent.tom_audit_log.append({
-                'round': round_number,
-                'target_agent': target.agent_id,
-                'trust_score': score,
-                'reasoning': reasoning,
-            })
+            evaluating_agent.tom_audit_log.append(
+                {
+                    "round": round_number,
+                    "target_agent": target.agent_id,
+                    "trust_score": score,
+                    "reasoning": reasoning,
+                }
+            )
 
         logger.info(
             "[ToM] Evaluator Agent %s completed %s/%s score(s) in %.1fs.",
@@ -119,7 +122,7 @@ class TomModule:
         label = f"ToM Agent {evaluator.agent_id} -> Agent {target.agent_id}"
         max_attempts = max(
             1,
-            int(getattr(parameters, 'TOM_MAX_ATTEMPTS', 2)),
+            int(getattr(parameters, "TOM_MAX_ATTEMPTS", 2)),
         )
 
         def retry_prompt(base, _attempt, last_error):
@@ -134,7 +137,6 @@ class TomModule:
 
         def parse_score(response):
             return self._parse_score_response(response)
-
 
         def validate_score(parsed):
             _score, _reasoning, parse_error = parsed
@@ -174,12 +176,12 @@ class TomModule:
 
     def _build_pair_prompt(self, evaluator, target, round_number):
         sc = get_scenario_config(parameters.SCENARIO)
-        currency_name = sc['currency_name']
+        currency_name = sc["currency_name"]
         stated_intent = self._truncate(target.contribution_reasoning)
         contribution = target.contribution
         endowment = (
             target.get_stage1_contribution_cap()
-            if hasattr(target, 'get_stage1_contribution_cap')
+            if hasattr(target, "get_stage1_contribution_cap")
             else parameters.ENDOWMENT_STAGE_1
         )
 
@@ -213,11 +215,11 @@ Task: Score the behavioral consistency of Agent {target.agent_id} this round.
         """Parse a single trust score. Returns (score, reasoning, error_message)."""
         try:
             data = robust_json_loads(response)
-            if 'trust_score' not in data:
-                raise ValueError('Missing trust_score')
-            score = float(data['trust_score'])
+            if "trust_score" not in data:
+                raise ValueError("Missing trust_score")
+            score = float(data["trust_score"])
             score = max(1.0, min(10.0, score))
-            reasoning = str(data.get('reasoning', '') or '').strip()
-            return score, reasoning, ''
+            reasoning = str(data.get("reasoning", "") or "").strip()
+            return score, reasoning, ""
         except Exception as e:
-            return None, '', str(e)
+            return None, "", str(e)

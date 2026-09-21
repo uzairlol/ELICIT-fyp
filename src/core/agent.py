@@ -26,41 +26,41 @@ Dependencies:
 - Requires OllamaClient for local LLM interaction.
 """
 
-import logging
-import random
-from core import parameters
-import os
+import contextlib
 import json
+import logging
+import os
+import random
+from typing import Any
+
+from core import parameters
 from core.utils import robust_json_loads, uses_climate_budget
 from llm.retry import (
     RetryExhaustedError,
     build_failure_retry_prompt,
     request_with_retries,
 )
+from parsing import (
+    _fit_allocations_to_budget,
+    parse_contribution_response_v2,
+    parse_institution_choice_response,
+    parse_punishment_response,
+)
+from prompts.prompt_generator import (
+    construct_contribution_prompt,
+    construct_institution_choice_prompt,
+    construct_punishment_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
-from prompts.prompt_generator import (
-    construct_institution_choice_prompt,
-    construct_contribution_prompt,
-    construct_punishment_prompt,
-    get_past_actions_string
-)
-
-from parsing import (
-    parse_institution_choice_response,
-    parse_contribution_response_v2,
-    parse_punishment_response,
-    deanonymize_reasoning,
-    _fit_allocations_to_budget,
-)
 
 def _schema_repair_prompt(base_prompt, stage_name, failure_reason=""):
     guidance = (
         "Use the exact key names from the Required JSON shape. "
         "Do not invent keys or omit required fields."
     )
-    if 'unexpected labels' in str(failure_reason or '').lower():
+    if "unexpected labels" in str(failure_reason or "").lower():
         guidance = (
             "Remove every disallowed Agent label. Use ONLY the Allowed labels listed "
             "in the failure reason / target label list. Do not invent SFI or other Agent IDs."
@@ -79,12 +79,12 @@ def _semantic_repair_prompt(base_prompt, stage_name, failure_reason=""):
         stage_name,
         failure_reason,
         fix_guidance=(
-            "CRITICAL CONSISTENCY RULE: numeric amounts in \"punishments\" / \"rewards\" "
+            'CRITICAL CONSISTENCY RULE: numeric amounts in "punishments" / "rewards" '
             "must match what reasoning and justifications claim.\n"
             "- If you intend to punish free-riders, put positive INTEGER amounts under "
-            "\"punishments\" for those Agent labels (within your Stage 2 budget).\n"
+            '"punishments" for those Agent labels (within your Stage 2 budget).\n'
             "- If you intend to reward cooperators, put positive INTEGER amounts under "
-            "\"rewards\" for those Agent labels.\n"
+            '"rewards" for those Agent labels.\n'
             "- If you choose not to punish anyone, set all punishment amounts to 0 and "
             "explicitly write that you are not punishing anyone / all punishment amounts "
             "are 0.\n"
@@ -105,9 +105,10 @@ def _budget_repair_prompt(base_prompt, stage_name, budget, currency_name, failur
             f"Your total punishment and reward amounts summed together exceeded your budget of {budget:,.0f} {currency_name}. "
             f"This budget is SHARED across ALL peers combined. "
             f"Please keep your targets but divide your amounts so their SUM is strictly ≤ {budget:,.0f} {currency_name}. "
-            f"Put the scaled amounts in the \"punishments\" and \"rewards\" JSON objects."
+            f'Put the scaled amounts in the "punishments" and "rewards" JSON objects.'
         ),
     )
+
 
 class Agent:
     def __init__(self, agent_id, api_client):
@@ -141,11 +142,11 @@ class Agent:
 
         # Add 'strategy' attribute for compatibility
         # Identify agent type for logging/analysis
-        self.strategy = 'LLM'
-        self.llm_persona = 'DEFAULT'
+        self.strategy = "LLM"
+        self.llm_persona = "DEFAULT"
 
         # --- Phase 5: Heterogeneous climate profile ---
-        self.agent_group = 'developing'
+        self.agent_group = "developing"
         self.wealth = float(parameters.INITIAL_TOKENS)
         self.vulnerability = float(parameters.DEVELOPING_VULNERABILITY)
         self.historical_emissions = float(parameters.DEVELOPING_HISTORICAL_EMISSIONS)
@@ -159,12 +160,12 @@ class Agent:
         self.net_climate_transfer_round = 0.0
 
         # Attributes to store reasoning
-        self.institution_reasoning = ''
-        self.contribution_reasoning = ''
-        self.punishment_reasoning = ''
-        self.institution_deepseek_think = ''
-        self.contribution_deepseek_think = ''
-        self.punishment_deepseek_think = ''
+        self.institution_reasoning = ""
+        self.contribution_reasoning = ""
+        self.punishment_reasoning = ""
+        self.institution_deepseek_think = ""
+        self.contribution_deepseek_think = ""
+        self.punishment_deepseek_think = ""
         self.institution_facts_used = []
         self.contribution_facts_used = []
         self.punishment_facts_used = []
@@ -177,17 +178,17 @@ class Agent:
         self.anonymized_id_mapping = {}  # Mapping of anonymized agent numbers to actual agent IDs for the current prompt
 
         # For deanonymized reasoning
-        self.deanonymized_punishment_reasoning = ''  # Deanonymized version of punishment reasoning
+        self.deanonymized_punishment_reasoning = ""  # Deanonymized version of punishment reasoning
 
         # Stable pseudonym mapping to prevent cross-round identity confusion
         self.pseudonym_mapping = {}  # {actual_agent_id: stable_pseudonym_integer}
-        self.reverse_pseudonym_mapping = {} # {stable_pseudonym_integer: actual_agent_id}
+        self.reverse_pseudonym_mapping = {}  # {stable_pseudonym_integer: actual_agent_id}
 
         # --- Phase 4: Subsidy & Curiosity ---
-        self.last_subsidy = 0       # tokens received in current round
-        self.explored_params = set() # For curiosity module: unique parameters proposed
-        self.history_institutions = [] # Track all past choices
-        self.history_contributions = [] # Track last few contributions
+        self.last_subsidy = 0  # tokens received in current round
+        self.explored_params = set()  # For curiosity module: unique parameters proposed
+        self.history_institutions = []  # Track all past choices
+        self.history_contributions = []  # Track last few contributions
 
         # --- Reliability tracking ---
         self.parsing_failures = 0
@@ -197,19 +198,18 @@ class Agent:
         self.punishment_parser_meta = {}
 
         # --- Phase 2: Theory of Mind & Reputation ---
-        self.tom_scores = {}        # {other_agent_id: trust_score (1-10)} — updated each round
-        self.reputation = 5.0       # Peer-average trust score (default = neutral)
-        self.stated_intent = ''     # Saved contribution reasoning before the action (for ToM audit)
-        self.tom_audit_log = []     # Log of all ToM audit entries this agent has made
-        self.recent_gossip = ""     # Phase 2b: Gossip bulletin from the previous round
+        self.tom_scores = {}  # {other_agent_id: trust_score (1-10)} — updated each round
+        self.reputation = 5.0  # Peer-average trust score (default = neutral)
+        self.stated_intent = ""  # Saved contribution reasoning before the action (for ToM audit)
+        self.tom_audit_log = []  # Log of all ToM audit entries this agent has made
+        self.recent_gossip = ""  # Phase 2b: Gossip bulletin from the previous round
 
         # --- Belief Tracking (Working Memory / Scratchpad) ---
-        self.belief_state = {
+        self.belief_state: dict[str, Any] = {
             "trust_levels": {},
             "institutional_strategy": "No prior experience — exploring options.",
-            "observations": "No rounds played yet."
+            "observations": "No rounds played yet.",
         }
-
 
         # Initialize pseudonyms for this agent to prevent the anonymization null-routing bug
         self._ensure_pseudonyms_initialized()
@@ -237,9 +237,9 @@ class Agent:
 
         def validate_choice(parsed):
             choice, _reasoning, _facts, _think, meta = parsed
-            if meta.get('fallback_used', False) or choice not in ('SI', 'SFI'):
-                return meta.get('fallback_reason', 'invalid institution choice')
-            return ''
+            if meta.get("fallback_used", False) or choice not in ("SI", "SFI"):
+                return meta.get("fallback_reason", "invalid institution choice")
+            return ""
 
         response = None
         try:
@@ -255,27 +255,28 @@ class Agent:
                     "temperature": temperature,
                     "top_p": top_p,
                 },
-                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+                max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
                 label=f"Agent {self.agent_id} institution choice",
-                retry_prompt_factory=lambda base, _attempt, error: (
-                    _schema_repair_prompt(base, "Institution Choice", error)
+                retry_prompt_factory=lambda base, _attempt, error: _schema_repair_prompt(
+                    base, "Institution Choice", error
                 ),
                 logger=logger,
             )
             choice, reasoning, facts_used, deepseek_think, parser_meta = parsed
         except RetryExhaustedError as exc:
-            last_err = str(exc.last_error or '')
+            last_err = str(exc.last_error or "")
             logger.warning(
                 "Agent %s institution choice retries exhausted: %s. Falling back to SFI.",
-                self.agent_id, last_err
+                self.agent_id,
+                last_err,
             )
-            choice = 'SFI'
+            choice = "SFI"
             reasoning = f"Fallback institution choice due to retry exhaust: {last_err}"
             facts_used = []
             deepseek_think = ""
             parser_meta = {
-                'fallback_used': True,
-                'fallback_reason': f'retries exhausted: {last_err}'
+                "fallback_used": True,
+                "fallback_reason": f"retries exhausted: {last_err}",
             }
 
         self.institution_choice = choice
@@ -283,7 +284,7 @@ class Agent:
         self.institution_facts_used = facts_used
         self.institution_deepseek_think = deepseek_think
         self.institution_parser_meta = parser_meta
-        
+
         if response is not None:
             self.log_debug(round_number, "stage_0_institution", prompt, response)
 
@@ -297,13 +298,11 @@ class Agent:
             other_agents = [a for a in range(parameters.NUM_AGENTS) if a != self.agent_id]
             rng = random.Random(parameters.SEED + self.agent_id)
             rng.shuffle(other_agents)
-            
+
             for i, actual_id in enumerate(other_agents):
                 pseudonym = i + 1
                 self.pseudonym_mapping[actual_id] = pseudonym
                 self.reverse_pseudonym_mapping[pseudonym] = actual_id
-
-
 
     def decide_contribution(self, group_state):
         """
@@ -317,9 +316,9 @@ class Agent:
 
         def validate_contribution(parsed):
             contribution, _reasoning, _facts, _think, meta = parsed
-            if meta.get('fallback_used', False) or contribution is None:
-                return meta.get('fallback_reason', 'invalid contribution')
-            return ''
+            if meta.get("fallback_used", False) or contribution is None:
+                return meta.get("fallback_reason", "invalid contribution")
+            return ""
 
         response = None
         try:
@@ -335,35 +334,36 @@ class Agent:
                     "temperature": temperature,
                     "top_p": top_p,
                 },
-                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+                max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
                 label=f"Agent {self.agent_id} contribution choice",
-                retry_prompt_factory=lambda base, _attempt, error: (
-                    _schema_repair_prompt(
-                        base,
-                        "Contribution Choice",
-                        error,
-                    )
+                retry_prompt_factory=lambda base, _attempt, error: _schema_repair_prompt(
+                    base,
+                    "Contribution Choice",
+                    error,
                 ),
                 logger=logger,
             )
             contribution, llm_reasoning, facts_used, deepseek_think, parser_meta = parsed
         except RetryExhaustedError as exc:
-            last_err = str(exc.last_error or '')
+            last_err = str(exc.last_error or "")
             logger.warning(
                 "Agent %s contribution choice retries exhausted: %s. Falling back to MIN_CONTRIBUTION.",
-                self.agent_id, last_err
+                self.agent_id,
+                last_err,
             )
             contribution = parameters.MIN_CONTRIBUTION
             llm_reasoning = f"Fallback contribution choice due to retry exhaust: {last_err}"
             facts_used = []
             deepseek_think = ""
             parser_meta = {
-                'fallback_used': True,
-                'fallback_reason': f'retries exhausted: {last_err}'
+                "fallback_used": True,
+                "fallback_reason": f"retries exhausted: {last_err}",
             }
 
         # Enforce bounds
-        contribution = max(parameters.MIN_CONTRIBUTION, min(contribution, self.get_stage1_contribution_cap()))
+        contribution = max(
+            parameters.MIN_CONTRIBUTION, min(contribution, self.get_stage1_contribution_cap())
+        )
 
         self.contribution = contribution
         self.contribution_reasoning = llm_reasoning
@@ -373,7 +373,6 @@ class Agent:
 
         if response is not None:
             self.log_debug(self.round_number, "stage_1_contribution", prompt, response)
-
 
     def assign_punishment(self, group_state):
         """
@@ -387,27 +386,28 @@ class Agent:
 
         def validate_punishment(parsed):
             meta = parsed[-1]
-            if meta.get('fallback_used', False):
-                return meta.get('fallback_reason', 'invalid punishment response')
-            if meta.get('semantic_retry', False):
-                detail = str(meta.get('semantic_retry_reason') or '').strip()
+            if meta.get("fallback_used", False):
+                return meta.get("fallback_reason", "invalid punishment response")
+            if meta.get("semantic_retry", False):
+                detail = str(meta.get("semantic_retry_reason") or "").strip()
                 if detail:
-                    return f'punishment response is internally inconsistent: {detail}'
-                return 'punishment response is internally inconsistent'
-            return ''
+                    return f"punishment response is internally inconsistent: {detail}"
+                return "punishment response is internally inconsistent"
+            return ""
 
         def punishment_retry_prompt(base, _attempt, last_error):
-            if 'exceeds budget' in last_error:
+            if "exceeds budget" in last_error:
                 from core.scenario_config import get_scenario_config
+
                 sc = get_scenario_config(parameters.SCENARIO)
                 return _budget_repair_prompt(
                     base,
                     "Punishment and Reward Choice",
                     self.get_stage2_budget(),
-                    sc['currency_name'],
+                    sc["currency_name"],
                     last_error,
                 )
-            if 'internally inconsistent' in last_error:
+            if "internally inconsistent" in last_error:
                 return _semantic_repair_prompt(
                     base,
                     "Punishment and Reward Choice",
@@ -423,8 +423,8 @@ class Agent:
         max_punish_attempts = int(
             getattr(
                 parameters,
-                'LLM_PUNISHMENT_MAX_ATTEMPTS',
-                getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 5),
+                "LLM_PUNISHMENT_MAX_ATTEMPTS",
+                getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 5),
             )
         )
         response = None
@@ -457,7 +457,7 @@ class Agent:
                 parser_meta,
             ) = parsed
         except RetryExhaustedError as exc:
-            last_parsed = getattr(exc, 'last_parsed', None)
+            last_parsed = getattr(exc, "last_parsed", None)
             if last_parsed and isinstance(last_parsed, (tuple, list)) and len(last_parsed) == 8:
                 (
                     raw_punish,
@@ -469,33 +469,40 @@ class Agent:
                     deepseek_think,
                     parser_meta,
                 ) = last_parsed
-                meta_reason = str(parser_meta.get('fallback_reason', '') or '')
-                raw_punish_allocs = parser_meta.get('raw_punishment_allocations', {}) or raw_punish
-                raw_reward_allocs = parser_meta.get('raw_reward_allocations', {}) or raw_reward
+                meta_reason = str(parser_meta.get("fallback_reason", "") or "")
+                raw_punish_allocs = parser_meta.get("raw_punishment_allocations", {}) or raw_punish
+                raw_reward_allocs = parser_meta.get("raw_reward_allocations", {}) or raw_reward
 
-                if 'exceeds budget' in meta_reason or parser_meta.get('total_spend', 0) > self.get_stage2_budget():
-                    members = group_state.get('members', []) or []
+                if (
+                    "exceeds budget" in meta_reason
+                    or parser_meta.get("total_spend", 0) > self.get_stage2_budget()
+                ):
+                    members = group_state.get("members", []) or []
                     punishment_allocations, reward_allocations = _fit_allocations_to_budget(
                         raw_punish_allocs, raw_reward_allocs, self.get_stage2_budget(), members
                     )
                     logger.info(
                         "Agent %s auto-fitted allocations to budget after retries exhausted: %s -> %s",
-                        self.agent_id, raw_punish_allocs, punishment_allocations
+                        self.agent_id,
+                        raw_punish_allocs,
+                        punishment_allocations,
                     )
-                    parser_meta['fallback_used'] = False
-                    parser_meta['auto_fitted_to_budget'] = True
+                    parser_meta["fallback_used"] = False
+                    parser_meta["auto_fitted_to_budget"] = True
                 else:
                     logger.warning(
                         "Agent %s punishment retries exhausted with reason: %s. Using safe defaults.",
-                        self.agent_id, exc.last_error
+                        self.agent_id,
+                        exc.last_error,
                     )
                     punishment_allocations, reward_allocations = {}, {}
-                    parser_meta['fallback_used'] = True
-                    parser_meta['fallback_reason'] = str(exc.last_error or '')
+                    parser_meta["fallback_used"] = True
+                    parser_meta["fallback_reason"] = str(exc.last_error or "")
             else:
                 logger.warning(
                     "Agent %s punishment retries exhausted with no parseable output: %s.",
-                    self.agent_id, exc.last_error
+                    self.agent_id,
+                    exc.last_error,
                 )
                 punishment_allocations, reward_allocations = {}, {}
                 reasoning = f"Fallback punishment choice due to retry exhaust: {exc.last_error}"
@@ -503,7 +510,10 @@ class Agent:
                 justifications = {}
                 facts_used = []
                 deepseek_think = ""
-                parser_meta = {'fallback_used': True, 'fallback_reason': f'retries exhausted: {exc.last_error}'}
+                parser_meta = {
+                    "fallback_used": True,
+                    "fallback_reason": f"retries exhausted: {exc.last_error}",
+                }
 
         if response is not None:
             self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
@@ -518,7 +528,6 @@ class Agent:
         self.assigned_rewards = reward_allocations
         return punishment_allocations, reward_allocations
 
-
     def _persona_sampling_profile(self, stage_name):
         """Return sampling settings tuned to the current persona."""
         if self.llm_persona == "RANDOM":
@@ -531,8 +540,6 @@ class Agent:
 
         return 0.5, 0.95
 
-
-
     def update_payoff(self, amount, is_subsidy=False):
         """
         Update the agent's cumulative and round payoffs.
@@ -542,11 +549,9 @@ class Agent:
         """
         if is_subsidy:
             self.last_subsidy += amount
-            
+
         self.round_payoff += amount
         self.cumulative_payoff += amount
-
-
 
     def update_history(self, round_data):
         """
@@ -564,11 +569,12 @@ class Agent:
         This replaces the old sliding-window episodic memory with a
         compact, semantically rich working-memory scratchpad.
         """
-        if not getattr(parameters, 'BELIEF_TRACKING_ENABLED', True):
+        if not getattr(parameters, "BELIEF_TRACKING_ENABLED", True):
             return
 
         from core.scenario_config import get_scenario_config
-        sc = get_scenario_config(parameters.SCENARIO)
+
+        get_scenario_config(parameters.SCENARIO)
 
         # Build a compact peer summary — keep prompt tokens well under num_ctx.
         # Only include peers whose contribution differs significantly from average,
@@ -576,18 +582,26 @@ class Agent:
         observed_peer_ids = []
         compact_rows = []
         if anonymous_data:
-            contribs = [e.get('contribution', 0) for e in anonymous_data if e.get('contribution') is not None]
+            contribs = [
+                e.get("contribution", 0)
+                for e in anonymous_data
+                if e.get("contribution") is not None
+            ]
             avg_c = (sum(contribs) / len(contribs)) if contribs else 0.0
             for entry in anonymous_data:
-                pid = entry.get('actual_agent_id', '?')
-                try:
+                pid = entry.get("actual_agent_id", "?")
+                with contextlib.suppress(TypeError, ValueError):
                     observed_peer_ids.append(int(pid))
-                except (TypeError, ValueError):
-                    pass
-                c = entry.get('contribution', 0)
+                c = entry.get("contribution", 0)
                 deviation = c - avg_c
-                tag = "high" if deviation > 0.15 * avg_c else ("low" if deviation < -0.15 * avg_c else "avg")
-                compact_rows.append((abs(deviation), pid, c, tag, entry.get('institution_choice', '?')))
+                tag = (
+                    "high"
+                    if deviation > 0.15 * avg_c
+                    else ("low" if deviation < -0.15 * avg_c else "avg")
+                )
+                compact_rows.append(
+                    (abs(deviation), pid, c, tag, entry.get("institution_choice", "?"))
+                )
             # Sort most-notable first, limit to 10 rows to cap prompt size
             compact_rows.sort(key=lambda r: r[0], reverse=True)
             compact_rows = compact_rows[:10]
@@ -611,14 +625,14 @@ class Agent:
 
         # Keep the existing trust_levels from last round as a starting point;
         # only show the keys (labels) to avoid re-serialising a large object.
-        prev_trust = self.belief_state.get('trust_levels') or {}
-        prev_trust_compact = ", ".join(
-            f"{k}:{v}" for k, v in list(prev_trust.items())[:8]
-        ) or "none"
+        prev_trust = self.belief_state.get("trust_levels") or {}
+        prev_trust_compact = (
+            ", ".join(f"{k}:{v}" for k, v in list(prev_trust.items())[:8]) or "none"
+        )
 
         allowed_ids_str = ", ".join(str(i) for i in sorted(observed_peer_ids))
 
-        prompt = f"""Agent {self.agent_id} | Round {round_feedback.get('round_number', '?')} ended.
+        prompt = f"""Agent {self.agent_id} | Round {round_feedback.get("round_number", "?")} ended.
 Your results: {own_summary}
 Top notable peers this round (most-deviant contributions):
 {peer_block}
@@ -644,32 +658,34 @@ Required JSON:
 
         def validate_belief(parsed):
             if not isinstance(parsed, dict):
-                return 'belief response must be a JSON object'
-            required = ('trust_levels', 'institutional_strategy', 'observations')
+                return "belief response must be a JSON object"
+            required = ("trust_levels", "institutional_strategy", "observations")
             missing = [key for key in required if key not in parsed]
             if missing:
                 return f"belief response missing keys: {', '.join(missing)}"
-            if not isinstance(parsed.get('trust_levels'), dict):
-                return 'trust_levels must be a JSON object'
+            if not isinstance(parsed.get("trust_levels"), dict):
+                return "trust_levels must be a JSON object"
             allowed_peer_ids = {str(pid) for pid in observed_peer_ids}
-            trust_levels = parsed.get('trust_levels') or {}
-            unexpected = sorted(str(key) for key in trust_levels.keys() if str(key) not in allowed_peer_ids)
+            trust_levels = parsed.get("trust_levels") or {}
+            unexpected = sorted(
+                str(key) for key in trust_levels if str(key) not in allowed_peer_ids
+            )
             if unexpected:
                 return (
                     f"trust_levels contains unexpected peer ids: {', '.join(unexpected)}. "
                     f"Allowed ids only: {', '.join(sorted(allowed_peer_ids)) if allowed_peer_ids else '(none)'}"
                 )
             for key, value in trust_levels.items():
-                label = str(value or '').strip()
+                label = str(value or "").strip()
                 if not label:
                     return f"trust_levels[{key}] must be a non-empty short label"
                 if len(label) > 40:
                     return f"trust_levels[{key}] is too long; keep labels to 1-2 words"
-            if len(str(parsed.get('institutional_strategy', '') or '')) > 240:
-                return 'institutional_strategy is too long; keep it to 1-2 short sentences'
-            if len(str(parsed.get('observations', '') or '')) > 240:
-                return 'observations is too long; keep it to 1-2 short sentences'
-            return ''
+            if len(str(parsed.get("institutional_strategy", "") or "")) > 240:
+                return "institutional_strategy is too long; keep it to 1-2 short sentences"
+            if len(str(parsed.get("observations", "") or "")) > 240:
+                return "observations is too long; keep it to 1-2 short sentences"
+            return ""
 
         try:
             response, parsed = request_with_retries(
@@ -679,14 +695,14 @@ Required JSON:
                 validate_result=validate_belief,
                 request_kwargs={
                     "model_name": self.api_client.deployment_name,
-                    "max_tokens": getattr(parameters, 'BELIEF_UPDATE_MAX_TOKENS', 384),
+                    "max_tokens": getattr(parameters, "BELIEF_UPDATE_MAX_TOKENS", 384),
                     "temperature": 0.2,
                     "response_format": {"type": "json_object"},
                 },
-                max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+                max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
                 label=f"Agent {self.agent_id} belief update",
-                retry_prompt_factory=lambda base, _attempt, error: (
-                    _schema_repair_prompt(base, "Belief Update", error)
+                retry_prompt_factory=lambda base, _attempt, error: _schema_repair_prompt(
+                    base, "Belief Update", error
                 ),
                 logger=logger,
             )
@@ -695,25 +711,25 @@ Required JSON:
                 "[Belief Update] Agent %s round %s failed after retries; "
                 "keeping previous belief state unchanged: %s",
                 self.agent_id,
-                round_feedback.get('round_number', '?'),
+                round_feedback.get("round_number", "?"),
                 exc.last_error,
             )
             return
 
         self.belief_state = {
-            'trust_levels': parsed['trust_levels'],
-            'institutional_strategy': str(parsed['institutional_strategy']),
-            'observations': str(parsed['observations']),
+            "trust_levels": parsed["trust_levels"],
+            "institutional_strategy": str(parsed["institutional_strategy"]),
+            "observations": str(parsed["observations"]),
         }
         self.log_debug(
-            round_feedback.get('round_number', 0),
+            round_feedback.get("round_number", 0),
             "belief_update",
             prompt,
             response,
         )
-        round_number = round_feedback.get('round_number', '?')
-        strategy = self.belief_state.get('institutional_strategy', '')
-        trust_levels = self.belief_state.get('trust_levels', {}) or {}
+        round_number = round_feedback.get("round_number", "?")
+        strategy = self.belief_state.get("institutional_strategy", "")
+        trust_levels = self.belief_state.get("trust_levels", {}) or {}
         trust_preview = ", ".join(sorted(map(str, trust_levels.keys()))[:3])
         trust_suffix = f"; peers={trust_preview}" if trust_preview else ""
         logger.debug(
@@ -726,10 +742,13 @@ Required JSON:
         Reset variables that are specific to a round.
         """
         # Move current round data to anonymous data history before resetting
-        if hasattr(self, 'current_round_anonymous_data') and self.current_round_anonymous_data is not None:
+        if (
+            hasattr(self, "current_round_anonymous_data")
+            and self.current_round_anonymous_data is not None
+        ):
             round_data = {
-                'round_number': self.round_number,
-                'anonymous_data': self.current_round_anonymous_data
+                "round_number": self.round_number,
+                "anonymous_data": self.current_round_anonymous_data,
             }
             self.anonymous_data_history.append(round_data)
             # Ensure the history does not exceed DISPLAY_PAST_ACTIONS
@@ -756,19 +775,19 @@ Required JSON:
         self.round_payoff = 0  # Reset current round's payoff
 
         # Reset reasoning attributes
-        self.institution_reasoning = ''
-        self.contribution_reasoning = ''
-        self.punishment_reasoning = ''
-        self.deanonymized_punishment_reasoning = ''
+        self.institution_reasoning = ""
+        self.contribution_reasoning = ""
+        self.punishment_reasoning = ""
+        self.deanonymized_punishment_reasoning = ""
         self.institution_facts_used = []
         self.contribution_facts_used = []
         self.punishment_facts_used = []
         self.punishment_justifications = {}
-        self.institution_deepseek_think = ''
-        self.contribution_deepseek_think = ''
-        self.punishment_deepseek_think = ''
+        self.institution_deepseek_think = ""
+        self.contribution_deepseek_think = ""
+        self.punishment_deepseek_think = ""
         self.anonymized_id_mapping = {}
-        self.last_subsidy = 0 # Reset for new round
+        self.last_subsidy = 0  # Reset for new round
         self.climate_damage_taken_round = 0.0
         self.ldf_contribution_round = 0.0
         self.ldf_payout_round = 0.0
@@ -776,7 +795,7 @@ Required JSON:
         self.institution_parser_meta = {}
         self.contribution_parser_meta = {}
         self.punishment_parser_meta = {}
-        if hasattr(self, 'tom_audit_log'):
+        if hasattr(self, "tom_audit_log"):
             self.tom_audit_log = []
 
     def receive_punishment(self, amount):
@@ -805,10 +824,12 @@ Required JSON:
         float: The payoff from Stage 1.
         """
         if group_size > 0:
-            earnings_from_public_good = (parameters.PUBLIC_GOOD_MULTIPLIER * total_group_contribution) / group_size
+            earnings_from_public_good = (
+                parameters.PUBLIC_GOOD_MULTIPLIER * total_group_contribution
+            ) / group_size
         else:
             earnings_from_public_good = 0
-            
+
         if self._uses_climate_budget():
             # In climate mode, return the net profit/loss
             stage1_payoff = earnings_from_public_good - self.contribution
@@ -816,7 +837,7 @@ Required JSON:
             contribution_cap = self.get_stage1_contribution_cap()
             tokens_kept = contribution_cap - self.contribution
             stage1_payoff = tokens_kept + earnings_from_public_good
-            
+
         return stage1_payoff
 
     def get_stage2_budget(self):
@@ -845,8 +866,8 @@ Required JSON:
         """
         # Tokens used for assigning punishments and rewards
         tokens_spent = (
-            sum(self.assigned_punishments.values()) * parameters.PUNISHMENT_COST +
-            sum(self.assigned_rewards.values()) * parameters.REWARD_COST
+            sum(self.assigned_punishments.values()) * parameters.PUNISHMENT_COST
+            + sum(self.assigned_rewards.values()) * parameters.REWARD_COST
         )
 
         # Effects of punishments and rewards received
@@ -867,11 +888,11 @@ Required JSON:
 
     def log_debug(self, round_num, stage_name, prompt, response):
         """Helper to save LLM interactions for debugging (opt-in; large on disk/RAM)."""
-        if not getattr(parameters, 'DEBUG_LLM_IO', False):
+        if not getattr(parameters, "DEBUG_LLM_IO", False):
             return
-        log_dir = os.path.join(os.path.dirname(__file__), '..', 'debug_logs')
+        log_dir = os.path.join(os.path.dirname(__file__), "..", "debug_logs")
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         filename = f"agent_{self.agent_id}_round_{round_num}_{stage_name}.json"
-        with open(os.path.join(log_dir, filename), 'w', encoding='utf-8') as f:
-            json.dump({'prompt': prompt, 'response': response}, f, indent=2)
+        with open(os.path.join(log_dir, filename), "w", encoding="utf-8") as f:
+            json.dump({"prompt": prompt, "response": response}, f, indent=2)

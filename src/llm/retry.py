@@ -8,9 +8,7 @@ class RetryExhaustedError(RuntimeError):
     """Raised when an LLM operation fails all configured attempts."""
 
     def __init__(self, label, attempts, last_error, last_parsed=None):
-        super().__init__(
-            f"{label} failed after {attempts} attempt(s): {last_error}"
-        )
+        super().__init__(f"{label} failed after {attempts} attempt(s): {last_error}")
         self.label = label
         self.attempts = attempts
         self.last_error = last_error
@@ -39,11 +37,13 @@ def build_failure_retry_prompt(
     ]
     if guidance:
         lines.append(f"How to fix: {guidance}")
-    lines.extend([
-        "Correct that exact problem.",
-        "Return ONLY one valid JSON object matching the Required JSON shape / response contract.",
-        "No markdown, no code fences, no text outside the JSON.",
-    ])
+    lines.extend(
+        [
+            "Correct that exact problem.",
+            "Return ONLY one valid JSON object matching the Required JSON shape / response contract.",
+            "No markdown, no code fences, no text outside the JSON.",
+        ]
+    )
     return "\n".join(lines)
 
 

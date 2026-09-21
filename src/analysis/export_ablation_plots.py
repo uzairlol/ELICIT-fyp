@@ -9,7 +9,6 @@ from typing import Any
 import matplotlib.pyplot as plt
 import pandas as pd
 
-
 plt.style.use("seaborn-v0_8-whitegrid")
 
 
@@ -58,7 +57,9 @@ def iter_result_files(results_dir: Path) -> list[Path]:
     return sorted(path for path in results_dir.glob("*.json") if path.is_file())
 
 
-def build_round_frame(data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]) -> pd.DataFrame:
+def build_round_frame(
+    data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]
+) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for round_data in data:
         si_members = round_data.get("si_members", []) or []
@@ -90,7 +91,9 @@ def build_round_frame(data: list[dict[str, Any]], source_file: str, meta: dict[s
     return pd.DataFrame(rows)
 
 
-def build_agent_frame(data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]) -> pd.DataFrame:
+def build_agent_frame(
+    data: list[dict[str, Any]], source_file: str, meta: dict[str, Any]
+) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for round_data in data:
         round_number = safe_int(round_data.get("round_number"))
@@ -111,13 +114,25 @@ def build_agent_frame(data: list[dict[str, Any]], source_file: str, meta: dict[s
                     "reputation": safe_float(agent_data.get("reputation")),
                     "received_punishments": safe_float(agent_data.get("received_punishments")),
                     "received_rewards": safe_float(agent_data.get("received_rewards")),
-                    "assigned_punishments_total": sum(safe_float(v) for v in (agent_data.get("assigned_punishments", {}) or {}).values()),
-                    "assigned_rewards_total": sum(safe_float(v) for v in (agent_data.get("assigned_rewards", {}) or {}).values()),
-                    "climate_damage_taken_round": safe_float(agent_data.get("climate_damage_taken_round")),
-                    "climate_damage_taken_cumulative": safe_float(agent_data.get("climate_damage_taken_cumulative")),
+                    "assigned_punishments_total": sum(
+                        safe_float(v)
+                        for v in (agent_data.get("assigned_punishments", {}) or {}).values()
+                    ),
+                    "assigned_rewards_total": sum(
+                        safe_float(v)
+                        for v in (agent_data.get("assigned_rewards", {}) or {}).values()
+                    ),
+                    "climate_damage_taken_round": safe_float(
+                        agent_data.get("climate_damage_taken_round")
+                    ),
+                    "climate_damage_taken_cumulative": safe_float(
+                        agent_data.get("climate_damage_taken_cumulative")
+                    ),
                     "ldf_contribution_round": safe_float(agent_data.get("ldf_contribution_round")),
                     "ldf_payout_round": safe_float(agent_data.get("ldf_payout_round")),
-                    "net_climate_transfer_round": safe_float(agent_data.get("net_climate_transfer_round")),
+                    "net_climate_transfer_round": safe_float(
+                        agent_data.get("net_climate_transfer_round")
+                    ),
                     "parsing_failures": safe_int(agent_data.get("parsing_failures")),
                     "rule_of_law_blocks": safe_int(agent_data.get("rule_of_law_blocks")),
                     "strategy": agent_data.get("strategy", ""),
@@ -134,9 +149,11 @@ def save_plot(path: Path) -> None:
 
 
 def plot_population_dynamics(round_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(11, 6))
+    _fig, ax = plt.subplots(figsize=(11, 6))
     ax.plot(round_df["round_number"], round_df["si_population"], marker="o", label="SI population")
-    ax.plot(round_df["round_number"], round_df["sfi_population"], marker="o", label="SFI population")
+    ax.plot(
+        round_df["round_number"], round_df["sfi_population"], marker="o", label="SFI population"
+    )
     ax.set_title("Institution Population Dynamics")
     ax.set_xlabel("Round")
     ax.set_ylabel("Agents")
@@ -145,9 +162,19 @@ def plot_population_dynamics(round_df: pd.DataFrame, output_path: Path) -> None:
 
 
 def plot_avg_contributions(round_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(11, 6))
-    ax.plot(round_df["round_number"], round_df["si_avg_contribution"], marker="o", label="SI avg contribution")
-    ax.plot(round_df["round_number"], round_df["sfi_avg_contribution"], marker="o", label="SFI avg contribution")
+    _fig, ax = plt.subplots(figsize=(11, 6))
+    ax.plot(
+        round_df["round_number"],
+        round_df["si_avg_contribution"],
+        marker="o",
+        label="SI avg contribution",
+    )
+    ax.plot(
+        round_df["round_number"],
+        round_df["sfi_avg_contribution"],
+        marker="o",
+        label="SFI avg contribution",
+    )
     ax.set_title("Average Contributions by Institution")
     ax.set_xlabel("Round")
     ax.set_ylabel("Contribution")
@@ -156,9 +183,19 @@ def plot_avg_contributions(round_df: pd.DataFrame, output_path: Path) -> None:
 
 
 def plot_total_contributions(round_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(11, 6))
-    ax.plot(round_df["round_number"], round_df["si_total_contribution"], marker="o", label="SI total contribution")
-    ax.plot(round_df["round_number"], round_df["sfi_total_contribution"], marker="o", label="SFI total contribution")
+    _fig, ax = plt.subplots(figsize=(11, 6))
+    ax.plot(
+        round_df["round_number"],
+        round_df["si_total_contribution"],
+        marker="o",
+        label="SI total contribution",
+    )
+    ax.plot(
+        round_df["round_number"],
+        round_df["sfi_total_contribution"],
+        marker="o",
+        label="SFI total contribution",
+    )
     ax.set_title("Total Contributions by Institution")
     ax.set_xlabel("Round")
     ax.set_ylabel("Tokens")
@@ -167,9 +204,14 @@ def plot_total_contributions(round_df: pd.DataFrame, output_path: Path) -> None:
 
 
 def plot_cumulative_payoffs(agent_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(12, 7))
+    _fig, ax = plt.subplots(figsize=(12, 7))
     for agent_id, group in agent_df.groupby("agent_id"):
-        ax.plot(group["round_number"], group["cumulative_payoff"], linewidth=1.8, label=f"Agent {agent_id}")
+        ax.plot(
+            group["round_number"],
+            group["cumulative_payoff"],
+            linewidth=1.8,
+            label=f"Agent {agent_id}",
+        )
     ax.set_title("Cumulative Payoff Trajectories")
     ax.set_xlabel("Round")
     ax.set_ylabel("Cumulative payoff")
@@ -178,9 +220,11 @@ def plot_cumulative_payoffs(agent_df: pd.DataFrame, output_path: Path) -> None:
 
 
 def plot_agent_contributions(agent_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(12, 7))
+    _fig, ax = plt.subplots(figsize=(12, 7))
     for agent_id, group in agent_df.groupby("agent_id"):
-        ax.plot(group["round_number"], group["contribution"], linewidth=1.8, label=f"Agent {agent_id}")
+        ax.plot(
+            group["round_number"], group["contribution"], linewidth=1.8, label=f"Agent {agent_id}"
+        )
     ax.set_title("Agent Contribution Trajectories")
     ax.set_xlabel("Round")
     ax.set_ylabel("Contribution")
@@ -189,9 +233,11 @@ def plot_agent_contributions(agent_df: pd.DataFrame, output_path: Path) -> None:
 
 
 def plot_reputations(agent_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(12, 7))
+    _fig, ax = plt.subplots(figsize=(12, 7))
     for agent_id, group in agent_df.groupby("agent_id"):
-        ax.plot(group["round_number"], group["reputation"], linewidth=1.8, label=f"Agent {agent_id}")
+        ax.plot(
+            group["round_number"], group["reputation"], linewidth=1.8, label=f"Agent {agent_id}"
+        )
     ax.set_title("Reputation Trajectories")
     ax.set_xlabel("Round")
     ax.set_ylabel("Reputation")
@@ -200,9 +246,14 @@ def plot_reputations(agent_df: pd.DataFrame, output_path: Path) -> None:
 
 
 def plot_punishments_received(agent_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(12, 7))
+    _fig, ax = plt.subplots(figsize=(12, 7))
     for agent_id, group in agent_df.groupby("agent_id"):
-        ax.plot(group["round_number"], group["received_punishments"], linewidth=1.8, label=f"Agent {agent_id}")
+        ax.plot(
+            group["round_number"],
+            group["received_punishments"],
+            linewidth=1.8,
+            label=f"Agent {agent_id}",
+        )
     ax.set_title("Punishments Received")
     ax.set_xlabel("Round")
     ax.set_ylabel("Punishment tokens")
@@ -211,9 +262,14 @@ def plot_punishments_received(agent_df: pd.DataFrame, output_path: Path) -> None
 
 
 def plot_punishments_assigned(agent_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(12, 7))
+    _fig, ax = plt.subplots(figsize=(12, 7))
     for agent_id, group in agent_df.groupby("agent_id"):
-        ax.plot(group["round_number"], group["assigned_punishments_total"], linewidth=1.8, label=f"Agent {agent_id}")
+        ax.plot(
+            group["round_number"],
+            group["assigned_punishments_total"],
+            linewidth=1.8,
+            label=f"Agent {agent_id}",
+        )
     ax.set_title("Punishments Assigned")
     ax.set_xlabel("Round")
     ax.set_ylabel("Punishment tokens spent")
@@ -222,9 +278,16 @@ def plot_punishments_assigned(agent_df: pd.DataFrame, output_path: Path) -> None
 
 
 def plot_ldf_flows(round_df: pd.DataFrame, output_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(11, 6))
-    ax.plot(round_df["round_number"], round_df["ldf_contributions_total"], marker="o", label="LDF contributions")
-    ax.plot(round_df["round_number"], round_df["ldf_payouts_total"], marker="o", label="LDF payouts")
+    _fig, ax = plt.subplots(figsize=(11, 6))
+    ax.plot(
+        round_df["round_number"],
+        round_df["ldf_contributions_total"],
+        marker="o",
+        label="LDF contributions",
+    )
+    ax.plot(
+        round_df["round_number"], round_df["ldf_payouts_total"], marker="o", label="LDF payouts"
+    )
     ax.plot(round_df["round_number"], round_df["ldf_pool_end"], marker="o", label="LDF pool end")
     ax.set_title("LDF Pool and Flow Dynamics")
     ax.set_xlabel("Round")
@@ -236,15 +299,24 @@ def plot_ldf_flows(round_df: pd.DataFrame, output_path: Path) -> None:
 def plot_damage_coverage(round_df: pd.DataFrame, output_path: Path) -> None:
     coverage = [
         (p / g) if g > 0 else 0.0
-        for g, p in zip(round_df["gross_damage_total"], round_df["ldf_payouts_total"])
+        for g, p in zip(round_df["gross_damage_total"], round_df["ldf_payouts_total"], strict=False)
     ]
-    fig, ax1 = plt.subplots(figsize=(11, 6))
-    ax1.plot(round_df["round_number"], round_df["gross_damage_total"], marker="o", label="Gross damage")
+    _fig, ax1 = plt.subplots(figsize=(11, 6))
+    ax1.plot(
+        round_df["round_number"], round_df["gross_damage_total"], marker="o", label="Gross damage"
+    )
     ax1.plot(round_df["round_number"], round_df["net_damage_total"], marker="o", label="Net damage")
     ax1.set_xlabel("Round")
     ax1.set_ylabel("Damage")
     ax2 = ax1.twinx()
-    ax2.plot(round_df["round_number"], coverage, marker="o", color="black", linestyle="--", label="Coverage ratio")
+    ax2.plot(
+        round_df["round_number"],
+        coverage,
+        marker="o",
+        color="black",
+        linestyle="--",
+        label="Coverage ratio",
+    )
     ax2.set_ylabel("Coverage ratio")
     ax1.set_title("Climate Damage and LDF Coverage")
     handles1, labels1 = ax1.get_legend_handles_labels()
@@ -281,7 +353,9 @@ def export_plots(results_dir: Path, output_dir: Path) -> None:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Generate ablation plots from simulation JSON files.")
+    parser = argparse.ArgumentParser(
+        description="Generate ablation plots from simulation JSON files."
+    )
     repo_root = Path(__file__).resolve().parents[2]
     parser.add_argument("--results-dir", type=Path, default=repo_root / "results")
     parser.add_argument("--output-dir", type=Path, default=repo_root / "analysis_outputs" / "plots")

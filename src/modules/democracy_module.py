@@ -20,10 +20,9 @@ log them in the round data / results JSON.
 """
 
 import logging
-from core import parameters
 import random
-import json
-import re
+
+from core import parameters
 from core.utils import robust_json_loads
 from llm.retry import build_failure_retry_prompt, request_with_retries
 
@@ -32,23 +31,27 @@ logger = logging.getLogger(__name__)
 # Only these parameters may be changed by democratic vote.
 # This prevents agents from corrupting SEED, NUM_AGENTS, NUM_ROUNDS, etc.
 GENERAL_DEMOCRACY_PARAMS = {
-    'PUNISHMENT_EFFECT',
-    'REWARD_EFFECT',
-    'ENDOWMENT_STAGE_2',
-    'MAX_PUNISHMENT_TOKENS',
-    'SUBSIDY_FRACTION',
-    'SUBSIDY_TOP_N',
+    "PUNISHMENT_EFFECT",
+    "REWARD_EFFECT",
+    "ENDOWMENT_STAGE_2",
+    "MAX_PUNISHMENT_TOKENS",
+    "SUBSIDY_FRACTION",
+    "SUBSIDY_TOP_N",
 }
 
 LDF_DEMOCRACY_PARAMS = {
-    'LDF_PAYOUT_DAMAGE_WEIGHT',
-    'LDF_MAX_COVERAGE',
-    'LDF_EQUITY_WEIGHT',
+    "LDF_PAYOUT_DAMAGE_WEIGHT",
+    "LDF_MAX_COVERAGE",
+    "LDF_EQUITY_WEIGHT",
 }
+
 
 def get_allowed_democracy_params():
     allowed = set(GENERAL_DEMOCRACY_PARAMS)
-    if getattr(parameters, 'LDF_ENABLED', False) or getattr(parameters, 'SCENARIO', '').lower() == 'ldf':
+    if (
+        getattr(parameters, "LDF_ENABLED", False)
+        or getattr(parameters, "SCENARIO", "").lower() == "ldf"
+    ):
         allowed.update(LDF_DEMOCRACY_PARAMS)
     return allowed
 
@@ -88,16 +91,13 @@ class DemocracyModule:
 
         if not proposals:
             logger.info("No valid proposals received. Skipping vote.")
-            return {
-                'proposals': [],
-                'votes': {},
-                'winning_proposal': None,
-                'applied': False
-            }
+            return {"proposals": [], "votes": {}, "winning_proposal": None, "applied": False}
 
         # Phase B: Vote (pass oracle annotations so agents see welfare predictions)
         oracle_annotations = oracle.annotate_proposals(proposals) if oracle else None
-        votes = self._collect_votes(agents, proposals, round_number, oracle_annotations=oracle_annotations)
+        votes = self._collect_votes(
+            agents, proposals, round_number, oracle_annotations=oracle_annotations
+        )
 
         # Tally
         winning_proposal, tally = self._tally_votes(proposals, votes)
@@ -113,14 +113,14 @@ class DemocracyModule:
                     f"Rule applied: {winning_proposal['rule']} -> {winning_proposal['new_value']}"
                 )
 
-        logger.info(f"--- End of Constitutional Session ---")
+        logger.info("--- End of Constitutional Session ---")
 
         return {
-            'proposals': proposals,
-            'votes': votes,
-            'tally': tally,
-            'winning_proposal': winning_proposal,
-            'applied': applied
+            "proposals": proposals,
+            "votes": votes,
+            "tally": tally,
+            "winning_proposal": winning_proposal,
+            "applied": applied,
         }
 
     # ------------------------------------------------------------------
@@ -130,24 +130,24 @@ class DemocracyModule:
     def _build_tuneable_str(self):
         """Show whitelisted numeric parameters with descriptions, randomized to prevent position bias."""
         import random
-        
+
         param_descriptions = {
-            'PUNISHMENT_EFFECT': 'Multiplier applied to target\'s payoff when punished (e.g., 3 means losing 3 tokens per 1 token spent).',
-            'REWARD_EFFECT': 'Multiplier applied to target\'s payoff when rewarded.',
-            'ENDOWMENT_STAGE_2': 'Number of tokens agents are given specifically for punishing/rewarding others.',
-            'MAX_PUNISHMENT_TOKENS': 'Maximum number of punishment tokens one agent can assign to a single target.',
-            'SUBSIDY_FRACTION': 'Fraction of SI punishment costs pooled and redistributed to top SI contributors as a subsidy.',
-            'SUBSIDY_TOP_N': 'Number of top contributors in the SI who share the subsidy pool.',
-            'LDF_PAYOUT_DAMAGE_WEIGHT': 'How strongly direct damage affects LDF payouts after shocks.',
-            'LDF_MAX_COVERAGE': 'Maximum fraction of an agent\'s climate damage covered by LDF payouts.',
-            'LDF_EQUITY_WEIGHT': 'How strongly the LDF prioritizes poorer developing nations. 0.0 ignores wealth, higher values heavily skew payouts to the poorest.'
+            "PUNISHMENT_EFFECT": "Multiplier applied to target's payoff when punished (e.g., 3 means losing 3 tokens per 1 token spent).",
+            "REWARD_EFFECT": "Multiplier applied to target's payoff when rewarded.",
+            "ENDOWMENT_STAGE_2": "Number of tokens agents are given specifically for punishing/rewarding others.",
+            "MAX_PUNISHMENT_TOKENS": "Maximum number of punishment tokens one agent can assign to a single target.",
+            "SUBSIDY_FRACTION": "Fraction of SI punishment costs pooled and redistributed to top SI contributors as a subsidy.",
+            "SUBSIDY_TOP_N": "Number of top contributors in the SI who share the subsidy pool.",
+            "LDF_PAYOUT_DAMAGE_WEIGHT": "How strongly direct damage affects LDF payouts after shocks.",
+            "LDF_MAX_COVERAGE": "Maximum fraction of an agent's climate damage covered by LDF payouts.",
+            "LDF_EQUITY_WEIGHT": "How strongly the LDF prioritizes poorer developing nations. 0.0 ignores wealth, higher values heavily skew payouts to the poorest.",
         }
-        
+
         lines = []
         # Randomize order to prevent LLM position bias (anchoring on the first item)
         param_names = list(get_allowed_democracy_params())
         random.shuffle(param_names)
-        
+
         for name in param_names:
             val = getattr(parameters, name, None)
             desc = param_descriptions.get(name, "")
@@ -158,7 +158,7 @@ class DemocracyModule:
     def _collect_proposals(self, agents, round_number):
         """Ask each agent to propose one rule change."""
         proposals = []
-        seen_proposals = set() # (rule, new_value) pairs to filter exact duplicates
+        seen_proposals = set()  # (rule, new_value) pairs to filter exact duplicates
 
         tuneable_str = self._build_tuneable_str()
 
@@ -176,14 +176,16 @@ class DemocracyModule:
                     target = random.choice(unexplored)
                     curiosity_hint = f"\n**Note:** You haven't proposed a change to `{target}` in your history. Rule changes can provide data on different governance outcomes."
 
-            proposal = self._get_proposal(agent, round_number, tuneable_str, curiosity_hint=curiosity_hint)
-            
+            proposal = self._get_proposal(
+                agent, round_number, tuneable_str, curiosity_hint=curiosity_hint
+            )
+
             # Phase 4: Dynamic Validation
             validated = self._validate_proposal(proposal)
             if validated:
-                rule = validated['rule']
-                new_val = validated['new_value']
-                validated['proposer'] = agent.agent_id
+                rule = validated["rule"]
+                new_val = validated["new_value"]
+                validated["proposer"] = agent.agent_id
 
                 # Deduplicate: only skip if it's the EXACT same rule and value
                 # This allows different agents to suggest different values for the same rule.
@@ -191,37 +193,37 @@ class DemocracyModule:
                 if proposal_key not in seen_proposals:
                     proposals.append(validated)
                     seen_proposals.add(proposal_key)
-                    agent.explored_params.add(rule) # Mark as explored
+                    agent.explored_params.add(rule)  # Mark as explored
                     logger.info(
                         f"Agent {agent.agent_id} proposes: "
-                        f"{rule} -> {new_val}  (reason: {validated.get('reason','')[:60]})"
+                        f"{rule} -> {new_val}  (reason: {validated.get('reason', '')[:60]})"
                     )
         return proposals
 
     def _validate_proposal(self, proposal):
         if not proposal or not isinstance(proposal, dict):
             return None
-            
-        rule = proposal.get('rule')
-        new_val = proposal.get('new_value')
-        
+
+        rule = proposal.get("rule")
+        new_val = proposal.get("new_value")
+
         # Only allow whitelisted parameters
         if rule not in get_allowed_democracy_params():
             return None
-        
+
         if not hasattr(parameters, rule):
             return None
-        
+
         current = getattr(parameters, rule)
         if not isinstance(current, (int, float)):
             return None
-            
+
         # Ensure correct type (safely convert string representations of floats to int if needed)
         try:
             new_val = type(current)(float(new_val))
         except (ValueError, TypeError):
             return None
-            
+
         # Safety clamp: 10x range
         if current != 0:
             lower = current * 0.1
@@ -229,8 +231,8 @@ class DemocracyModule:
             new_val = max(lower, min(new_val, upper))
         else:
             new_val = max(0.0, min(new_val, 10.0))
-            
-        proposal['new_value'] = new_val
+
+        proposal["new_value"] = new_val
         return proposal
 
     def _get_proposal(self, agent, round_number, tuneable_str, curiosity_hint=""):
@@ -256,14 +258,10 @@ Respond ONLY with valid JSON in this exact format:
 }}"""
 
         def validate_proposal(parsed):
-            validated = (
-                self._validate_proposal(dict(parsed))
-                if isinstance(parsed, dict)
-                else None
-            )
+            validated = self._validate_proposal(dict(parsed)) if isinstance(parsed, dict) else None
             if validated:
-                return ''
-            return 'proposal must contain an allowed rule and valid numeric new_value'
+                return ""
+            return "proposal must contain an allowed rule and valid numeric new_value"
 
         _response, proposal = request_with_retries(
             self.api_client,
@@ -276,23 +274,20 @@ Respond ONLY with valid JSON in this exact format:
                 "temperature": 0.5,
                 "response_format": {"type": "json_object"},
             },
-            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
             label=f"Agent {agent.agent_id} democracy proposal",
-            retry_prompt_factory=lambda base, _attempt, error: (
-                build_failure_retry_prompt(
-                    base,
-                    "Democracy Proposal",
-                    error,
-                    fix_guidance=(
-                        'Return {"rule": "<exact parameter name>", '
-                        '"new_value": <number>, "reason": "<one sentence>"}.'
-                    ),
-                )
+            retry_prompt_factory=lambda base, _attempt, error: build_failure_retry_prompt(
+                base,
+                "Democracy Proposal",
+                error,
+                fix_guidance=(
+                    'Return {"rule": "<exact parameter name>", '
+                    '"new_value": <number>, "reason": "<one sentence>"}.'
+                ),
             ),
             logger=logger,
         )
         return proposal
-
 
     # ------------------------------------------------------------------
     # Phase B: Voting
@@ -307,7 +302,7 @@ Respond ONLY with valid JSON in this exact format:
         for i, p in enumerate(proposals):
             line = (
                 f"  [{i}] {p['rule']} → {p['new_value']} "
-                f"(proposed by Agent {p.get('proposer','?')}): {p.get('reason','')}"
+                f"(proposed by Agent {p.get('proposer', '?')}): {p.get('reason', '')}"
             )
             # Append oracle annotation if available
             if oracle_annotations and i < len(oracle_annotations):
@@ -335,7 +330,7 @@ The community has collected the following rule-change proposals:
 
 {proposals_str}
 
-Vote for the proposal index (0–{num_proposals - 1}) you believe will best improve group welfare.
+Vote for the proposal index (0-{num_proposals - 1}) you believe will best improve group welfare.
 
 Respond ONLY with valid JSON:
 {{
@@ -345,16 +340,16 @@ Respond ONLY with valid JSON:
 
         def validate_vote(parsed):
             if not isinstance(parsed, dict):
-                return 'vote response must be a JSON object'
+                return "vote response must be a JSON object"
             try:
-                idx = int(parsed.get('vote', -1))
+                idx = int(parsed.get("vote", -1))
             except (ValueError, TypeError):
-                return 'vote must be an integer proposal index'
+                return "vote must be an integer proposal index"
             if not 0 <= idx < num_proposals:
-                return f'vote must be between 0 and {num_proposals - 1}'
-            if not str(parsed.get('reason', '')).strip():
-                return 'vote reason is required'
-            return ''
+                return f"vote must be between 0 and {num_proposals - 1}"
+            if not str(parsed.get("reason", "")).strip():
+                return "vote reason is required"
+            return ""
 
         _response, parsed = request_with_retries(
             self.api_client,
@@ -367,23 +362,19 @@ Respond ONLY with valid JSON:
                 "temperature": 0.3,
                 "response_format": {"type": "json_object"},
             },
-            max_attempts=getattr(parameters, 'LLM_DECISION_MAX_ATTEMPTS', 2),
+            max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
             label=f"Agent {agent.agent_id} democracy vote",
-            retry_prompt_factory=lambda base, _attempt, error: (
-                build_failure_retry_prompt(
-                    base,
-                    "Democracy Vote",
-                    error,
-                    fix_guidance=(
-                        'Return {"vote": <integer index>, "reason": "<one sentence>"}.'
-                    ),
-                )
+            retry_prompt_factory=lambda base, _attempt, error: build_failure_retry_prompt(
+                base,
+                "Democracy Vote",
+                error,
+                fix_guidance=('Return {"vote": <integer index>, "reason": "<one sentence>"}.'),
             ),
             logger=logger,
         )
         return {
-            "vote": int(parsed['vote']),
-            "reason": str(parsed['reason']).strip(),
+            "vote": int(parsed["vote"]),
+            "reason": str(parsed["reason"]).strip(),
         }
 
     # ------------------------------------------------------------------
@@ -392,9 +383,9 @@ Respond ONLY with valid JSON:
 
     def _tally_votes(self, proposals, votes):
         """Return (winning_proposal, tally_dict)."""
-        tally = {i: 0 for i in range(len(proposals))}
+        tally = dict.fromkeys(range(len(proposals)), 0)
         for vote_info in votes.values():
-            vote_idx = vote_info['vote'] if isinstance(vote_info, dict) else vote_info
+            vote_idx = vote_info["vote"] if isinstance(vote_info, dict) else vote_info
             if vote_idx in tally:
                 tally[vote_idx] += 1
 
@@ -416,8 +407,8 @@ Respond ONLY with valid JSON:
         Apply the winning proposal to the live parameters module.
         Returns True if successfully applied.
         """
-        rule = proposal.get('rule')
-        new_value = proposal.get('new_value')
+        rule = proposal.get("rule")
+        new_value = proposal.get("new_value")
         if rule and hasattr(parameters, rule):
             setattr(parameters, rule, new_value)
             return True

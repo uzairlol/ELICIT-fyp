@@ -1,8 +1,9 @@
-#prompt_utils.py
+# prompt_utils.py
+
 
 def _safe_int(value, default=0):
     try:
-        return int(round(float(value)))
+        return round(float(value))
     except (TypeError, ValueError):
         return default
 
@@ -22,17 +23,14 @@ def _format_token_list(values):
 
 
 def _format_recent_institutions(agent, limit=3):
-    recent = getattr(agent, 'history_institutions', [])[-limit:]
+    recent = getattr(agent, "history_institutions", [])[-limit:]
     return ", ".join(recent) if recent else "none"
 
 
 def _agent_task_header(agent, task_label, round_number, extra=""):
     """Short role + task line for small models (repeat task at top of prompt)."""
     suffix = f" {extra}" if extra else ""
-    return (
-        f"You are Agent {agent.agent_id}. Round {round_number}. "
-        f"Task: {task_label}.{suffix}\n"
-    )
+    return f"You are Agent {agent.agent_id}. Round {round_number}. Task: {task_label}.{suffix}\n"
 
 
 _LLM_FINAL_OUTPUT_RULES = """
@@ -58,12 +56,11 @@ def _llm_decision_steps(stage_name):
         ),
         "Punishment and Reward Choice": (
             "1. Review each target's contribution and stated intent.\n"
-            "2. Set integer amounts in the \"punishments\" object (0 if not punishing).\n"
-            "3. Fill \"justifications\" for every target label.\n"
-            "4. Write a one-sentence \"reasoning\" summary (amounts stay in punishments).\n"
+            '2. Set integer amounts in the "punishments" object (0 if not punishing).\n'
+            '3. Fill "justifications" for every target label.\n'
+            '4. Write a one-sentence "reasoning" summary (amounts stay in punishments).\n'
             "5. Output the JSON object below — nothing else."
         ),
     }
     body = steps.get(stage_name, "Follow the response contract below.")
     return f"\n**Decision steps:**\n{body}\n"
-

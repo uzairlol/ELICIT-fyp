@@ -1,13 +1,13 @@
 import logging
 import re
+
 from core import parameters
 from parsing.response_parsing_utils import (
-    _unwrap_response_data,
     _apply_stage2_allocations,
-    _fit_allocations_to_budget,
     _make_parser_meta,
-    deanonymize_reasoning,
     _stage2_total_cost,
+    _unwrap_response_data,
+    deanonymize_reasoning,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,66 +40,68 @@ _REWARD_INTENT_RE = re.compile(
 )
 
 _EXPLICIT_ZERO_PUNISH_PHRASES = (
-    'all amounts are 0',
-    'all punishment amounts are 0',
-    'all punishments are 0',
-    'no punishments',
-    'punish nobody',
-    'punishing nobody',
-    'not punishing anyone',
-    'punish no one',
-    'punishing no one',
-    'zero punishments',
-    'assign 0 punishment',
-    'assigning 0 punishment',
-    'do not punish',
+    "all amounts are 0",
+    "all punishment amounts are 0",
+    "all punishments are 0",
+    "no punishments",
+    "punish nobody",
+    "punishing nobody",
+    "not punishing anyone",
+    "punish no one",
+    "punishing no one",
+    "zero punishments",
+    "assign 0 punishment",
+    "assigning 0 punishment",
+    "do not punish",
     "don't punish",
-    'no one is punished',
-    'no agents are punished',
+    "no one is punished",
+    "no agents are punished",
 )
 
 _EXPLICIT_ZERO_REWARD_PHRASES = (
-    'no rewards',
-    'reward nobody',
-    'rewarding nobody',
-    'not rewarding anyone',
-    'reward no one',
-    'zero rewards',
-    'all reward amounts are 0',
-    'do not reward',
+    "no rewards",
+    "reward nobody",
+    "rewarding nobody",
+    "not rewarding anyone",
+    "reward no one",
+    "zero rewards",
+    "all reward amounts are 0",
+    "do not reward",
     "don't reward",
 )
 
 
 def _expected_target_labels(group_state, agent):
-    members = list((group_state or {}).get('members', []) or [])
+    members = list((group_state or {}).get("members", []) or [])
     others = sorted(
-        [member for member in members if getattr(member, 'agent_id', None) != agent.agent_id],
+        [member for member in members if getattr(member, "agent_id", None) != agent.agent_id],
         key=lambda member: member.agent_id,
     )
     labels = []
-    use_anonymity = bool(getattr(parameters, 'ANONYMITY', False))
-    if str(getattr(parameters, 'SCENARIO', '')).lower() == 'climate':
+    use_anonymity = bool(getattr(parameters, "ANONYMITY", False))
+    if str(getattr(parameters, "SCENARIO", "")).lower() == "climate":
         use_anonymity = False
-    if bool(getattr(parameters, 'CLIMATE_SHOCK_ENABLED', False)) or bool(getattr(parameters, 'LDF_ENABLED', False)):
+    if bool(getattr(parameters, "CLIMATE_SHOCK_ENABLED", False)) or bool(
+        getattr(parameters, "LDF_ENABLED", False)
+    ):
         use_anonymity = False
 
     for member in others:
         if use_anonymity:
-            if hasattr(agent, 'pseudonym_mapping'):
+            if hasattr(agent, "pseudonym_mapping"):
                 label_id = agent.pseudonym_mapping.get(member.agent_id, -1)
                 if label_id == -1:
                     continue
-                labels.append(f'Agent {label_id}')
+                labels.append(f"Agent {label_id}")
         else:
-            labels.append(f'Agent {member.agent_id}')
+            labels.append(f"Agent {member.agent_id}")
     return labels
 
 
 def _parse_amount_map(raw_map, allowed_labels, field_name, require_all=False):
     """Strictly parse non-negative integer allocation maps."""
     if not isinstance(raw_map, dict):
-        raise ValueError(f'{field_name} must be a JSON object')
+        raise ValueError(f"{field_name} must be a JSON object")
 
     allowed = set(allowed_labels)
     keys = set(raw_map.keys())
@@ -107,14 +109,14 @@ def _parse_amount_map(raw_map, allowed_labels, field_name, require_all=False):
     if unexpected:
         allowed_list = ", ".join(sorted(allowed)) if allowed else "(none)"
         raise ValueError(
-            f'{field_name} contains unexpected labels: {", ".join(unexpected)}. '
-            f'Allowed labels only: {allowed_list}.'
+            f"{field_name} contains unexpected labels: {', '.join(unexpected)}. "
+            f"Allowed labels only: {allowed_list}."
         )
     if require_all:
         missing = sorted(allowed - keys)
         if missing:
             logger.warning(
-                f'{field_name} missing labels: {", ".join(missing)}. Defaulting these to 0.'
+                f"{field_name} missing labels: {', '.join(missing)}. Defaulting these to 0."
             )
 
     parsed = {}
@@ -122,12 +124,10 @@ def _parse_amount_map(raw_map, allowed_labels, field_name, require_all=False):
         if label in raw_map:
             raw_amount = raw_map[label]
             if isinstance(raw_amount, bool):
-                raise ValueError(f'{field_name}[{label}] must be an integer')
+                raise ValueError(f"{field_name}[{label}] must be an integer")
             numeric_amount = float(raw_amount)
             if not numeric_amount.is_integer() or numeric_amount < 0:
-                raise ValueError(
-                    f'{field_name}[{label}] must be a non-negative integer'
-                )
+                raise ValueError(f"{field_name}[{label}] must be a non-negative integer")
             parsed[label] = int(numeric_amount)
         else:
             parsed[label] = 0
@@ -136,24 +136,23 @@ def _parse_amount_map(raw_map, allowed_labels, field_name, require_all=False):
 
 def _parse_justifications(raw_justifications, expected_labels):
     if not isinstance(raw_justifications, dict):
-        raise ValueError('justifications must be a JSON object')
+        raise ValueError("justifications must be a JSON object")
     expected = set(expected_labels)
     keys = set(raw_justifications.keys())
     unexpected = sorted(keys - expected)
     if unexpected:
         allowed_list = ", ".join(sorted(expected)) if expected else "(none)"
         raise ValueError(
-            f'justifications contains unexpected labels: {", ".join(unexpected)}. '
-            f'Allowed labels only: {allowed_list}.'
+            f"justifications contains unexpected labels: {', '.join(unexpected)}. "
+            f"Allowed labels only: {allowed_list}."
         )
     return {
-        label: str(raw_justifications.get(label, '') or '').strip()
-        for label in expected_labels
+        label: str(raw_justifications.get(label, "") or "").strip() for label in expected_labels
     }
 
 
 def _text_has_explicit_zero(text, phrases):
-    lowered = str(text or '').lower()
+    lowered = str(text or "").lower()
     return any(phrase in lowered for phrase in phrases)
 
 
@@ -162,7 +161,7 @@ def _justifications_imply_punishment(justifications, punishments):
     for label, value in (justifications or {}).items():
         if int(punishments.get(label, 0) or 0) > 0:
             continue
-        text = str(value or '')
+        text = str(value or "")
         if _PUNISH_INTENT_RE.search(text):
             return True
     return False
@@ -176,31 +175,34 @@ def _assess_allocation_text_consistency(reasoning, justifications, punishments, 
     """
     all_zero_punishments = all(int(v) == 0 for v in punishments.values()) if punishments else True
     all_zero_rewards = all(int(v) == 0 for v in rewards.values()) if rewards else True
-    reasoning_text = str(reasoning or '')
-    just_blob = " ".join(str(v or '') for v in (justifications or {}).values())
+    reasoning_text = str(reasoning or "")
+    just_blob = " ".join(str(v or "") for v in (justifications or {}).values())
 
     if all_zero_punishments:
         if not reasoning_text.strip():
-            return False, 'zero punishments with empty reasoning'
+            return False, "zero punishments with empty reasoning"
         if not _text_has_explicit_zero(reasoning_text, _EXPLICIT_ZERO_PUNISH_PHRASES):
             if _PUNISH_INTENT_RE.search(reasoning_text):
                 return False, (
-                    'zero punishments while reasoning claims punishing / sanctioning / '
-                    'targeting free-riders'
+                    "zero punishments while reasoning claims punishing / sanctioning / "
+                    "targeting free-riders"
                 )
             if _justifications_imply_punishment(justifications, punishments):
                 return False, (
-                    'zero punishments while justifications accuse targets as free-riders '
-                    'or under-contributors'
+                    "zero punishments while justifications accuse targets as free-riders "
+                    "or under-contributors"
                 )
             if _PUNISH_INTENT_RE.search(just_blob):
-                return False, 'zero punishments while justifications use punishment language'
+                return False, "zero punishments while justifications use punishment language"
 
-    if all_zero_rewards and not _text_has_explicit_zero(reasoning_text, _EXPLICIT_ZERO_REWARD_PHRASES):
-        if _REWARD_INTENT_RE.search(reasoning_text):
-            return False, 'zero rewards while reasoning claims rewarding contributors'
+    if (
+        all_zero_rewards
+        and not _text_has_explicit_zero(reasoning_text, _EXPLICIT_ZERO_REWARD_PHRASES)
+        and _REWARD_INTENT_RE.search(reasoning_text)
+    ):
+        return False, "zero rewards while reasoning claims rewarding contributors"
 
-    return True, ''
+    return True, ""
 
 
 def parse_punishment_response(response, group_state, agent):
@@ -208,40 +210,52 @@ def parse_punishment_response(response, group_state, agent):
     Parse the LLM's response to extract punishment and reward allocations and reasoning.
     Returns: (punishment_allocations, reward_allocations, reasoning, deanonymized_reasoning, justifications, facts_used, deepseek_think, parser_meta)
     """
-    expected_keys = ['punishments', 'rewards', 'reasoning', 'facts_used', 'justifications', 'deepseek_think', 'deepseek_thought']
+    expected_keys = [
+        "punishments",
+        "rewards",
+        "reasoning",
+        "facts_used",
+        "justifications",
+        "deepseek_think",
+        "deepseek_thought",
+    ]
     try:
         data = _unwrap_response_data(response)
         expected_labels = _expected_target_labels(group_state, agent)
 
         punishments = _parse_amount_map(
-            data.get('punishments', {}) or {},
+            data.get("punishments", {}) or {},
             expected_labels,
-            'punishments',
+            "punishments",
             require_all=False,
         )
         rewards = _parse_amount_map(
-            data.get('rewards', {}) or {},
+            data.get("rewards", {}) or {},
             expected_labels,
-            'rewards',
+            "rewards",
         )
         justifications = _parse_justifications(
-            data.get('justifications', {}) or {},
+            data.get("justifications", {}) or {},
             expected_labels,
         )
-        reasoning = data.get('reasoning', '')
-        deepseek_thought = data.get('deepseek_thought', '')
+        reasoning = data.get("reasoning", "")
+        deepseek_thought = data.get("deepseek_thought", "")
         if deepseek_thought:
             reasoning = f"<think>\n{deepseek_thought}\n</think>\n" + reasoning
-        deepseek_think = data.get('deepseek_think', '')
-        facts_used = data.get('facts_used', []) or []
+        deepseek_think = data.get("deepseek_think", "")
+        facts_used = data.get("facts_used", []) or []
 
-        retry_reason = ''
-        if not str(reasoning or '').strip():
-            retry_reason = 'missing reasoning'
+        retry_reason = ""
+        if not str(reasoning or "").strip():
+            retry_reason = "missing reasoning"
         elif not isinstance(facts_used, list):
-            retry_reason = 'facts_used must be a JSON array'
+            retry_reason = "facts_used must be a JSON array"
 
-        budget = agent.get_stage2_budget() if hasattr(agent, 'get_stage2_budget') else parameters.ENDOWMENT_STAGE_2
+        budget = (
+            agent.get_stage2_budget()
+            if hasattr(agent, "get_stage2_budget")
+            else parameters.ENDOWMENT_STAGE_2
+        )
 
         punishment_allocations, reward_allocations = _apply_stage2_allocations(
             punishments, rewards, agent, agent.anonymized_id_mapping, group_state, budget
@@ -249,11 +263,11 @@ def parse_punishment_response(response, group_state, agent):
 
         total_cost = _stage2_total_cost(punishment_allocations, reward_allocations)
         if not retry_reason and total_cost > budget:
-            retry_reason = f'total spend {total_cost} exceeds budget {budget}'
+            retry_reason = f"total spend {total_cost} exceeds budget {budget}"
 
         all_zero_punishments = all(value == 0 for value in punishments.values())
         semantic_retry = False
-        semantic_retry_reason = ''
+        semantic_retry_reason = ""
         if not retry_reason:
             consistent, inconsistency = _assess_allocation_text_consistency(
                 reasoning, justifications, punishments, rewards
@@ -265,30 +279,57 @@ def parse_punishment_response(response, group_state, agent):
         if not retry_reason:
             for label in expected_labels:
                 amount = punishments[label]
-                if amount > 0 and not str(justifications.get(label, '') or '').strip():
-                    retry_reason = f'missing justification for {label}'
+                if amount > 0 and not str(justifications.get(label, "") or "").strip():
+                    retry_reason = f"missing justification for {label}"
                     break
 
         deanonymized_reasoning = deanonymize_reasoning(reasoning, agent.anonymized_id_mapping)
 
         parser_meta = _make_parser_meta(data, expected_keys, bool(retry_reason), retry_reason)
-        parser_meta['expected_target_labels'] = expected_labels
-        parser_meta['parsed_punishment_labels'] = list(punishments.keys())
-        parser_meta['parsed_reward_labels'] = list(rewards.keys())
-        parser_meta['all_zero_punishments'] = all_zero_punishments
-        parser_meta['semantic_retry'] = semantic_retry
-        parser_meta['semantic_retry_reason'] = semantic_retry_reason
-        parser_meta['raw_punishment_values'] = dict(punishments)
-        parser_meta['total_spend'] = total_cost
-        parser_meta['budget'] = budget
-        parser_meta['raw_punishment_allocations'] = dict(punishment_allocations)
-        parser_meta['raw_reward_allocations'] = dict(reward_allocations)
+        parser_meta["expected_target_labels"] = expected_labels
+        parser_meta["parsed_punishment_labels"] = list(punishments.keys())
+        parser_meta["parsed_reward_labels"] = list(rewards.keys())
+        parser_meta["all_zero_punishments"] = all_zero_punishments
+        parser_meta["semantic_retry"] = semantic_retry
+        parser_meta["semantic_retry_reason"] = semantic_retry_reason
+        parser_meta["raw_punishment_values"] = dict(punishments)
+        parser_meta["total_spend"] = total_cost
+        parser_meta["budget"] = budget
+        parser_meta["raw_punishment_allocations"] = dict(punishment_allocations)
+        parser_meta["raw_reward_allocations"] = dict(reward_allocations)
 
         if retry_reason:
-            return {}, {}, reasoning, deanonymized_reasoning, justifications, facts_used, deepseek_think, parser_meta
+            return (
+                {},
+                {},
+                reasoning,
+                deanonymized_reasoning,
+                justifications,
+                facts_used,
+                deepseek_think,
+                parser_meta,
+            )
 
-        return punishment_allocations, reward_allocations, reasoning, deanonymized_reasoning, justifications, facts_used, deepseek_think, parser_meta
+        return (
+            punishment_allocations,
+            reward_allocations,
+            reasoning,
+            deanonymized_reasoning,
+            justifications,
+            facts_used,
+            deepseek_think,
+            parser_meta,
+        )
 
     except Exception as e:
         logger.warning(f"Error parsing punishment response: {e}")
-        return {}, {}, '', '', {}, [], '', _make_parser_meta({}, expected_keys, True, f'Punishment parse exception: {e}')
+        return (
+            {},
+            {},
+            "",
+            "",
+            {},
+            [],
+            "",
+            _make_parser_meta({}, expected_keys, True, f"Punishment parse exception: {e}"),
+        )

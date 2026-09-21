@@ -9,12 +9,14 @@ Both institutions manage the grouping of agents and their interactions within th
 - The Sanction-Free Institution does not have mechanisms for punishment or reward.
 """
 
-import logging
-from core import parameters
 import concurrent.futures
+import logging
+
+from core import parameters
 from core.scenario_config import get_scenario_config
 
 logger = logging.getLogger(__name__)
+
 
 class Institution:
     def __init__(self):
@@ -65,7 +67,7 @@ class Institution:
             for future in concurrent.futures.as_completed(futures):
                 agent = futures[future]
                 future.result()
-                currency = get_scenario_config(parameters.SCENARIO)['currency_name']
+                currency = get_scenario_config(parameters.SCENARIO)["currency_name"]
                 logger.info(f"Agent {agent.agent_id} contributed {agent.contribution} {currency}")
 
         for agent in self.members:
@@ -77,19 +79,18 @@ class Institution:
         Calculate and distribute the share of the public good to each member.
         """
         if self.group_size > 0:
-            public_good_earning = (parameters.PUBLIC_GOOD_MULTIPLIER * self.total_contribution) / self.group_size
+            (parameters.PUBLIC_GOOD_MULTIPLIER * self.total_contribution) / self.group_size
         else:
-            public_good_earning = 0
+            pass
 
         for agent in self.members:
             stage1_payoff = agent.get_stage1_payoff(
-                group_size=self.group_size,
-                total_group_contribution=self.total_contribution
+                group_size=self.group_size, total_group_contribution=self.total_contribution
             )
             # Update the agent's payoff; Stage 1 payoff is added after Stage 2
             self.stage1_payoffs[agent.agent_id] = stage1_payoff
             # The payoff will be updated later after Stage 2 in the environment
-            currency = get_scenario_config(parameters.SCENARIO)['currency_name']
+            currency = get_scenario_config(parameters.SCENARIO)["currency_name"]
             logger.info(f"Agent {agent.agent_id} earned {stage1_payoff} {currency} in Stage 1")
 
     def get_group_state(self, requesting_agent):
@@ -104,15 +105,13 @@ class Institution:
         """
         # For anonymity, agents receive only aggregated or anonymized information
         group_state = {
-            'members': [agent for agent in self.members],
-            'anonymized_contributions': self.anonymized_contributions.copy(),
-            'group_size': self.group_size,
-            'round_number': self.round_number,
-            'stage1_payoffs': self.stage1_payoffs.copy(),
+            "members": list(self.members),
+            "anonymized_contributions": self.anonymized_contributions.copy(),
+            "group_size": self.group_size,
+            "round_number": self.round_number,
+            "stage1_payoffs": self.stage1_payoffs.copy(),
         }
         return group_state
-
-
 
     def get_average_contribution(self):
         """Returns the average contribution in this institution."""
@@ -125,7 +124,7 @@ class SanctioningInstitution(Institution):
     def __init__(self):
         super().__init__()
         self.punishment_matrix = {}  # Records punishments assigned between agents
-        self.reward_matrix = {}      # Records rewards assigned between agents
+        self.reward_matrix = {}  # Records rewards assigned between agents
 
     def reset_institution(self, round_number):
         super().reset_institution(round_number)
@@ -146,7 +145,7 @@ class SanctioningInstitution(Institution):
                 executor.submit(agent.assign_punishment, self.get_group_state(agent)): agent
                 for agent in self.members
             }
-            
+
             for future in concurrent.futures.as_completed(futures):
                 agent = futures[future]
                 punishment_allocations, reward_allocations = future.result()
@@ -164,13 +163,15 @@ class SanctioningInstitution(Institution):
                     self.reward_matrix[rewarded_agent_id][agent.agent_id] = tokens
 
                 just_snippet = ""
-                justifications = getattr(agent, 'punishment_justifications', {}) or {}
-                active_just = [f"{k}: {str(v)[:60]}" for k, v in justifications.items() if str(v).strip()]
+                justifications = getattr(agent, "punishment_justifications", {}) or {}
+                active_just = [
+                    f"{k}: {str(v)[:60]}" for k, v in justifications.items() if str(v).strip()
+                ]
                 if active_just:
                     just_snippet = f" Justifications: {'; '.join(active_just[:4])}"
                 logger.info(
                     f"Agent {agent.agent_id} assigned punishments: {punishment_allocations}. "
-                    f"Reasoning: \"{agent.punishment_reasoning[:150]}...\"{just_snippet}"
+                    f'Reasoning: "{agent.punishment_reasoning[:150]}..."{just_snippet}'
                 )
 
     def apply_punishments_and_rewards(self):

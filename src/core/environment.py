@@ -1,44 +1,47 @@
 # environment.py
 
-import random
-import json
-import os
-import gc
-import logging
 import concurrent.futures
+import contextlib
+import gc
+import json
+import logging
+import os
+import random
 import statistics
 import time
 from datetime import datetime
-from core import parameters
+from typing import Any
 
-logger = logging.getLogger(__name__)
-from core.agent import Agent
-from core.institution import SanctioningInstitution, SanctionFreeInstitution
-from modules.tom_module import TomModule
-from modules.democracy_module import DemocracyModule
-from modules.oracle import Oracle
-from core.subsidy import SubsidyModule
+from core import parameters
+from core.institution import SanctionFreeInstitution, SanctioningInstitution
 from core.loss_damage_fund import LossDamageFund
 from core.scenario_config import get_scenario_config
+from core.subsidy import SubsidyModule
+from modules.democracy_module import DemocracyModule
+from modules.oracle import Oracle
+from modules.tom_module import TomModule
+
+logger = logging.getLogger(__name__)
+
 if parameters.GOSSIP_ENABLED:
     from modules.gossip_module import GossipModule
 
 # Fat text fields that compound in RAM when every round is retained in-process.
 _FAT_AGENT_TEXT_KEYS = (
-    'institution_reasoning',
-    'institution_facts_used',
-    'institution_deepseek_think',
-    'institution_parser_meta',
-    'contribution_reasoning',
-    'contribution_facts_used',
-    'contribution_deepseek_think',
-    'contribution_parser_meta',
-    'punishment_reasoning',
-    'deanonymized_punishment_reasoning',
-    'punishment_facts_used',
-    'punishment_justifications',
-    'punishment_deepseek_think',
-    'punishment_parser_meta',
+    "institution_reasoning",
+    "institution_facts_used",
+    "institution_deepseek_think",
+    "institution_parser_meta",
+    "contribution_reasoning",
+    "contribution_facts_used",
+    "contribution_deepseek_think",
+    "contribution_parser_meta",
+    "punishment_reasoning",
+    "deanonymized_punishment_reasoning",
+    "punishment_facts_used",
+    "punishment_justifications",
+    "punishment_deepseek_think",
+    "punishment_parser_meta",
 )
 
 
@@ -51,12 +54,12 @@ class Environment:
         self.sfi = SanctionFreeInstitution()
         self.results = []
         self.constitutional_history = []  # Phase 2: log of democracy outcomes
-        self.current_shock = {'occurred': False, 'severity': 0.0, 'damages': {}}
+        self.current_shock: dict[str, Any] = {"occurred": False, "severity": 0.0, "damages": {}}
         self.last_ldf_summary = {
-            'pool_start': 0.0,
-            'contributions_total': 0.0,
-            'payouts_total': 0.0,
-            'pool_end': 0.0,
+            "pool_start": 0.0,
+            "contributions_total": 0.0,
+            "payouts_total": 0.0,
+            "pool_end": 0.0,
         }
         self._results_spill_path = None
         random.seed(parameters.SEED)
@@ -64,7 +67,9 @@ class Environment:
         # Phase 2: shared module instances (use first agent's API client)
         api_client = agents[0].api_client if agents else None
         self.tom_module = TomModule(api_client) if (api_client and parameters.TOM_ENABLED) else None
-        self.democracy_module = DemocracyModule(api_client) if (api_client and parameters.DEMOCRACY_ENABLED) else None
+        self.democracy_module = (
+            DemocracyModule(api_client) if (api_client and parameters.DEMOCRACY_ENABLED) else None
+        )
         self.subsidy_module = SubsidyModule() if parameters.SUBSIDY_ENABLED else None
         self.ldf_module = LossDamageFund() if parameters.LDF_ENABLED else None
         self.gossip_module = GossipModule() if parameters.GOSSIP_ENABLED else None
@@ -75,8 +80,14 @@ class Environment:
         """
         for round_number in range(1, parameters.NUM_ROUNDS + 1):
             self.current_round = round_number
-            progress_str = f" [Run {getattr(parameters, 'CURRENT_RUN', '?')}/{getattr(parameters, 'TOTAL_RUNS', '?')}]" if hasattr(parameters, 'CURRENT_RUN') else ""
-            logger.info(f"{progress_str} Starting Round {self.current_round}/{parameters.NUM_ROUNDS}")
+            progress_str = (
+                f" [Run {getattr(parameters, 'CURRENT_RUN', '?')}/{getattr(parameters, 'TOTAL_RUNS', '?')}]"
+                if hasattr(parameters, "CURRENT_RUN")
+                else ""
+            )
+            logger.info(
+                f"{progress_str} Starting Round {self.current_round}/{parameters.NUM_ROUNDS}"
+            )
             self.run_round()
 
             # Phase 2: Theory of Mind audit after every round
@@ -90,23 +101,20 @@ class Environment:
                 result = self.democracy_module.run_constitutional_session(
                     self.agents, round_number, oracle=oracle
                 )
-                self.constitutional_history.append({
-                    'round': round_number,
-                    **result
-                })
+                self.constitutional_history.append({"round": round_number, **result})
                 # Attach democracy result to the latest round data
                 if self.results:
-                    self.results[-1]['constitutional_change'] = result
+                    self.results[-1]["constitutional_change"] = result
 
-            if getattr(parameters, 'OLLAMA_SOFT_RESET_EACH_ROUND', False):
+            if getattr(parameters, "OLLAMA_SOFT_RESET_EACH_ROUND", False):
                 self._soft_reset_ollama(round_number)
 
     def _soft_reset_ollama(self, round_number):
         """Unload Ollama models and release Python refs after a round."""
         if not self.agents:
             return
-        api_client = getattr(self.agents[0], 'api_client', None)
-        if not api_client or not hasattr(api_client, 'soft_reset_model'):
+        api_client = getattr(self.agents[0], "api_client", None)
+        if not api_client or not hasattr(api_client, "soft_reset_model"):
             return
         try:
             logger.info(
@@ -124,7 +132,6 @@ class Environment:
         # Force Python to reclaim fat round / ToM objects after unload.
         gc.collect()
 
-
     def run_tom_audit(self, round_number):
         """
         Phase 2: Run Theory of Mind audits for every agent.
@@ -132,12 +139,14 @@ class Environment:
         The peer-average scores update each agent's reputation.
         Phase 2b: Gossip distributed to agents.
         """
+        if self.tom_module is None:
+            return
         # Tally incoming trust scores for each agent: {agent_id: [scores...]}
         audit_started = time.monotonic()
         expected_scores = len(self.agents) * max(0, len(self.agents) - 1)
         tom_workers = min(
             len(self.agents),
-            max(1, int(getattr(parameters, 'TOM_MAX_CONCURRENCY', parameters.LLM_MAX_CONCURRENCY))),
+            max(1, int(getattr(parameters, "TOM_MAX_CONCURRENCY", parameters.LLM_MAX_CONCURRENCY))),
         )
         logger.info(
             "[ToM] Round %s audit starting: %s pairwise score(s), "
@@ -154,10 +163,13 @@ class Environment:
         completed_evaluators = 0
         completed_scores = 0
 
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=tom_workers
-        ) as executor:
-            futures = {executor.submit(self.tom_module.audit_round, evaluator, self.agents, round_number): evaluator for evaluator in self.agents}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=tom_workers) as executor:
+            futures = {
+                executor.submit(
+                    self.tom_module.audit_round, evaluator, self.agents, round_number
+                ): evaluator
+                for evaluator in self.agents
+            }
             for future in concurrent.futures.as_completed(futures):
                 evaluator = futures[future]
                 scores = future.result()
@@ -174,17 +186,19 @@ class Environment:
                 if not scores:
                     continue
                 for target_id, data in scores.items():
-                    score = data['score']
-                    reasoning = data['reasoning']
+                    score = data["score"]
+                    reasoning = data["reasoning"]
                     evaluator.tom_scores[target_id] = score
                     incoming_scores[target_id].append(score)
                     if self.gossip_module:
-                        all_audits_this_round.append({
-                            'source': evaluator.agent_id,
-                            'target': target_id,
-                            'score': score,
-                            'reasoning': reasoning
-                        })
+                        all_audits_this_round.append(
+                            {
+                                "source": evaluator.agent_id,
+                                "target": target_id,
+                                "score": score,
+                                "reasoning": reasoning,
+                            }
+                        )
 
         # Update each agent's reputation as the average of all incoming scores
         for agent in self.agents:
@@ -201,14 +215,11 @@ class Environment:
 
         # Drop per-round ToM audit logs and local audit list — they compound at O(N^2).
         for agent in self.agents:
-            if hasattr(agent, 'tom_audit_log'):
+            if hasattr(agent, "tom_audit_log"):
                 agent.tom_audit_log = []
         all_audits_this_round.clear()
 
-        rep_str = ", ".join(
-            f"Agent {a.agent_id}: {a.reputation:.1f}"
-            for a in self.agents
-        )
+        rep_str = ", ".join(f"Agent {a.agent_id}: {a.reputation:.1f}" for a in self.agents)
         logger.info(f"[ToM] Reputations after Round {round_number}: [{rep_str}]")
         logger.info(
             "[ToM] Round %s audit finished: %s/%s scores in %.1fs.",
@@ -218,33 +229,30 @@ class Environment:
             time.monotonic() - audit_started,
         )
 
-        if getattr(parameters, 'TOM_VERBOSE', False):
+        if getattr(parameters, "TOM_VERBOSE", False):
             for agent in self.agents:
                 if not agent.tom_scores:
                     continue
                 published = ", ".join(
-                    f"Agent {tid}: {score:.1f}"
-                    for tid, score in sorted(agent.tom_scores.items())
+                    f"Agent {tid}: {score:.1f}" for tid, score in sorted(agent.tom_scores.items())
                 )
-                logger.info(
-                    f"[ToM] Agent {agent.agent_id} published trust scores -> [{published}]"
-                )
-        
+                logger.info(f"[ToM] Agent {agent.agent_id} published trust scores -> [{published}]")
+
         if self.gossip_module and self.gossip_module.gossip_bulletin:
-            logger.info(f"{'='*20} SOCIAL GOSSIP BULLETIN {'='*20}")
+            logger.info(f"{'=' * 20} SOCIAL GOSSIP BULLETIN {'=' * 20}")
             for gossip in self.gossip_module.gossip_bulletin:
-                reasoning = str(gossip.get('reasoning', '') or '').strip()
+                reasoning = str(gossip.get("reasoning", "") or "").strip()
                 if reasoning:
                     logger.info(
                         f"Agent {gossip['source']} on Agent {gossip['target']}: "
-                        f"score {gossip['score']}/10 -- \"{reasoning[:150]}...\""
+                        f'score {gossip["score"]}/10 -- "{reasoning[:150]}..."'
                     )
                 else:
                     logger.info(
                         f"Agent {gossip['source']} on Agent {gossip['target']}: "
                         f"score {gossip['score']}/10"
                     )
-            logger.info(f"{'='*64}")
+            logger.info(f"{'=' * 64}")
 
     def run_round(self):
         """
@@ -258,29 +266,45 @@ class Environment:
         def setup_agent(agent):
             logger.debug(f"Agent {agent} started")
             agent.reset_for_new_round()
-            scenario_name = str(getattr(parameters, 'SCENARIO', '')).lower()
-            if scenario_name == 'climate':
-                scenario_name = 'ldf'
+            scenario_name = str(getattr(parameters, "SCENARIO", "")).lower()
+            if scenario_name == "climate":
+                scenario_name = "ldf"
 
             climate_mode = (
-                scenario_name == 'ldf'
-                or bool(getattr(parameters, 'CLIMATE_SHOCK_ENABLED', False))
-                or bool(getattr(parameters, 'LDF_ENABLED', False))
+                scenario_name == "ldf"
+                or bool(getattr(parameters, "CLIMATE_SHOCK_ENABLED", False))
+                or bool(getattr(parameters, "LDF_ENABLED", False))
             )
 
             if climate_mode:
-                if getattr(agent, 'agent_group', 'developing') == 'developed':
-                    agent.institution_choice = 'SI'
-                    agent.institution_reasoning = 'Climate/LDF mode defaults developed countries to the binding treaty.'
-                    agent.institution_facts_used = ['Developed countries are routed to SI in climate/LDF mode.']
-                    agent.institution_deepseek_think = ''
-                    agent.log_debug(self.current_round, "stage_0_institution", "Climate/LDF mode defaults developed countries to SI.", '{"institution_choice": "SI"}')
+                if getattr(agent, "agent_group", "developing") == "developed":
+                    agent.institution_choice = "SI"
+                    agent.institution_reasoning = (
+                        "Climate/LDF mode defaults developed countries to the binding treaty."
+                    )
+                    agent.institution_facts_used = [
+                        "Developed countries are routed to SI in climate/LDF mode."
+                    ]
+                    agent.institution_deepseek_think = ""
+                    agent.log_debug(
+                        self.current_round,
+                        "stage_0_institution",
+                        "Climate/LDF mode defaults developed countries to SI.",
+                        '{"institution_choice": "SI"}',
+                    )
                 else:
-                    agent.institution_choice = 'SFI'
-                    agent.institution_reasoning = 'Climate/LDF mode defaults developing countries to the non-binding agreement.'
-                    agent.institution_facts_used = ['Developing countries are routed to SFI in climate/LDF mode.']
-                    agent.institution_deepseek_think = ''
-                    agent.log_debug(self.current_round, "stage_0_institution", "Climate/LDF mode defaults developing countries to SFI.", '{"institution_choice": "SFI"}')
+                    agent.institution_choice = "SFI"
+                    agent.institution_reasoning = "Climate/LDF mode defaults developing countries to the non-binding agreement."
+                    agent.institution_facts_used = [
+                        "Developing countries are routed to SFI in climate/LDF mode."
+                    ]
+                    agent.institution_deepseek_think = ""
+                    agent.log_debug(
+                        self.current_round,
+                        "stage_0_institution",
+                        "Climate/LDF mode defaults developing countries to SFI.",
+                        '{"institution_choice": "SFI"}',
+                    )
             else:
                 agent.choose_institution(self.current_round)
             return agent
@@ -292,14 +316,16 @@ class Environment:
             for future in concurrent.futures.as_completed(futures):
                 agent = future.result()
                 # Add agent to the chosen institution
-                if agent.institution_choice == 'SI':
+                if agent.institution_choice == "SI":
                     self.si.add_member(agent)
                     agent.current_group = self.si
                 else:
                     self.sfi.add_member(agent)
                     agent.current_group = self.sfi
-                
-                logger.info(f"Agent {agent.agent_id} chose {agent.institution_choice}. Reasoning: {agent.institution_reasoning}")
+
+                logger.info(
+                    f"Agent {agent.agent_id} chose {agent.institution_choice}. Reasoning: {agent.institution_reasoning}"
+                )
                 if agent.institution_deepseek_think:
                     logger.info(f"  └─ [institution <think>]\n{agent.institution_deepseek_think}")
 
@@ -322,12 +348,12 @@ class Environment:
             for agent_id, bonus in subsidies.items():
                 agent = next(a for a in self.agents if a.agent_id == agent_id)
                 agent.last_subsidy = bonus
-                currency = get_scenario_config(parameters.SCENARIO)['currency_name']
+                currency = get_scenario_config(parameters.SCENARIO)["currency_name"]
                 logger.info(f"Agent {agent_id} received subsidy: +{bonus} {currency}")
 
         # Climate shocks and Loss & Damage Fund (optional; disabled by default).
         self._apply_climate_shock_and_ldf()
-                    
+
         # Calculate payoffs and update agents
         self.calculate_payoffs()
 
@@ -336,13 +362,13 @@ class Environment:
 
     def _apply_climate_shock_and_ldf(self):
         # Defaults when modules are disabled or no event occurs.
-        self.current_shock = {'occurred': False, 'severity': 0.0, 'damages': {}}
+        self.current_shock = {"occurred": False, "severity": 0.0, "damages": {}}
         self.last_ldf_summary = {
-            'pool_start': self.ldf_module.pool_balance if self.ldf_module else 0.0,
-            'contributions_collected': False,
-            'contributions_total': 0.0,
-            'payouts_total': 0.0,
-            'pool_end': self.ldf_module.pool_balance if self.ldf_module else 0.0,
+            "pool_start": self.ldf_module.pool_balance if self.ldf_module else 0.0,
+            "contributions_collected": False,
+            "contributions_total": 0.0,
+            "payouts_total": 0.0,
+            "pool_end": self.ldf_module.pool_balance if self.ldf_module else 0.0,
         }
 
         if self.ldf_module:
@@ -354,21 +380,23 @@ class Environment:
                 contributions = self.ldf_module.collect_contributions(self.agents)
                 contributions_total = sum(contributions.values())
 
-            self.last_ldf_summary.update({
-                'pool_start': pool_start,
-                'contributions_collected': should_collect,
-                'contributions_total': contributions_total,
-                'pool_end': self.ldf_module.pool_balance,
-            })
+            self.last_ldf_summary.update(
+                {
+                    "pool_start": pool_start,
+                    "contributions_collected": should_collect,
+                    "contributions_total": contributions_total,
+                    "pool_end": self.ldf_module.pool_balance,
+                }
+            )
 
         if not parameters.CLIMATE_SHOCK_ENABLED:
             return
 
         # Deterministic schedule overrides stochastic roll when enabled.
-        if getattr(parameters, 'CLIMATE_SHOCK_DETERMINISTIC', False):
+        if getattr(parameters, "CLIMATE_SHOCK_DETERMINISTIC", False):
             # Find a scheduled shock for the current round (exact match)
             severity = None
-            for r, s in getattr(parameters, 'CLIMATE_SHOCK_SCHEDULE', []):
+            for r, s in getattr(parameters, "CLIMATE_SHOCK_SCHEDULE", []):
                 if r == self.current_round:
                     severity = s
                     break
@@ -382,7 +410,9 @@ class Environment:
             shock_roll = random.random()
             if shock_roll >= parameters.CLIMATE_SHOCK_BASE_PROB:
                 return
-            severity = random.uniform(parameters.CLIMATE_SHOCK_SEVERITY_MIN, parameters.CLIMATE_SHOCK_SEVERITY_MAX)
+            severity = random.uniform(
+                parameters.CLIMATE_SHOCK_SEVERITY_MIN, parameters.CLIMATE_SHOCK_SEVERITY_MAX
+            )
 
         damages = {}
 
@@ -395,27 +425,31 @@ class Environment:
         payouts = {}
         if self.ldf_module:
             payouts = self.ldf_module.distribute_payouts(self.agents, damages)
-            self.last_ldf_summary.update({
-                'payouts_total': sum(payouts.values()),
-                'pool_end': self.ldf_module.pool_balance,
-            })
+            self.last_ldf_summary.update(
+                {
+                    "payouts_total": sum(payouts.values()),
+                    "pool_end": self.ldf_module.pool_balance,
+                }
+            )
 
         self.current_shock = {
-            'occurred': True,
-            'severity': severity,
-            'damages': damages,
-            'payouts': payouts,
+            "occurred": True,
+            "severity": severity,
+            "damages": damages,
+            "payouts": payouts,
         }
 
         if self.ldf_module:
-            self.ldf_module.append_round_log({
-                'round_number': self.current_round,
-                'shock_occurred': self.current_shock.get('occurred', False),
-                'shock_severity': self.current_shock.get('severity', 0.0),
-                'damages': self.current_shock.get('damages', {}),
-                'payouts': self.current_shock.get('payouts', {}),
-                **self.last_ldf_summary,
-            })
+            self.ldf_module.append_round_log(
+                {
+                    "round_number": self.current_round,
+                    "shock_occurred": self.current_shock.get("occurred", False),
+                    "shock_severity": self.current_shock.get("severity", 0.0),
+                    "damages": self.current_shock.get("damages", {}),
+                    "payouts": self.current_shock.get("payouts", {}),
+                    **self.last_ldf_summary,
+                }
+            )
 
     def calculate_payoffs(self):
         """
@@ -425,7 +459,7 @@ class Environment:
         # Update payoffs for all agents
         for agent in self.agents:
             # Determine institution-specific stage 1 payoff
-            if agent.institution_choice == 'SI':
+            if agent.institution_choice == "SI":
                 stage1_payoff = self.si.stage1_payoffs.get(agent.agent_id, 0)
                 # Apply stage 1 results to wealth before calculating stage 2
                 agent.wealth += stage1_payoff
@@ -435,20 +469,24 @@ class Environment:
                 # Apply stage 1 results to wealth
                 agent.wealth += stage1_payoff
                 stage2_payoff = 0
-            
-            subsidy = getattr(agent, 'last_subsidy', 0)
-            ldf_transfer = self.current_shock.get('payouts', {}).get(agent.agent_id, 0.0)
-            climate_damage = self.current_shock.get('damages', {}).get(agent.agent_id, 0.0)
+
+            subsidy = getattr(agent, "last_subsidy", 0)
+            ldf_transfer = self.current_shock.get("payouts", {}).get(agent.agent_id, 0.0)
+            climate_damage = self.current_shock.get("damages", {}).get(agent.agent_id, 0.0)
             agent.ldf_payout_round = ldf_transfer
             agent.net_climate_transfer_round = ldf_transfer - climate_damage
-            
-            total_round_payoff = stage1_payoff + stage2_payoff + subsidy + ldf_transfer - climate_damage
+
+            total_round_payoff = (
+                stage1_payoff + stage2_payoff + subsidy + ldf_transfer - climate_damage
+            )
             agent.update_payoff(total_round_payoff)
-            agent.wealth += (stage2_payoff + subsidy + ldf_transfer - climate_damage)
+            agent.wealth += stage2_payoff + subsidy + ldf_transfer - climate_damage
             agent.wealth = max(0.0, agent.wealth)
 
             payoff_details = f"S1: {stage1_payoff:.1f}, S2: {stage2_payoff:.1f}, LDF: {ldf_transfer:.1f}, Damage: {climate_damage:.1f}"
-            logger.info(f"Agent {agent.agent_id} in {agent.institution_choice} (Payoff: {agent.round_payoff:.2f} | {payoff_details})")
+            logger.info(
+                f"Agent {agent.agent_id} in {agent.institution_choice} (Payoff: {agent.round_payoff:.2f} | {payoff_details})"
+            )
             if agent.contribution_reasoning:
                 logger.info(f"  └─ [contribution reasoning]: {agent.contribution_reasoning}")
             if agent.contribution_deepseek_think:
@@ -479,52 +517,56 @@ class Environment:
         """
         # Collect data for the round
         round_data = {
-            'round_number': self.current_round,
-            'si_members': [agent.agent_id for agent in self.si.members],
-            'sfi_members': [agent.agent_id for agent in self.sfi.members],
-            'si_total_contribution': self.si.total_contribution,
-            'sfi_total_contribution': self.sfi.total_contribution,
-            'si_avg_contribution': self.si.get_average_contribution(),
-            'sfi_avg_contribution': self.sfi.get_average_contribution(),
-            'shock_occurred': self.current_shock.get('occurred', False),
-            'shock_severity': self.current_shock.get('severity', 0.0),
-            'gross_damage_total': sum(self.current_shock.get('damages', {}).values()),
-            'net_damage_total': sum(
-                max(0.0, self.current_shock.get('damages', {}).get(a.agent_id, 0.0) - getattr(a, 'ldf_payout_round', 0.0))
+            "round_number": self.current_round,
+            "si_members": [agent.agent_id for agent in self.si.members],
+            "sfi_members": [agent.agent_id for agent in self.sfi.members],
+            "si_total_contribution": self.si.total_contribution,
+            "sfi_total_contribution": self.sfi.total_contribution,
+            "si_avg_contribution": self.si.get_average_contribution(),
+            "sfi_avg_contribution": self.sfi.get_average_contribution(),
+            "shock_occurred": self.current_shock.get("occurred", False),
+            "shock_severity": self.current_shock.get("severity", 0.0),
+            "gross_damage_total": sum(self.current_shock.get("damages", {}).values()),
+            "net_damage_total": sum(
+                max(
+                    0.0,
+                    self.current_shock.get("damages", {}).get(a.agent_id, 0.0)
+                    - getattr(a, "ldf_payout_round", 0.0),
+                )
                 for a in self.agents
             ),
-            'ldf_pool_start': self.last_ldf_summary.get('pool_start', 0.0),
-            'ldf_contributions_total': self.last_ldf_summary.get('contributions_total', 0.0),
-            'ldf_payouts_total': self.last_ldf_summary.get('payouts_total', 0.0),
-            'ldf_pool_end': self.last_ldf_summary.get('pool_end', 0.0),
-            'agents': {}
+            "ldf_pool_start": self.last_ldf_summary.get("pool_start", 0.0),
+            "ldf_contributions_total": self.last_ldf_summary.get("contributions_total", 0.0),
+            "ldf_payouts_total": self.last_ldf_summary.get("payouts_total", 0.0),
+            "ldf_pool_end": self.last_ldf_summary.get("pool_end", 0.0),
+            "agents": {},
         }
 
         ratios = []
         for a in self.agents:
-            cap = a.get_stage1_contribution_cap() if hasattr(a, 'get_stage1_contribution_cap') else parameters.ENDOWMENT_STAGE_1
+            cap = (
+                a.get_stage1_contribution_cap()
+                if hasattr(a, "get_stage1_contribution_cap")
+                else parameters.ENDOWMENT_STAGE_1
+            )
             ratios.append(a.contribution / cap if cap > 0 else 0.0)
-        round_data['cooperation_rate'] = statistics.mean(ratios) if ratios else 0.0
-        round_data['gini_wealth'] = self._compute_gini([a.wealth for a in self.agents])
+        round_data["cooperation_rate"] = statistics.mean(ratios) if ratios else 0.0
+        round_data["gini_wealth"] = self._compute_gini([a.wealth for a in self.agents])
 
         # Calculate cumulative payoffs for ranking
         agent_cumulative_payoffs = {
             agent.agent_id: agent.cumulative_payoff for agent in self.agents
         }
         # Calculate ranks based on cumulative payoff
-        sorted_payoffs = sorted(
-            agent_cumulative_payoffs.items(), key=lambda x: x[1], reverse=True
-        )
-        agent_ranks = {
-            agent_id: rank + 1 for rank, (agent_id, _) in enumerate(sorted_payoffs)
-        }
+        sorted_payoffs = sorted(agent_cumulative_payoffs.items(), key=lambda x: x[1], reverse=True)
+        agent_ranks = {agent_id: rank + 1 for rank, (agent_id, _) in enumerate(sorted_payoffs)}
 
         total_agents = len(self.agents)
 
         # Record detailed agent data and provide feedback
         for agent in self.agents:
             # Retrieve stage payoffs
-            if agent.institution_choice == 'SI':
+            if agent.institution_choice == "SI":
                 stage1_payoff = self.si.stage1_payoffs.get(agent.agent_id, 0)
                 stage2_payoff = agent.get_stage2_payoff()
             else:
@@ -540,73 +582,75 @@ class Environment:
 
             # Prepare agent data with detailed assigned punishments and rewards
             agent_data = {
-                'institution_choice': agent.institution_choice,
-                'institution_reasoning': agent.institution_reasoning,
-                'institution_facts_used': getattr(agent, 'institution_facts_used', []),
-                'institution_deepseek_think': getattr(agent, 'institution_deepseek_think', ''),
-                'institution_parser_meta': getattr(agent, 'institution_parser_meta', {}),
-                'contribution': agent.contribution,
-                'contribution_reasoning': agent.contribution_reasoning,
-                'contribution_facts_used': getattr(agent, 'contribution_facts_used', []),
-                'contribution_deepseek_think': getattr(agent, 'contribution_deepseek_think', ''),
-                'contribution_parser_meta': getattr(agent, 'contribution_parser_meta', {}),
-                'stage1_payoff': stage1_payoff,
-                'stage2_payoff': stage2_payoff,
-                'payoff': total_round_payoff,
-                'cumulative_payoff': agent.cumulative_payoff,
-                'strategy': agent.strategy,
-                'agent_group': getattr(agent, 'agent_group', 'developing'),
-                'wealth': getattr(agent, 'wealth', agent.cumulative_payoff),
-                'vulnerability': getattr(agent, 'vulnerability', 1.0),
-                'historical_emissions': getattr(agent, 'historical_emissions', 0.0),
-                'contribution_capacity': getattr(agent, 'contribution_capacity', 1.0),
-                'received_punishments': agent.received_punishments,
-                'received_rewards': agent.received_rewards,
-                'assigned_punishments': agent.assigned_punishments,
-                'assigned_rewards': agent.assigned_rewards,
-                'punishment_reasoning': agent.punishment_reasoning,
-                'deanonymized_punishment_reasoning': agent.deanonymized_punishment_reasoning,
-                'punishment_facts_used': getattr(agent, 'punishment_facts_used', []),
-                'punishment_justifications': getattr(agent, 'punishment_justifications', {}),
-                'punishment_deepseek_think': getattr(agent, 'punishment_deepseek_think', ''),
-                'punishment_parser_meta': getattr(agent, 'punishment_parser_meta', {}),
-                'reputation': round(agent.reputation, 2),            # Phase 2
-                'tom_scores': {str(k): round(v, 2) for k, v in agent.tom_scores.items()},  # Phase 2
-                'rank': f"{rank} out of {total_agents}",
-                'subsidy': getattr(agent, 'last_subsidy', 0), # Phase 4
-                'climate_damage_taken_round': getattr(agent, 'climate_damage_taken_round', 0.0),
-                'climate_damage_taken_cumulative': getattr(agent, 'climate_damage_taken_cumulative', 0.0),
-                'ldf_contribution_round': getattr(agent, 'ldf_contribution_round', 0.0),
-                'ldf_payout_round': getattr(agent, 'ldf_payout_round', 0.0),
-                'net_climate_transfer_round': getattr(agent, 'net_climate_transfer_round', 0.0),
-                'parsing_failures': getattr(agent, 'parsing_failures', 0),
-                'rule_of_law_blocks': getattr(agent, 'rule_of_law_blocks', 0),
-                'belief_state': getattr(agent, 'belief_state', {}),
+                "institution_choice": agent.institution_choice,
+                "institution_reasoning": agent.institution_reasoning,
+                "institution_facts_used": getattr(agent, "institution_facts_used", []),
+                "institution_deepseek_think": getattr(agent, "institution_deepseek_think", ""),
+                "institution_parser_meta": getattr(agent, "institution_parser_meta", {}),
+                "contribution": agent.contribution,
+                "contribution_reasoning": agent.contribution_reasoning,
+                "contribution_facts_used": getattr(agent, "contribution_facts_used", []),
+                "contribution_deepseek_think": getattr(agent, "contribution_deepseek_think", ""),
+                "contribution_parser_meta": getattr(agent, "contribution_parser_meta", {}),
+                "stage1_payoff": stage1_payoff,
+                "stage2_payoff": stage2_payoff,
+                "payoff": total_round_payoff,
+                "cumulative_payoff": agent.cumulative_payoff,
+                "strategy": agent.strategy,
+                "agent_group": getattr(agent, "agent_group", "developing"),
+                "wealth": getattr(agent, "wealth", agent.cumulative_payoff),
+                "vulnerability": getattr(agent, "vulnerability", 1.0),
+                "historical_emissions": getattr(agent, "historical_emissions", 0.0),
+                "contribution_capacity": getattr(agent, "contribution_capacity", 1.0),
+                "received_punishments": agent.received_punishments,
+                "received_rewards": agent.received_rewards,
+                "assigned_punishments": agent.assigned_punishments,
+                "assigned_rewards": agent.assigned_rewards,
+                "punishment_reasoning": agent.punishment_reasoning,
+                "deanonymized_punishment_reasoning": agent.deanonymized_punishment_reasoning,
+                "punishment_facts_used": getattr(agent, "punishment_facts_used", []),
+                "punishment_justifications": getattr(agent, "punishment_justifications", {}),
+                "punishment_deepseek_think": getattr(agent, "punishment_deepseek_think", ""),
+                "punishment_parser_meta": getattr(agent, "punishment_parser_meta", {}),
+                "reputation": round(agent.reputation, 2),  # Phase 2
+                "tom_scores": {str(k): round(v, 2) for k, v in agent.tom_scores.items()},  # Phase 2
+                "rank": f"{rank} out of {total_agents}",
+                "subsidy": getattr(agent, "last_subsidy", 0),  # Phase 4
+                "climate_damage_taken_round": getattr(agent, "climate_damage_taken_round", 0.0),
+                "climate_damage_taken_cumulative": getattr(
+                    agent, "climate_damage_taken_cumulative", 0.0
+                ),
+                "ldf_contribution_round": getattr(agent, "ldf_contribution_round", 0.0),
+                "ldf_payout_round": getattr(agent, "ldf_payout_round", 0.0),
+                "net_climate_transfer_round": getattr(agent, "net_climate_transfer_round", 0.0),
+                "parsing_failures": getattr(agent, "parsing_failures", 0),
+                "rule_of_law_blocks": getattr(agent, "rule_of_law_blocks", 0),
+                "belief_state": getattr(agent, "belief_state", {}),
             }
 
             # Add the agent data to the round data
-            round_data['agents'][agent.agent_id] = agent_data
+            round_data["agents"][agent.agent_id] = agent_data
 
             # Prepare feedback for the agent
             avg_contribution_institution = (
                 self.si.get_average_contribution()
-                if agent.institution_choice == 'SI'
+                if agent.institution_choice == "SI"
                 else self.sfi.get_average_contribution()
             )
 
             feedback = agent_data.copy()
-            feedback['round_number'] = self.current_round
-            feedback['avg_payoff_SI'] = (
+            feedback["round_number"] = self.current_round
+            feedback["avg_payoff_SI"] = (
                 sum([a.round_payoff for a in self.si.members]) / len(self.si.members)
                 if self.si.members
                 else 0
             )
-            feedback['avg_payoff_SFI'] = (
+            feedback["avg_payoff_SFI"] = (
                 sum([a.round_payoff for a in self.sfi.members]) / len(self.sfi.members)
                 if self.sfi.members
                 else 0
             )
-            feedback['avg_contribution_institution'] = avg_contribution_institution
+            feedback["avg_contribution_institution"] = avg_contribution_institution
 
             # Update agent's personal history
             agent.update_history(feedback)
@@ -617,19 +661,19 @@ class Environment:
             for other_agent in self.agents:
                 if other_agent.agent_id != agent.agent_id:
                     # Get other agent's data from round_data
-                    other_agent_data = round_data['agents'][other_agent.agent_id]
+                    other_agent_data = round_data["agents"][other_agent.agent_id]
                     # Extract the data needed
                     anonymous_entry = {
-                        'actual_agent_id': other_agent.agent_id,
-                        'institution_choice': other_agent_data['institution_choice'],
-                        'agent_group': other_agent_data.get('agent_group', 'unknown'),
-                        'wealth': other_agent_data.get('wealth', 0.0),
-                        'contribution': other_agent_data['contribution'],
-                        'received_punishments': other_agent_data['received_punishments'],
-                        'received_rewards': other_agent_data['received_rewards'],
-                        'stage1_payoff': other_agent_data['stage1_payoff'],
-                        'stage2_payoff': other_agent_data['stage2_payoff'],
-                        'total_round_payoff': other_agent_data['payoff']
+                        "actual_agent_id": other_agent.agent_id,
+                        "institution_choice": other_agent_data["institution_choice"],
+                        "agent_group": other_agent_data.get("agent_group", "unknown"),
+                        "wealth": other_agent_data.get("wealth", 0.0),
+                        "contribution": other_agent_data["contribution"],
+                        "received_punishments": other_agent_data["received_punishments"],
+                        "received_rewards": other_agent_data["received_rewards"],
+                        "stage1_payoff": other_agent_data["stage1_payoff"],
+                        "stage2_payoff": other_agent_data["stage2_payoff"],
+                        "total_round_payoff": other_agent_data["payoff"],
                     }
                     # Note: We do not include the detailed assigned punishments and rewards in the anonymous data
                     # to maintain anonymity and prevent deanonymization.
@@ -638,11 +682,11 @@ class Environment:
             agent.current_round_anonymous_data = anonymous_data_list
 
         # --- Belief Tracking: parallel update of each agent's belief state ---
-        if getattr(parameters, 'BELIEF_TRACKING_ENABLED', False):
+        if getattr(parameters, "BELIEF_TRACKING_ENABLED", False):
             feedback_map = {}
             for agent in self.agents:
-                agent_feedback = round_data['agents'].get(agent.agent_id, {})
-                agent_feedback['round_number'] = self.current_round
+                agent_feedback = round_data["agents"].get(agent.agent_id, {})
+                agent_feedback["round_number"] = self.current_round
                 feedback_map[agent.agent_id] = agent_feedback
 
             with concurrent.futures.ThreadPoolExecutor(
@@ -652,7 +696,7 @@ class Environment:
                     executor.submit(
                         agent.update_beliefs,
                         feedback_map[agent.agent_id],
-                        agent.current_round_anonymous_data
+                        agent.current_round_anonymous_data,
                     ): agent
                     for agent in self.agents
                 }
@@ -661,10 +705,12 @@ class Environment:
 
             # Snapshot the updated belief states into round_data for results JSON
             for agent in self.agents:
-                round_data['agents'][agent.agent_id]['belief_state'] = getattr(agent, 'belief_state', {})
+                round_data["agents"][agent.agent_id]["belief_state"] = getattr(
+                    agent, "belief_state", {}
+                )
 
         # Spill full text to disk, slim the in-RAM copy, then retain one list only.
-        if getattr(parameters, 'RESULTS_SPILL_TO_DISK', True):
+        if getattr(parameters, "RESULTS_SPILL_TO_DISK", True):
             self._spill_round_and_slim(round_data)
         self.results.append(round_data)
         self.history = self.results
@@ -672,11 +718,11 @@ class Environment:
     def _ensure_results_spill_path(self):
         if self._results_spill_path:
             return self._results_spill_path
-        spill_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'results', '_spill')
+        spill_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results", "_spill")
         os.makedirs(spill_dir, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        seed_val = getattr(parameters, 'SEED', 'noseed')
-        batch_name = getattr(parameters, 'BATCH_NAME', 'run')
+        seed_val = getattr(parameters, "SEED", "noseed")
+        batch_name = getattr(parameters, "BATCH_NAME", "run")
         self._results_spill_path = os.path.join(
             spill_dir,
             f"rounds_{batch_name}_seed{seed_val}_{stamp}.jsonl",
@@ -686,7 +732,7 @@ class Environment:
     @staticmethod
     def _slim_round_data_inplace(round_data):
         """Strip fat LLM text from an in-memory round after it has been spilled to disk."""
-        agents = round_data.get('agents') or {}
+        agents = round_data.get("agents") or {}
         for agent_data in agents.values():
             if not isinstance(agent_data, dict):
                 continue
@@ -694,32 +740,32 @@ class Environment:
                 if key not in agent_data:
                     continue
                 value = agent_data[key]
-                if key.endswith('_parser_meta') or key == 'punishment_justifications':
+                if key.endswith("_parser_meta") or key == "punishment_justifications":
                     agent_data[key] = {}
-                elif key.endswith('_facts_used'):
+                elif key.endswith("_facts_used"):
                     agent_data[key] = []
                 elif isinstance(value, str):
-                    agent_data[key] = (value[:120] + '...') if len(value) > 120 else value
-            belief = agent_data.get('belief_state')
+                    agent_data[key] = (value[:120] + "...") if len(value) > 120 else value
+            belief = agent_data.get("belief_state")
             if isinstance(belief, dict):
-                for text_key in ('institutional_strategy', 'observations'):
+                for text_key in ("institutional_strategy", "observations"):
                     text = belief.get(text_key)
                     if isinstance(text, str) and len(text) > 160:
-                        belief[text_key] = text[:160] + '...'
+                        belief[text_key] = text[:160] + "..."
 
     def _spill_round_and_slim(self, round_data):
         """Persist the full round JSON, then slim the in-RAM copy."""
         path = self._ensure_results_spill_path()
-        with open(path, 'a', encoding='utf-8') as handle:
+        with open(path, "a", encoding="utf-8") as handle:
             handle.write(json.dumps(round_data, ensure_ascii=False))
-            handle.write('\n')
+            handle.write("\n")
         self._slim_round_data_inplace(round_data)
         # agent.history may still hold old fat string refs via shallow feedback copies.
         for agent in self.agents:
-            slim_row = (round_data.get('agents') or {}).get(agent.agent_id)
+            slim_row = (round_data.get("agents") or {}).get(agent.agent_id)
             if isinstance(slim_row, dict):
                 feedback = dict(slim_row)
-                feedback['round_number'] = self.current_round
+                feedback["round_number"] = self.current_round
                 agent.history = [feedback]
 
     def _load_spilled_results(self):
@@ -727,7 +773,7 @@ class Environment:
         if not path or not os.path.exists(path):
             return None
         rounds = []
-        with open(path, 'r', encoding='utf-8') as handle:
+        with open(path, encoding="utf-8") as handle:
             for line in handle:
                 line = line.strip()
                 if line:
@@ -739,13 +785,13 @@ class Environment:
         Saves the simulation results to a timestamped JSON file inside a 'results/' subfolder.
         Prefer the on-disk spill (full text) when available so RAM can stay slim mid-run.
         """
-        results_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'results')
+        results_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results")
         os.makedirs(results_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        model_component = model_name.replace('/', '_').replace(':', '_')
-        batch_name = getattr(parameters, 'BATCH_NAME', 'run')
-        seed_val = getattr(parameters, 'SEED', 'noseed')
+        model_component = model_name.replace("/", "_").replace(":", "_")
+        batch_name = getattr(parameters, "BATCH_NAME", "run")
+        seed_val = getattr(parameters, "SEED", "noseed")
         filename = (
             f"simulation_{model_component}_{batch_name}_seed{seed_val}_{num_agents}agents"
             f"_{num_rounds}rounds_{timestamp}.json"
@@ -758,18 +804,16 @@ class Environment:
 
         # Attach late constitutional annotations that may exist only on slim in-RAM rows.
         if payload and self.results and len(payload) == len(self.results):
-            for spilled, live in zip(payload, self.results):
-                if 'constitutional_change' in live and 'constitutional_change' not in spilled:
-                    spilled['constitutional_change'] = live['constitutional_change']
+            for spilled, live in zip(payload, self.results, strict=False):
+                if "constitutional_change" in live and "constitutional_change" not in spilled:
+                    spilled["constitutional_change"] = live["constitutional_change"]
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=4)
 
         logger.info(f"Simulation results saved to '{filepath}'.")
         if self._results_spill_path and os.path.exists(self._results_spill_path):
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(self._results_spill_path)
-            except OSError:
-                pass
             self._results_spill_path = None
         gc.collect()

@@ -21,9 +21,8 @@ SCENARIOS = {
         "punishment_name": "negative token",
         "reward_name": "positive token",
         "stage_1_name": "Group Choice and Contribution to the Project",
-        "stage_2_name": "Assignment of Tokens (Only in SI)"
+        "stage_2_name": "Assignment of Tokens (Only in SI)",
     },
-    
     "ldf": {
         "game_name": "Global Climate Change Summit",
         "currency_name": "million USD",
@@ -36,9 +35,8 @@ SCENARIOS = {
         "punishment_name": "trade tariff penalty",
         "reward_name": "economic aid package",
         "stage_1_name": "Treaty Selection and Emissions Fund Contribution",
-        "stage_2_name": "Enforcement Actions (Only in Binding Treaty)"
+        "stage_2_name": "Enforcement Actions (Only in Binding Treaty)",
     },
-    
     "tax": {
         "game_name": "Corporate Tax Compliance Framework",
         "currency_name": "million euros",
@@ -51,9 +49,10 @@ SCENARIOS = {
         "punishment_name": "regulatory audit penalty",
         "reward_name": "tax-rebate endorsement",
         "stage_1_name": "Framework Selection and Tax Pool Declaration",
-        "stage_2_name": "Corporate Audits / Endorsements (Only in Strict Framework)"
-    }
+        "stage_2_name": "Corporate Audits / Endorsements (Only in Strict Framework)",
+    },
 }
+
 
 def get_scenario_config(scenario_name: str) -> dict:
     """

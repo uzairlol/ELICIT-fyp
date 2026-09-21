@@ -1,4 +1,4 @@
-﻿[build-system]
+[build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.backends.legacy:build"
 
@@ -45,6 +45,7 @@ where = ["src"]
 src = ["src"]
 target-version = "py311"
 line-length = 100
+exclude = ["docs"]
 
 [tool.ruff.lint]
 select = [
@@ -87,6 +88,7 @@ line-ending = "lf"
 python_version = "3.11"
 mypy_path = "src"
 explicit_package_bases = true
+exclude = ["docs"]
 
 warn_return_any = true
 warn_unused_configs = true
@@ -101,7 +103,6 @@ disallow_any_generics = false
 module = [
     "matplotlib.*",
     "wordcloud.*",
-    "backoff.*",
 ]
 ignore_missing_imports = true
 

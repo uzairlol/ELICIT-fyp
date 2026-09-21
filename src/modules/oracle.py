@@ -16,8 +16,8 @@ proposed rule change and estimates its effect on group social welfare based on:
   - Direction and magnitude of the proposed change
 
 This gives agents data-grounded context when voting, replacing pure LLM
-speculation with calculated signal. Note for research applications: this is 
-a synthetic environmental heuristic rather than an objective truth model or 
+speculation with calculated signal. Note for research applications: this is
+a synthetic environmental heuristic rather than an objective truth model or
 trained critic.
 
 Usage:
@@ -74,8 +74,8 @@ class Oracle:
 
         all_contribs = []
         for rnd in recent:
-            for agent_data in rnd.get('agents', {}).values():
-                all_contribs.append(agent_data.get('contribution', 0))
+            for agent_data in rnd.get("agents", {}).values():
+                all_contribs.append(agent_data.get("contribution", 0))
 
         n = len(all_contribs)
         avg_contrib = sum(all_contribs) / n if n > 0 else 0
@@ -92,16 +92,16 @@ class Oracle:
         # Recent avg cumulative payoff trend
         payoffs = []
         for rnd in recent:
-            for agent_data in rnd.get('agents', {}).values():
-                payoffs.append(agent_data.get('payoff', 0))
+            for agent_data in rnd.get("agents", {}).values():
+                payoffs.append(agent_data.get("payoff", 0))
         avg_payoff = sum(payoffs) / len(payoffs) if payoffs else 0
 
         return {
-            'avg_contrib': round(avg_contrib, 1),
-            'coop_rate': round(coop_rate, 3),
-            'freerider_rate': round(freerider_rate, 3),
-            'avg_payoff': round(avg_payoff, 1),
-            'n_observations': n,
+            "avg_contrib": round(avg_contrib, 1),
+            "coop_rate": round(coop_rate, 3),
+            "freerider_rate": round(freerider_rate, 3),
+            "avg_payoff": round(avg_payoff, 1),
+            "n_observations": n,
         }
 
     # ------------------------------------------------------------------
@@ -112,8 +112,8 @@ class Oracle:
         """
         Compute a welfare annotation string for one proposal.
         """
-        rule = proposal.get('rule', '')
-        new_val = proposal.get('new_value', None)
+        rule = proposal.get("rule", "")
+        new_val = proposal.get("new_value")
         old_val = getattr(parameters, rule, None)
 
         if old_val is None or new_val is None:
@@ -123,60 +123,61 @@ class Oracle:
             change_pct = float(new_val)
         else:
             change_pct = (new_val - old_val) / old_val
-        fr = stats['freerider_rate']
-        coop = stats['coop_rate']
+        fr = stats["freerider_rate"]
+        coop = stats["coop_rate"]
 
-        if rule == 'PUNISHMENT_EFFECT':
+        if rule == "PUNISHMENT_EFFECT":
             # Higher punishment helps when free-rider rate is high
             # Predicted gain = change_pct * freerider_rate * base_gain_factor
             predicted_welfare_pct = change_pct * fr * 100 * parameters.ORACLE_PUNISHMENT_WEIGHT
-            direction = "increase deterrence" if change_pct > 0 else "reduce punishment burden"
             rationale = (
-                f"Free-rider rate: {fr*100:.0f}%. "
+                f"Free-rider rate: {fr * 100:.0f}%. "
                 f"Harsher punishment helps more when free-riding is high. "
                 f"Predicted {'welfare gain' if predicted_welfare_pct > 0 else 'welfare cost'}: "
                 f"{predicted_welfare_pct:+.1f}%."
             )
 
-        elif rule == 'REWARD_EFFECT':
+        elif rule == "REWARD_EFFECT":
             # Rewards help when cooperation rate is already moderate (encourages more)
             predicted_welfare_pct = change_pct * coop * 100 * parameters.ORACLE_REWARD_WEIGHT
             rationale = (
-                f"Cooperation rate: {coop*100:.0f}%. "
+                f"Cooperation rate: {coop * 100:.0f}%. "
                 f"Rewards amplify already-cooperative behaviour. "
                 f"Predicted {'welfare gain' if predicted_welfare_pct > 0 else 'welfare cost'}: "
                 f"{predicted_welfare_pct:+.1f}%."
             )
 
-        elif rule == 'ENDOWMENT_STAGE_2':
+        elif rule == "ENDOWMENT_STAGE_2":
             # More budget = more punishment/reward capacity but also more redistribution cost
-            predicted_welfare_pct = change_pct * parameters.ORACLE_ENDOWMENT_SCALING  # Moderate flat scaling
+            predicted_welfare_pct = (
+                change_pct * parameters.ORACLE_ENDOWMENT_SCALING
+            )  # Moderate flat scaling
             rationale = (
                 f"Current avg round payoff: {stats['avg_payoff']:.1f} tokens. "
                 f"Larger Stage 2 budget gives more sanctioning capacity. "
                 f"Predicted redistribution effect: {predicted_welfare_pct:+.1f}%."
             )
 
-        elif rule == 'MAX_PUNISHMENT_TOKENS':
+        elif rule == "MAX_PUNISHMENT_TOKENS":
             # Cap on assignable tokens — mainly affects punishment intensity ceiling
             predicted_welfare_pct = change_pct * fr * parameters.ORACLE_MAX_TOKENS_WEIGHT
             rationale = (
-                f"Free-rider rate: {fr*100:.0f}%. "
+                f"Free-rider rate: {fr * 100:.0f}%. "
                 f"Raising the cap matters most when free-riding is high. "
                 f"Predicted effect on welfare: {predicted_welfare_pct:+.1f}%."
             )
 
         elif rule in {
-            'LDF_PAYOUT_DAMAGE_WEIGHT',
-            'LDF_MAX_COVERAGE',
-            'LDF_EQUITY_WEIGHT',
+            "LDF_PAYOUT_DAMAGE_WEIGHT",
+            "LDF_MAX_COVERAGE",
+            "LDF_EQUITY_WEIGHT",
         }:
             # Heuristic: LDF expansion helps most when cooperation is moderate+ and
             # free-riding is not extreme, because redistribution credibility improves resilience.
             resilience_signal = max(0.0, (coop - (fr * 0.5)))
             predicted_welfare_pct = change_pct * 100 * (8.0 + 20.0 * resilience_signal)
             rationale = (
-                f"Cooperation rate: {coop*100:.0f}%, free-rider rate: {fr*100:.0f}%. "
+                f"Cooperation rate: {coop * 100:.0f}%, free-rider rate: {fr * 100:.0f}%. "
                 f"This rule tunes climate-loss redistribution capacity. "
                 f"Predicted resilience impact: {predicted_welfare_pct:+.1f}%."
             )
@@ -184,6 +185,4 @@ class Oracle:
         else:
             return f"{rule} {old_val}→{new_val}: Oracle has no model for this rule."
 
-        return (
-            f"{rule} {old_val}→{new_val}: {rationale}"
-        )
+        return f"{rule} {old_val}→{new_val}: {rationale}"
