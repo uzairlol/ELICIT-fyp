@@ -24,6 +24,8 @@ LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for most agent decisi
 # Stage-2 allocations often mismatch prose vs numbers; allow more retries (no soft fallback).
 LLM_PUNISHMENT_MAX_ATTEMPTS = 5
 BELIEF_UPDATE_MAX_TOKENS = 256 # Compact belief-state JSON; keep well under slot budget
+REASONING_MIN_PREDICT = 1024    # Minimum prediction budget for reasoning models to prevent truncated <think>
+REASONING_MAX_PREDICT = 2048    # Upper ceiling on tokens for reasoning models
 LLM_MAX_CONCURRENCY = 2        # Thread-pool workers for institution/contribution/punishment/beliefs
 TOM_MAX_CONCURRENCY = 4        # Thread-pool workers for pairwise ToM audits only
 # Ollama runtime options forwarded on every request (native + OpenAI-compatible API).

@@ -180,10 +180,14 @@ class OllamaClient:
         Use Ollama's native HTTP API for reasoning models.
         """
         options = _ollama_runtime_options(max_tokens)
+        min_reasoning_tokens = int(getattr(parameters, 'REASONING_MIN_PREDICT', 1024))
+        max_reasoning_ceiling = int(getattr(parameters, 'REASONING_MAX_PREDICT', 2048))
+        # Ensure reasoning models have enough tokens for both <think> and the target JSON output
+        computed_predict = max(int(max_tokens), min_reasoning_tokens)
         options.update({
             "temperature": temperature,
             "top_p": top_p,
-            "num_predict": min(max_tokens, 768),
+            "num_predict": min(computed_predict, max_reasoning_ceiling),
         })
         payload = {
             "model": self.model_name,
