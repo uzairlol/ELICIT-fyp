@@ -23,7 +23,7 @@ ABLATION_NUM_ROUNDS = 20
 MAIN_NUM_ROUNDS = 30
 DEFAULT_NUM_AGENTS = 7
 DEFAULT_SCENARIO = "abstract"
-DEFAULT_MODEL = "llama3.1:8b"
+DEFAULT_MODEL = "qwen2.5-14b"
 
 SEEDS = MAIN_SEEDS[:]  # By default, track the main seeds for legacy loops
 

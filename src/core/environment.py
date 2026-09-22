@@ -148,14 +148,24 @@ class Environment:
             len(self.agents),
             max(1, int(getattr(parameters, "TOM_MAX_CONCURRENCY", parameters.LLM_MAX_CONCURRENCY))),
         )
+        client_max_inflight = max(
+            1,
+            int(
+                getattr(
+                    getattr(self.tom_module, "api_client", None),
+                    "max_concurrency",
+                    parameters.LLM_MAX_CONCURRENCY,
+                )
+            ),
+        )
         logger.info(
             "[ToM] Round %s audit starting: %s pairwise score(s), "
-            "executor_workers=%s, ollama_parallel=%s "
+            "executor_workers=%s, client_max_inflight=%s "
             "(general concurrency=%s).",
             round_number,
             expected_scores,
             tom_workers,
-            max(1, int(parameters.OLLAMA_NUM_PARALLEL)),
+            client_max_inflight,
             max(1, int(parameters.LLM_MAX_CONCURRENCY)),
         )
         incoming_scores: dict = {a.agent_id: [] for a in self.agents}

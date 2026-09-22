@@ -15,36 +15,44 @@ MIXED_AGENT_COUNTS = None  # Optional composition dict, e.g. {"LLM": 5, "Random"
 CURRENT_RUN = 0  # Progress counter for multi-run experiment scripts
 TOTAL_RUNS = 0  # Total planned runs for progress reporting
 
-# --- LLM Configuration (Local Ollama) ---
-LLM_MODEL = "llama3.1:8b"
-LLM_BASE_URL = "http://localhost:11434/v1"
-OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
+# --- LLM Configuration (vLLM backend) ---
+LLM_MODEL = "qwen2.5-14b"  # Must match the --served-model-name used to launch vLLM
+LLM_BASE_URL = "http://localhost:8000/v1"  # vLLM OpenAI-compatible endpoint
+LLM_BACKEND = "vllm"  # "vllm" (default) or "ollama" (legacy fallback)
+LLM_REQUEST_TIMEOUT_SECONDS = 300.0
 LLM_MAX_ATTEMPTS = 3  # Total transport attempts, including the first call
 LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for most agent decisions
 # Allow up to 3 attempts with failure repair before applying safety-net auto-fitting.
 LLM_PUNISHMENT_MAX_ATTEMPTS = 1
 BELIEF_UPDATE_MAX_TOKENS = 256  # Compact belief-state JSON; keep well under slot budget
 REASONING_MIN_PREDICT = (
-    1024  # Minimum prediction budget for reasoning models to prevent truncated <think>
+    1024  # Minimum prediction budget for reasoning models to prevent truncated  thinking
 )
 REASONING_MAX_PREDICT = 2048  # Upper ceiling on tokens for reasoning models
-LLM_MAX_CONCURRENCY = 2  # Thread-pool workers for institution/contribution/punishment/beliefs
-TOM_MAX_CONCURRENCY = 4  # Thread-pool workers for pairwise ToM audits only
-# Ollama runtime options forwarded on every request (native + OpenAI-compatible API).
-# num_gpu: model layers offloaded to GPU (Ollama option name is num_gpu).
-# num_ctx: KV-cache reservation per parallel slot — llama-server RAM scales with
-#          roughly OLLAMA_NUM_CTX * OLLAMA_NUM_PARALLEL. Keep this tight.
+
+# Python-side fan-out for each workload. Keep these <= the vLLM server's
+# --max-num-seqs (see scripts/serve_vllm*.sh) so concurrent requests are
+# served by vLLM continuous batching instead of queuing on the GPU.
+# The pairwise ToM audit is ~90% of all LLM calls, so it gets the most slots.
+LLM_MAX_CONCURRENCY = 8  # Thread-pool workers for institution/contribution/punishment/beliefs
+TOM_MAX_CONCURRENCY = 24  # Thread-pool workers for pairwise ToM audits only
+# Client semaphore ceiling shared by every backend. Must be >= the two above
+# and should equal the server max-num-seqs (never exceed it).
+VLLM_MAX_CONCURRENCY = 24
+
+# Legacy Ollama options; only used when LLM_BACKEND == "ollama".
+OLLAMA_REQUEST_TIMEOUT_SECONDS = LLM_REQUEST_TIMEOUT_SECONDS
 OLLAMA_NUM_GPU = -1
 OLLAMA_NUM_CTX = 4096
 # Parallel slots in the Ollama server process — set the same value when starting `ollama serve`.
-# Must be >= max(LLM_MAX_CONCURRENCY, TOM_MAX_CONCURRENCY) or the client semaphore will cap ToM.
 OLLAMA_NUM_PARALLEL = 4
 # How long the runner stays loaded between requests (Ollama keep_alive).
 OLLAMA_KEEP_ALIVE = "2m"
-OLLAMA_SOFT_RESET_EACH_ROUND = True  # Unload the model via API after each round
+# vLLM keeps the model resident; do not unload/reload it every round (slow).
+OLLAMA_SOFT_RESET_EACH_ROUND = False
 OLLAMA_SOFT_RESET_TIMEOUT_SECONDS = 30.0
 # After keep_alive=0, kill leftover Windows llama-server.exe if /api/ps is empty but RAM remains.
-OLLAMA_FORCE_KILL_RUNNER = True
+OLLAMA_FORCE_KILL_RUNNER = False
 # Write full prompts/responses to debug_logs/*.json (very large; leave off for long runs).
 DEBUG_LLM_IO = False
 # Keep full round JSON on disk and only slim numeric/text summaries in RAM.

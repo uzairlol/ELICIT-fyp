@@ -154,28 +154,33 @@ cd ELICIT-fyp
 pip install -r requirements.txt
 ```
 
-### 2. LLM Setup (Ollama)
+### 2. LLM Setup (vLLM)
 
-ELICIT runs against local LLM models using [Ollama](https://ollama.ai/).
+ELICIT runs against a local LLM served by [vLLM](https://docs.vllm.ai/) via its OpenAI-compatible API (a legacy Ollama backend is still available via `LLM_BACKEND = "ollama"` in `src/core/parameters.py`).
 
-Pull the default base model:
+Serve the 9GB 4-bit Qwen 2.5 14B on Kaggle T4 x2 (KV-cache sized so VRAM never spills to RAM):
 
 ```bash
-ollama pull llama3.1:8b
+bash scripts/serve_vllm.gptq_tp2.sh   # both T4s (recommended, ~5x vs Ollama)
+# or, for your existing 9GB GGUF model:
+bash scripts/serve_vllm.gguf.sh       # single T4 (drop-in for qwen2.5:14b Q4_K_M)
 ```
 
-Recommended Workstation Server Environment (e.g. NVIDIA GPU):
+Windows workstation: `powershell -File scripts/serve_vllm.windows.ps1`.
 
-```powershell
-$env:OLLAMA_NUM_PARALLEL = "1"
-ollama serve
+Tuning knobs live in `src/core/parameters.py`:
+- `LLM_MAX_CONCURRENCY` / `TOM_MAX_CONCURRENCY` — Python-side fan-out for the contribution/belief and the pairwise ToM audits (ToM is ~90% of all LLM calls).
+- Keep both at or below the server's `--max-num-seqs` so requests batch on the GPU instead of queuing. `--swap-space 0` in the scripts guarantees the KV cache stays in VRAM.
+
+```bash
+# Pull the model used by the serve scripts (GGUF variant)
+huggingface-cli download Qwen/Qwen2.5-14B-Instruct-GGUF \
+    Qwen2.5-14B-Instruct-Q4_K_M.gguf --local-dir ~/models
 ```
-
-*Note: You can tune model hardware acceleration settings in `src/core/parameters.py` (`OLLAMA_NUM_GPU`, `OLLAMA_NUM_CTX`, `OLLAMA_NUM_PARALLEL`).*
 
 ### 3. Running a Single Simulation
 
-Run a default simulation run with Llama 3.1:
+Run a default simulation run with the served Qwen model:
 
 ```bash
 python src/main.py
@@ -184,8 +189,8 @@ python src/main.py
 Common Command Line Arguments:
 
 ```bash
-# Custom LLM model
-python src/main.py --model-name llama3.1:8b
+# Custom LLM model (must match the vLLM --served-model-name)
+python src/main.py --model-name qwen2.5-14b
 
 # Enable Climate Shocks & Loss and Damage Fund (LDF)
 python src/main.py --scenario ldf --enable-climate-shocks --enable-ldf

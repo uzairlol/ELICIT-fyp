@@ -10,7 +10,7 @@ import random
 from core import parameters
 from core.agent import Agent
 from core.environment import Environment
-from llm.ollama_client import OllamaClient
+from llm import create_llm_client
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ def main():
     setup_logging()
 
     parser = argparse.ArgumentParser(
-        description="Run the public goods game simulation with local Ollama (Llama 3.1 8b)."
+        description="Run the public goods game simulation with local vLLM (Qwen 2.5 14b)."
     )
     parser.add_argument(
         "--num-rounds",
@@ -172,8 +172,8 @@ def main():
         logger.info(f"Mixed Agent Counts: {parameters.MIXED_AGENT_COUNTS}")
     logger.info("-------------------------------")
 
-    # Initialize the local Ollama client
-    api_client = OllamaClient(model_name=parameters.LLM_MODEL, base_url=parameters.LLM_BASE_URL)
+    # Initialize the LLM client (vLLM by default; Ollama via LLM_BACKEND=ollama)
+    api_client = create_llm_client()
 
     # Initialize agents (fresh weights every run for reproducibility)
     agents = []
