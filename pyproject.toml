@@ -1,6 +1,8 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+# setuptools.backends.legacy was removed in recent setuptools; build_meta is
+# the stable, long-supported backend for `pip install -e ".[dev]"` in CI.
+build-backend = "setuptools.build_meta"
 
 # ---------------------------------------------------------------------------
 # Project metadata
