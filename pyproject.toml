@@ -85,7 +85,10 @@ line-ending = "lf"
 # Mypy - static type checking
 # ---------------------------------------------------------------------------
 [tool.mypy]
-python_version = "3.11"
+# Type-check against 3.12: numpy>=2.4 bundles .pyi stubs that use Python
+# 3.12-only `type[...]` syntax and cannot be parsed at python_version 3.11.
+# Requires-python stays >=3.11; the source itself is 3.11-compatible.
+python_version = "3.12"
 mypy_path = "src"
 explicit_package_bases = true
 exclude = ["docs"]

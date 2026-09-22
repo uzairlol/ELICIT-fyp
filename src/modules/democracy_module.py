@@ -207,8 +207,12 @@ class DemocracyModule:
         rule = proposal.get("rule")
         new_val = proposal.get("new_value")
 
-        # Only allow whitelisted parameters
-        if rule not in get_allowed_democracy_params():
+        # Only allow whitelisted parameters (rule must be a string for attr lookups)
+        if not isinstance(rule, str) or rule not in get_allowed_democracy_params():
+            return None
+
+        # Only numeric values (or numeric strings) may be proposed
+        if not isinstance(new_val, (int, float, str)) or isinstance(new_val, bool):
             return None
 
         if not hasattr(parameters, rule):
