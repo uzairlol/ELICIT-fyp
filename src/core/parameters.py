@@ -22,7 +22,7 @@ OLLAMA_REQUEST_TIMEOUT_SECONDS = 300.0
 LLM_MAX_ATTEMPTS = 3  # Total transport attempts, including the first call
 LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for most agent decisions
 # Allow up to 3 attempts with failure repair before applying safety-net auto-fitting.
-LLM_PUNISHMENT_MAX_ATTEMPTS = 3
+LLM_PUNISHMENT_MAX_ATTEMPTS = 1
 BELIEF_UPDATE_MAX_TOKENS = 256  # Compact belief-state JSON; keep well under slot budget
 REASONING_MIN_PREDICT = (
     1024  # Minimum prediction budget for reasoning models to prevent truncated <think>
