@@ -170,11 +170,11 @@ Windows workstation: `powershell -File scripts/serve_vllm.windows.ps1`.
 
 Tuning knobs live in `src/core/parameters.py`:
 - `LLM_MAX_CONCURRENCY` / `TOM_MAX_CONCURRENCY` — Python-side fan-out for the contribution/belief and the pairwise ToM audits (ToM is ~90% of all LLM calls).
-- Keep both at or below the server's `--max-num-seqs` so requests batch on the GPU instead of queuing. `--swap-space 0` in the scripts guarantees the KV cache stays in VRAM.
+- Keep both at or below the server's `--max-num-seqs` so requests batch on the GPU instead of queuing. KV spill to CPU RAM is off by default in current vLLM, so the KV cache stays in VRAM.
 
 ```bash
-# Pull the model used by the serve scripts (GGUF variant)
-huggingface-cli download Qwen/Qwen2.5-14B-Instruct-GGUF \
+# Pull the model used by the serve scripts (GGUF variant, single-file Q4_K_M)
+huggingface-cli download bartowski/Qwen2.5-14B-Instruct-GGUF \
     Qwen2.5-14B-Instruct-Q4_K_M.gguf --local-dir ~/models
 ```
 

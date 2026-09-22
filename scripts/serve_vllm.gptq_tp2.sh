@@ -14,9 +14,10 @@
 #   --max-num-seqs 32 with a typical mix (~400-1,800 tokens/call) needs
 #     ~32 * 1,200 * 192 KiB = ~7.2 GiB/GPU < 9.4 GiB. No spill, no preemption.
 #   Worst-case burst (all 32 at 8192 tokens) exceeds the pool, in which case
-#   vLLM preempts/recomputes short prefills -- it NEVER drops KV to CPU RAM.
+#   vLLM preempts/recomputes short prefills -- it NEVER drops KV to CPU RAM
+#   (swap/CPU-offload default is off in current vLLM, and the flag that used
+#   to control it, --swap-space, has been removed).
 #
-# --swap-space 0 is the anti-"spill to RAM" guarantee: KV cache stays in VRAM.
 # --served-model-name must match parameters.LLM_MODEL ("qwen2.5-14b").
 #
 # ALTERNATIVE: if you see AWQ prefer this repo instead of GPTQ:
@@ -25,14 +26,13 @@
 
 set -e
 
-python -m vllm.entrypoints.openai.api_server \
+vllm serve \
   --model "Qwen/Qwen2.5-14B-Instruct-GPTQ-Int4" \
   --served-model-name "qwen2.5-14b" \
   --tensor-parallel-size 2 \
   --max-model-len 8192 \
   --max-num-seqs 32 \
   --gpu-memory-utilization 0.90 \
-  --swap-space 0 \
   --host 0.0.0.0 \
   --port 8000 \
   --enable-prefix-caching
