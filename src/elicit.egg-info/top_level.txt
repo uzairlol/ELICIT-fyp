@@ -1,0 +1,9 @@
+analysis
+core
+debug_logs
+kaggle
+llm
+modules
+parsing
+prompts
+tests
