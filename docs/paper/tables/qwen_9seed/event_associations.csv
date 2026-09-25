@@ -1,0 +1,25 @@
+event,role,outcome,method,n_runs,n_cells_total,n_exposed_total,n_unexposed_total,mean_difference,ci_lower,ci_upper,n_positive_run_differences
+Low incoming consistency event (peer mean <4),all,intensity,within-seed-round-role cell difference; run-level bootstrap,9,95,143,1098,0.017948675816384083,-0.03406542741930173,0.06212510646619269,6
+Low incoming consistency event (peer mean <4),all,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,95,143,1098,0.0030293780293780305,-0.009559884559884557,0.018648018648018648,1
+Low incoming consistency event (peer mean <4),developed,intensity,within-seed-round-role cell difference; run-level bootstrap,9,37,46,383,0.11069399432116611,-0.042020934040435845,0.33239833715367473,6
+Low incoming consistency event (peer mean <4),developed,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,37,46,383,-0.019781144781144778,-0.05934343434343434,0.0,0
+Low incoming consistency event (peer mean <4),developing,intensity,within-seed-round-role cell difference; run-level bootstrap,9,58,97,715,-0.009909960974036743,-0.05247055261003261,0.02865377060725853,3
+Low incoming consistency event (peer mean <4),developing,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,58,97,715,0.016856600189933527,0.0,0.041310541310541314,2
+Possible visible gossip line about agent,all,intensity,within-seed-round-role cell difference; run-level bootstrap,9,98,976,277,-0.023140752418372268,-0.09431716873196888,0.043266166374377725,3
+Possible visible gossip line about agent,all,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,98,976,277,0.06622240927796483,0.02575757575757576,0.11225443923360588,6
+Possible visible gossip line about agent,developed,intensity,within-seed-round-role cell difference; run-level bootstrap,9,45,393,118,-0.05172331833887285,-0.14931124132309817,0.03492142207895252,4
+Possible visible gossip line about agent,developed,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,45,393,118,0.07445216049382716,0.029513888888888888,0.12420524691358024,6
+Possible visible gossip line about agent,developing,intensity,within-seed-round-role cell difference; run-level bootstrap,9,53,583,159,0.0035074529201262077,-0.08072531117957113,0.09733423878675862,4
+Possible visible gossip line about agent,developing,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,53,583,159,0.05583847736625515,0.017361111111111112,0.10146604938271604,5
+Guaranteed visible gossip line about agent,all,intensity,within-seed-round-role cell difference; run-level bootstrap,9,43,46,510,0.06124608303554938,-0.0023107067088951423,0.1330112852832053,4
+Guaranteed visible gossip line about agent,all,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,43,46,510,0.027458960792294127,0.003527336860670194,0.058336725003391675,3
+Guaranteed visible gossip line about agent,developed,intensity,within-seed-round-role cell difference; run-level bootstrap,6,19,21,199,0.09484138903137151,0.01136114752904468,0.18502410886197773,4
+Guaranteed visible gossip line about agent,developed,positive_share,within-seed-round-role cell difference; run-level bootstrap,6,19,21,199,0.009259259259259259,0.0,0.027777777777777776,1
+Guaranteed visible gossip line about agent,developing,intensity,within-seed-round-role cell difference; run-level bootstrap,9,24,25,311,0.04254231586599612,-0.02653393230279047,0.12223773410036332,5
+Guaranteed visible gossip line about agent,developing,positive_share,within-seed-round-role cell difference; run-level bootstrap,9,24,25,311,0.039316239316239315,0.0,0.09230769230769231,2
+Possible bulletin receipt,all,intensity,within-seed-round-role cell difference; run-level bootstrap,0,0,0,0,,,,0
+Possible bulletin receipt,all,positive_share,within-seed-round-role cell difference; run-level bootstrap,0,0,0,0,,,,0
+Possible bulletin receipt,developed,intensity,within-seed-round-role cell difference; run-level bootstrap,0,0,0,0,,,,0
+Possible bulletin receipt,developed,positive_share,within-seed-round-role cell difference; run-level bootstrap,0,0,0,0,,,,0
+Possible bulletin receipt,developing,intensity,within-seed-round-role cell difference; run-level bootstrap,0,0,0,0,,,,0
+Possible bulletin receipt,developing,positive_share,within-seed-round-role cell difference; run-level bootstrap,0,0,0,0,,,,0

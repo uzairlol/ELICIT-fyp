@@ -1,0 +1,6 @@
+rule_family,direction,winner_sessions,unique_seeds,mean_new_value
+ldf,increase,6,4,0.6833333333333332
+punishment,decrease,8,6,2.75
+punishment,increase,8,7,4.5
+reward,increase,7,5,2.7142857142857144
+subsidy,increase,25,9,1.1239999999999999

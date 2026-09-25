@@ -1,0 +1,3 @@
+transition,n_transition_observations,n_runs,pooled_positive_rate,mean_run_level_rate,ci_lower,ci_upper,n_seeds_all_positive,n_seeds_not_all_positive
+positive_after_positive,6259,9,0.999840230068701,0.9998375568551007,0.9995126705653021,1.0,8,1
+positive_after_zero,296,9,0.6013513513513513,0.636098109130931,0.5442658250901005,0.7288916113546868,0,9

@@ -1,7 +1,14 @@
-# Python caches
+# Python and tooling caches
 **/__pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+*.egg-info/
+.coverage
+htmlcov/
 
 # Virtual environments
 .venv/
@@ -31,6 +38,10 @@ assets/literature/
 # Ad-hoc summary CSVs
 *_summary.csv
 *_dynamics.csv
+
+# Qwen manuscript tables are paper deliverables, not ad-hoc generated summaries.
+!docs/paper/tables/qwen_9seed/
+!docs/paper/tables/qwen_9seed/**
 
 .VSCodeCounter/
 .vscode/
