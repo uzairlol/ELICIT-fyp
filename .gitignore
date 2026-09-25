@@ -26,9 +26,6 @@ analysis_outputs/
 
 # Legacy plot output folder (interactive plot_results.py used to write here)
 figures/
-# Keep manuscript figures tracked
-!docs/paper/figures/
-!docs/paper/figures/**
 
 # Asset and LaTeX artifacts
 assets/
@@ -39,9 +36,16 @@ assets/literature/
 *_summary.csv
 *_dynamics.csv
 
-# Qwen manuscript tables are paper deliverables, not ad-hoc generated summaries.
-!docs/paper/tables/qwen_9seed/
-!docs/paper/tables/qwen_9seed/**
+# Manuscript is local-only. Reports and writing instructions remain tracked.
+docs/paper/main.tex
+docs/paper/main.pdf
+docs/paper/macros.tex
+docs/paper/sections/
+docs/paper/figures/
+docs/paper/tables/
+docs/paper/bib/
+docs/paper/scripts/
+docs/paper/README.md
 
 .VSCodeCounter/
 .vscode/
