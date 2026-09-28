@@ -25,10 +25,9 @@ LLM_DECISION_MAX_ATTEMPTS = 2  # Total send+parse attempts for most agent decisi
 # Allow up to 3 attempts with failure repair before applying safety-net auto-fitting.
 LLM_PUNISHMENT_MAX_ATTEMPTS = 1
 BELIEF_UPDATE_MAX_TOKENS = 256  # Compact belief-state JSON; keep well under slot budget
-REASONING_MIN_PREDICT = (
-    1024  # Minimum prediction budget for reasoning models to prevent truncated  thinking
-)
-REASONING_MAX_PREDICT = 2048  # Upper ceiling on tokens for reasoning models
+# The reasoning token cap (previously REASONING_MIN_PREDICT / REASONING_MAX_PREDICT)
+# has been removed. Clients no longer send max_tokens / num_predict, so the backend
+# derives the output budget from the context window instead of clamping it.
 
 # Python-side fan-out for each workload. Keep these <= the vLLM server's
 # --max-num-seqs (see scripts/serve_vllm*.sh) so concurrent requests are

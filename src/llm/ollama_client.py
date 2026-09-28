@@ -21,12 +21,11 @@ def _is_reasoning_model(model_name):
     return "deepseek-r1" in model_name or "reasoning" in model_name
 
 
-def _ollama_runtime_options(max_tokens):
+def _ollama_runtime_options():
     """Build Ollama option dict shared across HTTP and OpenAI-compatible calls."""
     return {
         "num_gpu": int(getattr(parameters, "OLLAMA_NUM_GPU", 1)),
         "num_ctx": int(getattr(parameters, "OLLAMA_NUM_CTX", 4096)),
-        "num_predict": int(max_tokens),
         "seed": int(getattr(parameters, "SEED", 0)),
     }
 
@@ -145,13 +144,12 @@ class OllamaClient:
                 create_args = {
                     "model": self.model_name,
                     "messages": messages,
-                    "max_tokens": max_tokens,
                     "temperature": temperature,
                     "top_p": top_p,
                     "n": 1,
                     "seed": parameters.SEED,
                     "extra_body": {
-                        "options": _ollama_runtime_options(max_tokens),
+                        "options": _ollama_runtime_options(),
                         # Prevents llama-server from staying loaded forever between calls.
                         "keep_alive": _ollama_keep_alive(),
                     },
@@ -188,16 +186,13 @@ class OllamaClient:
         """
         Use Ollama's native HTTP API for reasoning models.
         """
-        options = _ollama_runtime_options(max_tokens)
-        min_reasoning_tokens = int(getattr(parameters, "REASONING_MIN_PREDICT", 1024))
-        max_reasoning_ceiling = int(getattr(parameters, "REASONING_MAX_PREDICT", 2048))
-        # Ensure reasoning models have enough tokens for both <think> and the target JSON output
-        computed_predict = max(int(max_tokens), min_reasoning_tokens)
+        options = _ollama_runtime_options()
+        # No num_predict: the reasoning token cap is removed, so the model is
+        # free to think until it emits a stop token.
         options.update(
             {
                 "temperature": temperature,
                 "top_p": top_p,
-                "num_predict": min(computed_predict, max_reasoning_ceiling),
             }
         )
         payload = {

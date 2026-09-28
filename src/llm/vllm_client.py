@@ -129,7 +129,9 @@ class VLLMClient:
                 create_args = {
                     "model": self.model_name,
                     "messages": messages,
-                    "max_tokens": int(max_tokens),
+                    # max_tokens is deliberately omitted: vLLM then derives the
+                    # budget as min(max_model_len - prompt_len, ...) via
+                    # get_max_tokens(), so reasoning is never truncated.
                     "temperature": temperature,
                     "top_p": top_p,
                     "n": 1,

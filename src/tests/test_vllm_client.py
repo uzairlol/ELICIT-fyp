@@ -69,7 +69,9 @@ def test_send_request_uses_standard_openai_args(client):
     captured = completions.captured
     assert captured is not None
     assert captured["model"] == "qwen2.5-14b"
-    assert captured["max_tokens"] == 96
+    # The reasoning token cap was removed: max_tokens is deliberately not sent,
+    # so vLLM derives the budget as min(max_model_len - prompt_len, ...).
+    assert "max_tokens" not in captured
     assert captured["temperature"] == 0.3
     assert captured["seed"] == 7
     assert captured["response_format"] == {"type": "json_object"}
