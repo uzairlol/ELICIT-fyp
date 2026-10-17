@@ -103,6 +103,7 @@ def _cell_to_config(cell: dict[str, Any]) -> dict[str, Any]:
     if cell.get("seed") is not None:
         config.setdefault("parameters", {})["SEED"] = int(cell["seed"])
     config["preset"] = cell.get("preset")
+    config["seed_index"] = cell.get("seed_index")
     return config
 
 
@@ -345,6 +346,16 @@ def cmd_grid(args: argparse.Namespace) -> int:
                 "prompt_variant": c["parameters"].get("PROMPT_VARIANT"),
                 "governance": c["parameters"].get("LDF_GOVERNANCE_MODE"),
                 "beta": c["parameters"].get("PUBLIC_GOOD_MULTIPLIER"),
+                # Cost drivers. A scheduler that has to guess these gets the
+                # session budget wrong in one direction or the other.
+                "agents": c["parameters"].get("NUM_AGENTS"),
+                "rounds": c["parameters"].get("NUM_ROUNDS"),
+                "tom": c["parameters"].get("TOM_ENABLED"),
+                # The runnable coordinates. A cell's *name* is not its preset:
+                # "arm_a_p0_qwen_s1" is preset "a_qwen_p0", seed 1, and the name
+                # cannot be split back into that reliably.
+                "preset": c.get("preset"),
+                "seed_index": c.get("seed_index"),
             }
             for c in configs
         ]
@@ -378,24 +389,82 @@ def cmd_grid(args: argparse.Namespace) -> int:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
-    """Preflight: the check to run before every compute session."""
+    """Preflight: the check to run before every compute session.
+
+    With --preset/--config the named cell is applied to ``parameters`` first, so
+    the checks describe the cell that is about to run. Without one they describe
+    the module defaults, which is only meaningful for a no-override cell: a grid
+    cell's seed vector and chat template live in its config, not in the defaults.
+    """
     from core import parameters
     from core.governance import GovernanceMode
     from core.seeding import validate_seed_vector
     from prompts.prompt_variants import active_variant, variant_hash
 
     findings: list[dict[str, Any]] = []
+    cell: dict[str, Any] | None = None
+    declared_governance = ""
+
+    if args.preset or args.config:
+        if args.preset:
+            expanded = expand_preset(args.preset)
+            index = int(args.seed_index)
+            if not 1 <= index <= len(expanded):
+                raise ConfigError(
+                    f"preset {args.preset!r} has {len(expanded)} seeds; "
+                    f"--seed-index {index} is out of range"
+                )
+            raw_cell = expanded[index - 1]
+            # Read the intent off the raw cell: validate_config() restructures
+            # `overrides`, so the declared mode is not readable afterwards.
+            declared_governance = str(
+                (raw_cell.get("overrides") or {}).get("LDF_GOVERNANCE_MODE") or ""
+            ).lower()
+            cell = _cell_to_config(_apply_set_overrides(raw_cell, args.set))
+        else:
+            raw = load_config_file(args.config)
+            raw["overrides"] = {
+                **dict(raw.get("overrides") or {}),
+                **((args.set and _parse_set(args.set)) or {}),
+            }
+            declared_governance = str(raw["overrides"].get("LDF_GOVERNANCE_MODE") or "").lower()
+            cell = validate_config(raw)
+            cell["seed_vector"] = cell.get("seed_vector") or raw.get("seed_vector")
+        # Apply without running: this is a preflight, not a simulation.
+        from cli.runner import prepare_run
+
+        prepare_run(cell, strict=not args.lenient)
 
     def check(name: str, ok: bool, detail: str = "") -> None:
         findings.append({"check": name, "ok": bool(ok), "detail": detail})
 
-    # 1. Governance default-off: the single failure that silently invalidates
-    #    the most work.
-    check(
-        "governance_default_off",
-        GovernanceMode().level == "G0",
-        f"LDF_GOVERNANCE_MODE={parameters.LDF_GOVERNANCE_MODE} -> {GovernanceMode().level}",
-    )
+    # 1. Governance matches what the cell intends. The dangerous failure is
+    #    governance silently ON for a cell that should have had it off, so with
+    #    no cell loaded this stays the "defaults are G0" check. With a cell
+    #    loaded, Arm D cells are *supposed* to run at G1/G2/G3/G3c, and the
+    #    check becomes "the live level is the one this cell declares".
+    live_level = GovernanceMode().level
+    if cell is None:
+        check(
+            "governance_default_off",
+            live_level == "G0",
+            f"LDF_GOVERNANCE_MODE={parameters.LDF_GOVERNANCE_MODE} -> {live_level}",
+        )
+    else:
+        expected_arm = str(cell.get("arm") or "").upper()
+        if expected_arm == "D" or declared_governance not in ("", "fixed", "g0"):
+            check(
+                "governance_matches_cell",
+                declared_governance == str(parameters.LDF_GOVERNANCE_MODE).lower(),
+                f"cell declares LDF_GOVERNANCE_MODE={declared_governance!r}, "
+                f"live is {parameters.LDF_GOVERNANCE_MODE!r} -> {live_level}",
+            )
+        else:
+            check(
+                "governance_off_for_non_governance_arm",
+                live_level == "G0",
+                f"arm {expected_arm} should be G0, live is {live_level}",
+            )
 
     # 2. Prompt variant resolves and hashes.
     variant = active_variant()
@@ -458,7 +527,13 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         check("served_model_name_matches", True, parameters.LLM_MODEL)
 
     ok = all(f["ok"] for f in findings)
-    _print({"ok": ok, "findings": findings})
+    _print(
+        {
+            "ok": ok,
+            "cell": cell.get("name") if cell else None,
+            "findings": findings,
+        }
+    )
     return 0 if ok else 1
 
 
@@ -822,6 +897,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     doctor = sub.add_parser("doctor", help="Preflight before a compute session.")
     doctor.add_argument("--model", help="Served model name the session was started with.")
+    doctor.add_argument(
+        "--preset", help="Validate this preset's cell instead of the module defaults."
+    )
+    doctor.add_argument("--config", help="Validate this config file's cell.")
+    doctor.add_argument(
+        "--seed-index", type=int, default=1, help="Seed index within the preset (1-based)."
+    )
+    doctor.add_argument("--set", action="append", metavar="PARAM=VALUE", help="Extra override.")
+    doctor.add_argument("--lenient", action="store_true", help="Do not fail on unread parameters.")
     doctor.set_defaults(func=cmd_doctor)
 
     ls_parser = sub.add_parser("ls", help="Tabulate completed cells.")

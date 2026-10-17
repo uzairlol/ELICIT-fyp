@@ -433,6 +433,84 @@ class TestCliCommands:
         detail = next(f["detail"] for f in payload["findings"] if f["check"] == "mcpr_reported")
         assert "MCPR=" in detail
 
+    def test_doctor_on_a_cell_passes_the_checks_the_defaults_fail(self):
+        """`doctor --preset` must describe the cell, not the module defaults.
+
+        The defaults carry no seed vector and a server-side chat template, so a
+        bare `doctor` reports two failures that say nothing about the run that is
+        about to start. Checking a real cell has to clear both.
+        """
+        _code, bare = run_cli("doctor")
+        bare_checks = {f["check"]: f["ok"] for f in bare["findings"]}
+        assert bare_checks["seed_vector_complete"] is False
+        assert bare_checks["chat_template_fixed_for_parity"] is False
+
+        _code, payload = run_cli("doctor", "--preset", "a_qwen_p0", "--seed-index", "1")
+        assert payload["cell"] == "arm_a_p0_qwen_s1"
+        checks = {f["check"]: f["ok"] for f in payload["findings"]}
+        assert checks["seed_vector_complete"] is True
+        assert checks["chat_template_fixed_for_parity"] is True
+
+    def test_doctor_accepts_the_governance_arm_intends(self):
+        """Arm D runs at G1/G2/G3/G3c on purpose; that is not a failure."""
+        _code, payload = run_cli("doctor", "--preset", "d_g3c_qwen", "--seed-index", "1")
+        checks = {f["check"]: f["ok"] for f in payload["findings"]}
+        assert "governance_default_off" not in checks
+        assert checks["governance_matches_cell"] is True
+        assert any(
+            "G3" in f["detail"]
+            for f in payload["findings"]
+            if f["check"] == "governance_matches_cell"
+        )
+
+    def test_doctor_still_catches_governance_that_was_not_intended(self):
+        """The governance check must have teeth, not just accept whatever it sees."""
+        original = parameters.LDF_GOVERNANCE_MODE
+        try:
+            _code, payload = run_cli(
+                "doctor",
+                "--preset",
+                "a_qwen_p0",
+                "--seed-index",
+                "1",
+                "--set",
+                "LDF_GOVERNANCE_MODE=full",
+            )
+            checks = {f["check"]: f["ok"] for f in payload["findings"]}
+            assert checks["governance_off_for_non_governance_arm"] is False
+        finally:
+            parameters.LDF_GOVERNANCE_MODE = original
+
+    def test_grid_preview_carries_runnable_coordinates(self):
+        """A caller must be able to run a previewed cell without parsing its name.
+
+        `arm_a_p0_qwen_s1` is preset `a_qwen_p0` at seed 1; deriving the preset by
+        splitting the name on "_s" yields "arm_a_p0_qwen", which does not exist.
+        """
+        _code, payload = run_cli("grid", "show", "--grid", "configs/grid_arm_a.yaml", "--arm", "A")
+        cell = payload["cells_preview"][0]
+        assert cell["name"] == "arm_a_p0_qwen_s1"
+        assert cell["preset"] == "a_qwen_p0"
+        assert cell["seed_index"] == 1
+
+        code, _run = run_cli(
+            "run",
+            "--preset",
+            str(cell["preset"]),
+            "--seed-index",
+            str(cell["seed_index"]),
+            "--dry-run",
+        )
+        assert code == 0
+
+    def test_grid_preview_reports_the_cost_drivers(self):
+        """Scheduling a session needs agents/rounds/ToM, not just a condition label."""
+        _code, payload = run_cli("grid", "show", "--grid", "configs/grid_arm_c.yaml", "--arm", "C")
+        cell = payload["cells_preview"][0]
+        assert cell["agents"] == 14
+        assert cell["rounds"] == 30
+        assert cell["tom"] is False
+
     def test_export_writes_a_runnable_bundle_per_cell(self, tmp_path):
         code, payload = run_cli(
             "export",
