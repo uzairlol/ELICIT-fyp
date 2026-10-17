@@ -84,9 +84,12 @@ def test_send_request_uses_standard_openai_args(client):
     # be shown to be independent of the Python-side draw.
     assert captured["seed"] == parameters.LLM_SEED
     assert captured["response_format"] == {"type": "json_object"}
-    assert "extra_body" not in captured
     assert "options" not in captured
     assert "keep_alive" not in captured
+    assert captured["extra_body"] == {
+        "min_p": parameters.LLM_MIN_P,
+        "repetition_penalty": parameters.LLM_REPETITION_PENALTY,
+    }
     assert captured["messages"][0]["content"] == "Hello"
 
 

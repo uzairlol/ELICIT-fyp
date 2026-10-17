@@ -140,13 +140,20 @@ class VLLMClient:
                     # get_max_tokens(), so reasoning is never truncated.
                     "temperature": temperature,
                     "top_p": top_p,
-                    "min_p": float(getattr(parameters, "LLM_MIN_P", 0.0)),
-                    "repetition_penalty": float(getattr(parameters, "LLM_REPETITION_PENALTY", 1.0)),
                     "n": 1,
                     # Seed the sampler explicitly. Historically this was
                     # `parameters.SEED`, which tied sampling to the Python RNG
                     # and made "nine seeds" indistinguishable from one draw.
                     "seed": int(getattr(parameters, "LLM_SEED", parameters.SEED)),
+                }
+                # These sampler fields are vLLM extensions rather than
+                # OpenAI-compatible top-level parameters. The OpenAI SDK
+                # forwards them through extra_body without rejecting them.
+                create_args["extra_body"] = {
+                    "min_p": float(getattr(parameters, "LLM_MIN_P", 0.0)),
+                    "repetition_penalty": float(
+                        getattr(parameters, "LLM_REPETITION_PENALTY", 1.0)
+                    ),
                 }
 
                 if _use_fixed_template():
