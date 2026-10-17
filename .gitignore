@@ -36,6 +36,9 @@ assets/literature/
 *_summary.csv
 *_dynamics.csv
 
+# Local planning documents (strategy, application prep, experiment grids)
+docs/planning/
+
 # Manuscript is local-only. Reports and writing instructions remain tracked.
 docs/paper/main.tex
 docs/paper/main.pdf
