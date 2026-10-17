@@ -17,6 +17,9 @@ env/
 
 # Runtime / debug artifacts
 src/debug_logs/
+# Deliberation traces (core/trace.py writes these here). Must match
+# trace.default_trace_dir() or the "gitignored sidecar" is not ignored.
+debug_logs/
 *.log
 debug.log
 results/_spill/
@@ -30,6 +33,12 @@ results/resolved_config.json
 
 # Generated analysis outputs (plots, metrics CSVs, test runs)
 analysis_outputs/
+
+# Simulation results. Each cell is ~5 MB, a grid is ~800 MB, and the files are
+# reproducible from a config plus a seed vector. Kept out of the repository so the
+# grid cannot bloat it; the analysis pipeline reads them from results/ locally.
+results/
+!results/.gitkeep
 
 # Legacy plot output folder (interactive plot_results.py used to write here)
 figures/

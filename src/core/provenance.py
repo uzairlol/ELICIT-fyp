@@ -19,6 +19,7 @@ import sys
 from typing import Any
 
 from core import parameters
+from core.seeding import stream_usage_report
 from llm.chat_template import template_fingerprint
 from prompts.prompt_variants import all_variant_hashes, variant_hash
 
@@ -40,13 +41,93 @@ def persona_sampling_profile() -> dict[str, dict[str, float]]:
     }
 
 
+def checkpoint_identity(checkpoint: str | None = None) -> dict[str, Any]:
+    """Identify the exact weights a run served, not just their repo name.
+
+    A Hub alias like ``Qwen/Qwen2.5-14B-Instruct-GPTQ-Int4`` is a mutable pointer:
+    the branch can be re-uploaded, so two runs a month apart can differ while
+    reporting the same checkpoint string. The resolved commit sha is what makes
+    "same weights" checkable, which is the whole point of the item-6 finding that
+    model provenance was unrecoverable.
+
+    Resolution is best-effort and offline-safe: if the cache or the Hub is
+    unreachable the sha is null and ``resolved`` says so, rather than the run
+    failing or the field being quietly absent.
+    """
+    name = str(checkpoint or getattr(parameters, "MODEL_CHECKPOINT", "") or "")
+    identity: dict[str, Any] = {
+        "checkpoint": name,
+        "revision": None,
+        "source": "unset",
+        "resolved": True,
+    }
+    if not name:
+        identity["source"] = "unset"  # nothing to resolve; not a failure
+        return identity
+
+    # 1. The local HF cache, which is where vLLM actually loaded from.
+    revision = _cached_revision(name)
+    if revision:
+        identity["revision"] = revision
+        identity["resolved"] = True
+        identity["source"] = "hf_cache"
+        return identity
+
+    # 2. The Hub. Short timeout: this runs inside every simulation's manifest
+    #    write, so a slow network must not become a slow run.
+    revision = _hub_revision(name)
+    if revision:
+        identity["revision"] = revision
+        identity["resolved"] = True
+        identity["source"] = "hub"
+        return identity
+
+    identity["source"] = "unresolved"
+    identity["resolved"] = False
+    return identity
+
+
+def _cached_revision(name: str) -> str | None:
+    """Commit sha of a snapshot already present in the HuggingFace cache."""
+    from pathlib import Path
+
+    cache = Path(os.environ.get("HF_HUB_CACHE") or Path.home() / ".cache" / "huggingface" / "hub")
+    folder = cache / ("models--" + name.replace("/", "--"))
+    refs = folder / "refs"
+    try:
+        if not refs.is_dir():
+            return None
+        main = (refs / "main").read_text(encoding="utf-8").strip()
+        return main or None
+    except OSError:
+        return None
+
+
+def _hub_revision(name: str) -> str | None:
+    """Commit sha for the model's main branch on the Hub."""
+    try:
+        import json as _json
+        import urllib.request
+
+        url = f"https://huggingface.co/api/models/{name}"
+        with urllib.request.urlopen(url, timeout=5) as response:
+            payload = _json.loads(response.read())
+        return str(payload.get("sha") or "") or None
+    except Exception:  # provenance must never break a run
+        return None
+
+
 def inference_provenance() -> dict[str, Any]:
     """Return the block embedded in every result JSON."""
     variant_name = str(parameters.PROMPT_VARIANT)
+    checkpoint = checkpoint_identity()
     return {
         "model": {
             "alias": parameters.LLM_MODEL,
             "checkpoint": parameters.MODEL_CHECKPOINT,
+            "checkpoint_revision": checkpoint["revision"],
+            "checkpoint_revision_source": checkpoint["source"],
+            "checkpoint_revision_resolved": checkpoint["resolved"],
             "quantization": parameters.MODEL_QUANTIZATION,
             "parameter_count_billions": parameters.MODEL_PARAM_COUNT_B,
             "served_model_name_matches_alias": bool(parameters.LLM_MODEL),
@@ -81,6 +162,7 @@ def inference_provenance() -> dict[str, Any]:
             "registered_hashes": all_variant_hashes(),
         },
         "seed_vector": dict(parameters.SEED_VECTOR or {}),
+        "seed_vector_usage": stream_usage_report(),
         "concurrency": {
             "llm_max_concurrency": parameters.LLM_MAX_CONCURRENCY,
             "tom_max_concurrency": parameters.TOM_MAX_CONCURRENCY,

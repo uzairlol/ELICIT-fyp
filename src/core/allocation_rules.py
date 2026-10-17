@@ -37,6 +37,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from core import parameters
+from core.seeding import active_rng
 
 DEFAULT_RULE = "damage_proportional"
 
@@ -361,10 +362,14 @@ def describe_registry(order_seed: int | None = None) -> dict[str, str]:
     """Name -> description, optionally shuffled to avoid position bias.
 
     Deterministic for a given seed so a governance decision is reproducible.
+    Defaults to the named ``rule_registry_order`` stream rather than the global
+    RNG, so the manifest records that the registry order is a draw.
     """
     pairs = [(name, rule.description) for name, rule in REGISTRY.items()]
     if order_seed is not None:
         random.Random(order_seed).shuffle(pairs)
+    else:
+        active_rng("rule_registry_order").shuffle(pairs)
     return dict(pairs)
 
 

@@ -7,8 +7,13 @@ show deliberation that was never serialised.
 
 This module records the full prompt and raw completion for a sampled subset of
 decisions, to a gitignored JSONL sidecar. Sampling keeps a 30-round, 26-agent run
-bounded; the sampler is seeded from the run's seed vector, so the same run
-traces the same decisions.
+bounded; the sampler is seeded from its own named stream, so the same run traces
+the same decisions.
+
+Enabled by default at a low sampling rate. The doc calls this the highest-value
+fix for an economics audience precisely because the qualitative section is
+otherwise an interpretation of 8.45-word summaries, and an opt-in switch that
+nobody flips leaves the gap exactly where it was.
 """
 
 from __future__ import annotations
@@ -16,33 +21,44 @@ from __future__ import annotations
 import json
 import logging
 import os
-import random
 import threading
 from typing import Any
 
 from core import parameters
+from core.seeding import active_rng
 
 logger = logging.getLogger(__name__)
 
 _LOCK = threading.Lock()
 
 
+def default_trace_dir() -> str:
+    """Where traces land.
+
+    Repo-relative rather than ``src/``-relative: the path has to agree with
+    ``.gitignore`` or traces show up as untracked files, which is how a
+    "gitignored sidecar" stops being one.
+    """
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(repo_root, "debug_logs", "traces")
+
+
 class TraceWriter:
-    """Append-only JSONL writer, sampled, capped, and disabled by default."""
+    """Append-only JSONL writer, sampled, capped."""
 
     def __init__(self, run_label: str | None = None, base_dir: str | None = None):
-        self.enabled = bool(getattr(parameters, "TRACE_ENABLED", False))
+        self.enabled = bool(getattr(parameters, "TRACE_ENABLED", True))
         self.rate = float(getattr(parameters, "TRACE_SAMPLING_RATE", 0.05))
         self.max_records = int(getattr(parameters, "TRACE_MAX_RECORDS", 20_000))
         self.written = 0
         self.considered = 0
         self.path: str | None = None
-        self._rng = random.Random((parameters.SEED_VECTOR or {}).get("python", parameters.SEED))
         if not self.enabled:
             return
-        base = base_dir or os.path.join(
-            os.path.dirname(__file__), "..", "..", "debug_logs", "traces"
-        )
+        # Own named stream: sampling must not consume from a stream the
+        # simulation itself draws on.
+        self._rng = active_rng("trace_sampling")
+        base = base_dir or default_trace_dir()
         os.makedirs(base, exist_ok=True)
         label = str(run_label or getattr(parameters, "BATCH_NAME", "run"))
         self.path = os.path.join(base, f"trace_{label}_seed{parameters.SEED}.jsonl")
@@ -93,7 +109,7 @@ _ACTIVE: TraceWriter | None = None
 def get_writer(run_label: str | None = None) -> TraceWriter | None:
     """Process-wide writer, created on first use."""
     global _ACTIVE
-    if _ACTIVE is None and getattr(parameters, "TRACE_ENABLED", False):
+    if _ACTIVE is None and getattr(parameters, "TRACE_ENABLED", True):
         _ACTIVE = TraceWriter(run_label)
     return _ACTIVE
 

@@ -94,8 +94,13 @@ RESULTS_SPILL_TO_DISK = True
 # Rationale fields average ~8.45 words of post-hoc justification, so the
 # qualitative section is an interpretation of summaries. This writes the full
 # prompt + raw completion per decision to a gitignored sidecar. Sampling keeps
-# the volume bounded; `random.Random(seed)`-driven so it is reproducible.
-TRACE_ENABLED = False
+# the volume bounded; driven by the `trace_sampling` named stream so it consumes
+# no randomness the simulation itself depends on.
+#
+# On by default at 5%: at ~2,232 calls/run that is ~110 records per run, which
+# is what makes the qualitative section a measurement. The cost is a few hundred
+# KB of gitignored JSONL per run.
+TRACE_ENABLED = True
 TRACE_SAMPLING_RATE = 0.05
 TRACE_MAX_RECORDS = 20_000
 

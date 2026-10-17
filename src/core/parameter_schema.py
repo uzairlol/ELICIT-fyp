@@ -517,7 +517,7 @@ SPECS: tuple[ParameterSpec, ...] = (
         "TRACE_ENABLED",
         "output",
         "bool",
-        False,
+        True,
         None,
         None,
         "Write sampled deliberation traces to a sidecar file.",

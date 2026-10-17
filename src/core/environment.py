@@ -17,6 +17,7 @@ from core.governance import governance_level
 from core.institution import SanctionFreeInstitution, SanctioningInstitution
 from core.loss_damage_fund import LossDamageFund
 from core.scenario_config import get_scenario_config
+from core.seeding import active_rng
 from core.subsidy import SubsidyModule
 from modules.democracy_module import DemocracyModule
 from modules.oracle import Oracle
@@ -74,6 +75,8 @@ class Environment:
         self.tom_completion_order: list[dict[str, Any]] = []
         # Governance records for the redistribution arm.
         self.governance_history: list[dict[str, Any]] = []
+        # Named streams carry the simulation's own draws; this keeps the global
+        # module deterministic so a missed conversion cannot add noise silently.
         random.seed(parameters.SEED)
 
         # Phase 2: shared module instances (use first agent's API client)
@@ -271,6 +274,7 @@ class Environment:
                 agent.recent_gossip = self.gossip_module.get_gossip_for_agent(agent)
             # Exact exposure, not a "possible target" bound (item 8).
             if getattr(parameters, "LOG_GOSSIP_EXPOSURE", True):
+                bulletin = self.gossip_module.gossip_bulletin
                 self.gossip_exposure.append(
                     {
                         "round": round_number,
@@ -279,18 +283,15 @@ class Environment:
                                 "source": g["source"],
                                 "target": g["target"],
                                 "score": g["score"],
+                                # The text the model actually read. Dropping it
+                                # makes the exposure record uninterpretable: a
+                                # score says something was said, not what.
+                                "reasoning": str(g.get("reasoning", "") or ""),
                             }
-                            for g in self.gossip_module.gossip_bulletin
+                            for g in bulletin
                         ],
                         "recipients": {
-                            str(agent.agent_id): {
-                                "saw_items": len(self.gossip_module.gossip_bulletin),
-                                "saw_self_as_target": any(
-                                    g["target"] == agent.agent_id
-                                    for g in self.gossip_module.gossip_bulletin
-                                ),
-                                "text_length": len(agent.recent_gossip or ""),
-                            }
+                            str(agent.agent_id): self._gossip_receipt(agent, bulletin)
                             for agent in self.agents
                         },
                     }
@@ -339,6 +340,27 @@ class Environment:
                         f"score {gossip['score']}/10"
                     )
             logger.info(f"{'=' * 64}")
+
+    @staticmethod
+    def _gossip_receipt(agent, bulletin) -> dict[str, Any]:
+        """What this agent actually received from the bulletin.
+
+        ``GossipModule.get_gossip_for_agent`` skips any item whose *source* is the
+        receiver, so a count of the whole bulletin overstates exposure for every
+        author in it. This reconstructs the exact delivered set, which is what
+        turns the report's "certain vs possible exposure" bound into a measurement.
+        """
+        delivered = [g for g in bulletin if g["source"] != agent.agent_id]
+        return {
+            "delivered_count": len(delivered),
+            "withheld_as_author": len(bulletin) - len(delivered),
+            "saw_items": [
+                {"source": g["source"], "target": g["target"], "score": g["score"]}
+                for g in delivered
+            ],
+            "saw_self_as_target": any(g["target"] == agent.agent_id for g in delivered),
+            "text_length": len(agent.recent_gossip or ""),
+        }
 
     def run_round(self):
         """
@@ -503,11 +525,12 @@ class Environment:
                 return
 
         else:
-            # Original stochastic logic
-            shock_roll = random.random()
-            if shock_roll >= parameters.CLIMATE_SHOCK_BASE_PROB:
+            # Original stochastic logic, off under the deterministic schedule
+            # every grid preset uses. Reachable only by legacy stochastic runs.
+            shock_rng = active_rng("climate_shock_roll")
+            if shock_rng.random() >= parameters.CLIMATE_SHOCK_BASE_PROB:
                 return
-            severity = random.uniform(
+            severity = active_rng("climate_shock_severity").uniform(
                 parameters.CLIMATE_SHOCK_SEVERITY_MIN, parameters.CLIMATE_SHOCK_SEVERITY_MAX
             )
 

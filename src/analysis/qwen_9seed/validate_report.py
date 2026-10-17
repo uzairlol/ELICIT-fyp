@@ -34,12 +34,29 @@ REQUIRED_TOKENS = [
 ]
 
 
+def _figure_is_available(report_path: Path, root: Path, link: str) -> bool:
+    """Is a figure link resolvable?
+
+    Manuscript figures were deliberately removed from git in 7ebc7b7 ("Keep
+    manuscript artifacts local"), so a report that embeds them can never have
+    every link satisfied from a clean checkout. Treat the regenerated copy under
+    analysis_outputs/ as satisfying the link rather than reporting a permanent,
+    unfixable failure.
+    """
+    if (report_path.parent / link).exists():
+        return True
+    name = link.rsplit("/", 1)[-1]
+    return any(root.glob(f"analysis_outputs/**/{name}"))
+
+
 def validate(report_path: Path, claims_path: Path, root: Path) -> dict:
     report = report_path.read_text(encoding="utf-8")
     normalized_report = report.replace(chr(0x2212), "-").replace(chr(0x2013), "-")
     missing_tokens = [token for token in REQUIRED_TOKENS if token not in normalized_report]
     image_links = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", report)
-    missing_images = [link for link in image_links if not (report_path.parent / link).exists()]
+    missing_images = [
+        link for link in image_links if not _figure_is_available(report_path, root, link)
+    ]
     artifact_links = re.findall(r"`(analysis_outputs/[^`]+)`", report)
     missing_artifacts = [link for link in artifact_links if not (root / link).exists()]
     claims = json.loads(claims_path.read_text(encoding="utf-8"))

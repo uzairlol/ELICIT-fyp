@@ -10,6 +10,7 @@ import random
 from core import parameters
 from core.agent import Agent
 from core.environment import Environment
+from core.seeding import active_rng
 from llm import create_llm_client
 
 logger = logging.getLogger(__name__)
@@ -144,7 +145,9 @@ def main():
             )
             parameters.NUM_AGENTS = required_agents
 
-    # Seed Python RNG for reproducibility
+    # Seed Python RNG for reproducibility. The named streams below are what the
+    # simulation actually draws from; this seeds the global module so any
+    # unconverted `random` call is still deterministic rather than arbitrary.
     random.seed(parameters.SEED)
 
     # Clear previous debug logs so each run is isolated
@@ -257,7 +260,9 @@ def main():
                     }
                 )
 
-        random.shuffle(profiles)
+        # Draw from a named stream rather than the global RNG, so the manifest
+        # records which source decided the group layout.
+        active_rng("agent_profile_shuffle").shuffle(profiles)
         return profiles
 
     def apply_group_profile(agent, profile):
@@ -312,9 +317,9 @@ def main():
                 f"got {llm_n + random_n + greedy_n}"
             )
 
-        # Deterministic assignment under seeded RNG for reproducible mixtures.
+        # Deterministic assignment under a named stream for reproducible mixtures.
         type_list = (["LLM"] * llm_n) + (["RANDOM"] * random_n) + (["GREEDY"] * greedy_n)
-        random.shuffle(type_list)
+        active_rng("persona_assignment").shuffle(type_list)
 
         for i, agent_kind in enumerate(type_list):
             profile = group_profile_list[i]

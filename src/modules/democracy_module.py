@@ -21,9 +21,9 @@ log them in the round data / results JSON.
 
 import concurrent.futures
 import logging
-import random
 
 from core import parameters
+from core.seeding import active_rng, agent_rng
 from core.utils import robust_json_loads
 from llm.retry import build_failure_retry_prompt, request_with_retries
 
@@ -180,7 +180,7 @@ class DemocracyModule:
         lines = []
         # Randomize order to prevent LLM position bias (anchoring on the first item)
         param_names = list(get_allowed_democracy_params())
-        random.shuffle(param_names)
+        active_rng("democracy_param_order").shuffle(param_names)
 
         for name in param_names:
             val = getattr(parameters, name, None)
@@ -223,10 +223,10 @@ class DemocracyModule:
 
         tuneable_str = self._build_tuneable_str()
 
-        # Shuffle agents to prevent priority bias. The shuffle is drawn from the
-        # seeded global RNG, so it stays reproducible under the seed vector.
+        # Shuffle agents to prevent priority bias. Drawn from a named stream so the
+        # manifest records that this ordering is stochastic.
         agents_copy = list(agents)
-        random.shuffle(agents_copy)
+        active_rng("democracy_agent_order").shuffle(agents_copy)
 
         workers = _democracy_workers(min(len(agents_copy), parameters.LLM_MAX_CONCURRENCY))
 
@@ -237,7 +237,10 @@ class DemocracyModule:
                 all_params = list(get_allowed_democracy_params())
                 unexplored = [p for p in all_params if p not in agent.explored_params]
                 if unexplored:
-                    target = random.choice(unexplored)
+                    # This runs inside the thread pool, so it must not touch a
+                    # shared RNG: thread scheduling would otherwise decide the
+                    # target. Each agent draws from its own stream.
+                    target = agent_rng(agent.agent_id).choice(unexplored)
                     curiosity_hint = f"\n**Note:** You haven't proposed a change to `{target}` in your history. Rule changes can provide data on different governance outcomes."
 
             return agent, self._get_proposal(
@@ -506,7 +509,7 @@ Respond ONLY with valid JSON:
 
         # Break ties randomly instead of depending on dictionary insertion order
         winners = [idx for idx, votes in tally.items() if votes == max_votes]
-        winning_idx = random.choice(winners)
+        winning_idx = active_rng("democracy_tiebreak").choice(winners)
 
         return proposals[winning_idx], tally
 

@@ -406,3 +406,129 @@ class TestSeedVectorIntegrity:
 
         fingerprints = {fingerprint(c["seed_vector"]) for c in expand_preset("a_qwen_p0")}
         assert len(fingerprints) == 4
+
+
+class TestEveryDrawIsNamed:
+    """The doc's item 16 is "serialise every random use", which is only true if
+    the serialised streams are the ones the code actually draws from.
+
+    An earlier version emitted python_streams/persona_streams into the manifest
+    while the simulation kept calling the global `random` module, so the manifest
+    described a structure the code did not have. These tests make the manifest
+    and the call sites impossible to diverge silently.
+    """
+
+    #: Files allowed to name a stochastic stream. Everything else that draws has
+    #: to go through core.seeding.
+    DRAWN_SOURCE = "src/core/seeding.py"
+
+    def _sources(self) -> list[Path]:
+        root = Path(__file__).resolve().parents[2]
+        return sorted((root / "src").rglob("*.py"))
+
+    def _draws(self, path: Path) -> list[int]:
+        """Line numbers that draw from the *global* RNG.
+
+        `random.Random(seed)` constructs a private generator and does not read
+        global state, so it is deterministic and exempt. `random.seed(...)`
+        installs state rather than drawing, also exempt. What this test exists to
+        catch is `random.choice(...)` and friends: those draw from whatever the
+        last seed installed, which is exactly what a manifest cannot describe.
+        """
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        hits = []
+        for node in ast.walk(tree):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "random"
+            ):
+                continue
+            if node.func.attr in {"seed", "Random"}:
+                continue
+            hits.append(node.lineno)
+        return hits
+
+    def test_no_module_level_random_draws_outside_seeding(self):
+        offenders = []
+        for path in self._sources():
+            if "tests" in path.parts or path.name == "seeding.py":
+                continue
+            offenders += [
+                f"{path.relative_to(Path(__file__).resolve().parents[2])}:{line}"
+                for line in self._draws(path)
+            ]
+        assert not offenders, (
+            "draw from a named stream instead of the global RNG "
+            f"(core.seeding.active_rng/agent_rng/persona_rng): {offenders}"
+        )
+
+    def test_every_declared_stream_has_a_distinct_seed(self):
+        from core.seeding import NAMED_STREAMS, build_seed_vector
+
+        vector = build_seed_vector({"seed": 11, "agents": 6})
+        streams = vector["streams"]
+        assert set(streams) == set(NAMED_STREAMS)
+        assert len(set(streams.values())) == len(NAMED_STREAMS)
+
+    def test_a_stream_added_to_the_code_must_be_declared(self):
+        """An unnamed draw cannot be reproduced from the manifest."""
+        from core.seeding import SeedVectorError, active_rng
+
+        with pytest.raises(SeedVectorError):
+            active_rng("not_a_registered_stream")
+
+    def test_vector_refuses_a_missing_or_unknown_stream(self):
+        from core.seeding import build_seed_vector, validate_seed_vector
+
+        vector = build_seed_vector({"seed": 5, "agents": 4})
+        incomplete = {k: v for k, v in vector.items() if k != "streams"}
+        assert any("streams" in p for p in validate_seed_vector(incomplete))
+
+        vector["streams"]["not_real"] = 1
+        assert any("unknown sources" in p for p in validate_seed_vector(vector))
+
+    def test_named_streams_are_independent_of_each_other(self):
+        """Adding a draw in one place must not re-randomise another.
+
+        Governance and institution setup draw from different streams on purpose:
+        a change to the constitutional rules should not silently re-randomise who
+        is developed and who is developing.
+        """
+        from core.seeding import active_rng, apply_seed_vector, build_seed_vector
+
+        apply_seed_vector(build_seed_vector({"seed": 99, "agents": 8}))
+        try:
+            first = active_rng("democracy_agent_order").sample(range(50), 10)
+            active_rng("agent_profile_shuffle").shuffle(list(range(50)))
+            second = active_rng("democracy_agent_order").sample(range(50), 10)
+            assert first == second
+        finally:
+            parameters.SEED_VECTOR = {}
+
+    def test_agent_streams_come_from_the_vector_not_an_offset(self):
+        """`random.Random(SEED + agent_id)` shifts when the base seed shifts."""
+        from core.seeding import agent_rng, apply_seed_vector, build_seed_vector
+
+        apply_seed_vector(build_seed_vector({"seed": 5, "agents": 4}))
+        try:
+            declared = parameters.SEED_VECTOR["python_streams"]["agent_2"]
+            assert agent_rng(2).random() == __import__("random").Random(declared).random()
+        finally:
+            parameters.SEED_VECTOR = {}
+
+    def test_usage_report_names_what_the_config_can_reach(self):
+        from core.seeding import build_seed_vector, stream_usage_report
+
+        apply = build_seed_vector({"seed": 3, "agents": 4})
+        from core.seeding import apply_seed_vector
+
+        apply_seed_vector(apply)
+        try:
+            report = stream_usage_report()
+            assert "democracy_tiebreak" in report["reachable_under_config"]
+            # The deterministic shock schedule draws nothing.
+            assert "climate_shock_roll" in report["declared_but_unused_under_config"]
+        finally:
+            parameters.SEED_VECTOR = {}

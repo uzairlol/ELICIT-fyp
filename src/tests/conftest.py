@@ -50,6 +50,10 @@ class FakeAgent:
         self.rule_of_law_blocks = 0
         self.contribution_reasoning = ""
         self.round_number = 1
+        # Identity mapping: labels already carry real agent ids. Anonymity
+        # behaviour is exercised by tests that set a non-empty mapping.
+        self.anonymized_id_mapping: dict[int, int] = {}
+        self.pseudonym_mapping: dict[int, int] = {}
 
     # Payoff helpers mirroring Agent's public surface -------------------------
     def _uses_climate_budget(self):

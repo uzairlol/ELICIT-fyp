@@ -322,6 +322,89 @@ class TestFitAllocationsToBudget:
         assert retained == pytest.approx(1 - 0.387, abs=0.05)
 
 
+class TestDualReportRecordsThePreFitRequest:
+    """Item 9: raw-requested allocations must survive beside the applied vector.
+
+    The dual report exists to measure how much of a model's sanction request the
+    budget safety net throws away. That measurement is only meaningful if
+    `raw_*` holds what the model actually asked for, so these tests pin the
+    distinction rather than trusting the field names.
+    """
+
+    def _overspend_response(self, amount: int) -> dict:
+        return {
+            "reasoning": "Agent 1 under-contributed relative to the group average.",
+            "punishments": {"Agent 1": amount},
+            "rewards": {},
+            "justifications": {"Agent 1": "under-contributed"},
+        }
+
+    def test_parser_keeps_the_unfitted_request(self, monkeypatch, abstract_mode):
+        """The parser must not silently fit before reporting."""
+        from parsing.punishment_parser import parse_punishment_response
+
+        monkeypatch.setattr(parameters, "PUNISHMENT_COST", 1)
+        monkeypatch.setattr(parameters, "REWARD_COST", 1)
+        monkeypatch.setattr(parameters, "ENDOWMENT_STAGE_2", 10)
+
+        members = [FakeAgent(0), FakeAgent(1)]
+        actor = FakeAgent(0)
+        # 500 tokens requested against a budget of 10: the fit would scale to 1.
+        parsed = parse_punishment_response(self._overspend_response(500), _group(members), actor)
+        parser_meta = parsed[-1]
+        assert parser_meta["raw_punishment_allocations"][1] == 500
+        assert parser_meta["raw_punishment_values"]["Agent 1"] == 500
+        # It is over budget, so the tuple's applied vector is withheld for retry.
+        assert parsed[0] == {}
+
+    def test_reported_raw_differs_from_applied_after_a_fit(self, monkeypatch, abstract_mode):
+        """The end-to-end invariant: requested != applied when a fit happens."""
+        from parsing.punishment_parser import parse_punishment_response
+
+        monkeypatch.setattr(parameters, "PUNISHMENT_COST", 1)
+        monkeypatch.setattr(parameters, "REWARD_COST", 1)
+        monkeypatch.setattr(parameters, "ENDOWMENT_STAGE_2", 10)
+
+        members = [FakeAgent(0), FakeAgent(1)]
+        actor = FakeAgent(0)
+        parsed = parse_punishment_response(self._overspend_response(500), _group(members), actor)
+        applied_punishments, _ = _fit_allocations_to_budget(
+            parsed[-1]["raw_punishment_allocations"],
+            parsed[-1]["raw_reward_allocations"],
+            budget=10,
+            members=members,
+        )
+        raw = parsed[-1]["raw_punishment_allocations"]
+        assert raw[1] == 500
+        assert applied_punishments[1] < raw[1]
+        assert raw != applied_punishments
+
+    def test_within_budget_request_is_identical_on_both_sides(self, monkeypatch, abstract_mode):
+        """When nothing is trimmed the two agree, so a difference means a fit."""
+        from parsing.punishment_parser import parse_punishment_response
+
+        monkeypatch.setattr(parameters, "PUNISHMENT_COST", 1)
+        monkeypatch.setattr(parameters, "REWARD_COST", 1)
+        monkeypatch.setattr(parameters, "ENDOWMENT_STAGE_2", 1000)
+
+        members = [FakeAgent(0), FakeAgent(1)]
+        parsed = parse_punishment_response(
+            self._overspend_response(5), _group(members), FakeAgent(0)
+        )
+        assert parsed[0] == parsed[-1]["raw_punishment_allocations"] == {1: 5}
+
+    def test_environment_logs_requested_beside_assigned(self, monkeypatch, abstract_mode):
+        """The result JSON must carry both, or the ratio cannot be recomputed."""
+        import inspect
+
+        from core import environment
+
+        source = inspect.getsource(environment.Environment)
+        assert "requested_punishments" in source
+        assert "assigned_punishments" in source
+        assert "RAW_ALLOCATION_REPORTING" in source
+
+
 class TestExpectedTargetLabels:
     def test_excludes_self_and_sorts(self, abstract_mode):
         members = [FakeAgent(2), FakeAgent(0), FakeAgent(1)]

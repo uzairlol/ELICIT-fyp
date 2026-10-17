@@ -30,10 +30,10 @@ import contextlib
 import json
 import logging
 import os
-import random
 from typing import Any
 
 from core import parameters
+from core.seeding import agent_rng
 from core.utils import robust_json_loads, uses_climate_budget
 from llm.retry import (
     RetryExhaustedError,
@@ -321,7 +321,10 @@ class Agent:
         """
         if not self.pseudonym_mapping:
             other_agents = [a for a in range(parameters.NUM_AGENTS) if a != self.agent_id]
-            rng = random.Random(parameters.SEED + self.agent_id)
+            # The agent's own stream, not SEED + agent_id: the offset form makes
+            # the mapping shift if the base seed changes, and it is not the
+            # stream the manifest declares.
+            rng = agent_rng(self.agent_id)
             rng.shuffle(other_agents)
 
             for i, actual_id in enumerate(other_agents):
@@ -497,8 +500,16 @@ class Agent:
                     parser_meta,
                 ) = last_parsed
                 meta_reason = str(parser_meta.get("fallback_reason", "") or "")
-                raw_punish_allocs = parser_meta.get("raw_punishment_allocations", {}) or raw_punish
-                raw_reward_allocs = parser_meta.get("raw_reward_allocations", {}) or raw_reward
+                # Do not fall through with `or`: an empty dict is a legitimate
+                # value here ("the model asked for nothing"), and substituting the
+                # empty applied vector for it would erase the distinction the
+                # dual report exists to preserve.
+                raw_punish_allocs = parser_meta.get("raw_punishment_allocations")
+                if raw_punish_allocs is None:
+                    raw_punish_allocs = raw_punish
+                raw_reward_allocs = parser_meta.get("raw_reward_allocations")
+                if raw_reward_allocs is None:
+                    raw_reward_allocs = raw_reward
 
                 if (
                     "exceeds budget" in meta_reason
@@ -556,12 +567,17 @@ class Agent:
         # `parser_meta["raw_punishment_allocations"]` is the pre-budget-fit
         # vector; the applied matrix may be a proportional rescale of it, and
         # reporting only the applied matrix hides that behind a third of the
-        # observed sanction map (item 9).
+        # observed sanction map (item 9). An empty dict is a real answer ("the
+        # model requested no sanctions"), so the fallback keys on absence only.
         self.raw_assigned_punishments = dict(
-            parser_meta.get("raw_punishment_allocations") or punishment_allocations or {}
+            parser_meta.get("raw_punishment_allocations")
+            if parser_meta.get("raw_punishment_allocations") is not None
+            else punishment_allocations
         )
         self.raw_assigned_rewards = dict(
-            parser_meta.get("raw_reward_allocations") or reward_allocations or {}
+            parser_meta.get("raw_reward_allocations")
+            if parser_meta.get("raw_reward_allocations") is not None
+            else reward_allocations
         )
         self.assigned_punishments = punishment_allocations
         self.assigned_rewards = reward_allocations

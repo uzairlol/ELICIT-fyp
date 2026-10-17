@@ -11,6 +11,15 @@ uses; :func:`build_seed_vector` derives them from one integer so a cell is
 reproducible from a single number, :func:`apply_seed_vector` pushes them into
 ``parameters`` and the Python RNG, and the vector is serialised verbatim into
 ``resolved_config.json`` and the result JSON.
+
+Serialising a stream is not the same as using it. An earlier version of this
+module emitted ``python_streams``, ``persona_streams`` and ``chat_template_seed``
+into the manifest while the simulation kept drawing from the global ``random``
+module, so the manifest described a structure the code did not have. Every
+stochastic source here is therefore *named* (:data:`NAMED_STREAMS`), declared in
+the vector, and reached through :func:`active_rng` — never through a bare
+``random`` call. Adding a draw means adding a name, which is what makes the
+"every random use" requirement checkable instead of aspirational.
 """
 
 from __future__ import annotations
@@ -28,6 +37,43 @@ class SeedVectorError(RuntimeError):
     """Raised when a declared seed vector is incomplete or inconsistent."""
 
 
+#: Every stochastic source in the simulation, by name. Adding a draw somewhere
+#: without adding a name here is what this module exists to prevent: the
+#: verification gate checks that the registry and the call sites agree.
+NAMED_STREAMS: tuple[str, ...] = (
+    # Institution setup (main.py): which agent gets which development group, and
+    # which gets which persona.
+    "agent_profile_shuffle",
+    "persona_assignment",
+    # Constitutional sessions (democracy_module.py). Parameter order and agent
+    # order are shuffled to defeat LLM position bias, so they are draws, not
+    # cosmetics; the tie-break is a draw by construction.
+    "democracy_param_order",
+    "democracy_agent_order",
+    "democracy_tiebreak",
+    # Climate shocks, only on the stochastic branch. The deterministic schedule
+    # used by every grid preset does not draw.
+    "climate_shock_roll",
+    "climate_shock_severity",
+    # Allocation-rule registry order, shown to deliberating agents.
+    "rule_registry_order",
+    # Deliberation-trace sampling.
+    "trace_sampling",
+)
+
+
+#: Streams that are consulted but never drawn from under the current grid
+#: presets. They are declared so the manifest is honest about the schema, and
+#: `chat_template` is listed here because rendering is deterministic: there is no
+#: randomness for a seed to govern. `elicit doctor` reports this rather than
+#: letting the reader assume the template is jittered.
+UNUSED_UNDER_GRID: tuple[str, ...] = (
+    "chat_template_seed",
+    "climate_shock_roll",
+    "climate_shock_severity",
+)
+
+
 #: Every stochastic source a run must pin. Adding one here is deliberately
 #: expensive: it forces every existing config to declare it.
 REQUIRED_KEYS: tuple[str, ...] = (
@@ -36,6 +82,7 @@ REQUIRED_KEYS: tuple[str, ...] = (
     "python_streams",
     "persona_streams",
     "chat_template_seed",
+    "streams",
 )
 
 #: Sampling settings that must be identical across model families for the
@@ -88,6 +135,11 @@ def derive_seed_vector(
             "GREEDY": _derive(base_seed, "persona:GREEDY"),
         },
         "chat_template_seed": _derive(base_seed, "chat-template"),
+        # One stream per named stochastic source. Deriving rather than sharing the
+        # global RNG means adding a draw in one place cannot shift the sequence
+        # seen in another, so a change to governance cannot silently re-randomise
+        # institution setup.
+        "streams": {name: _derive(base_seed, f"stream:{name}") for name in NAMED_STREAMS},
         "sampling": {
             "temperature": float(temperature),
             "top_p": float(top_p),
@@ -153,6 +205,19 @@ def validate_seed_vector(vector: Any) -> list[str]:
     personas = vector.get("persona_streams")
     if not isinstance(personas, dict) or not personas:
         problems.append("persona_streams must be a non-empty mapping")
+    streams = vector.get("streams")
+    if not isinstance(streams, dict) or not streams:
+        problems.append("streams must be a non-empty mapping of every named draw")
+    else:
+        missing = [name for name in NAMED_STREAMS if name not in streams]
+        if missing:
+            problems.append(f"streams missing declared sources: {', '.join(missing)}")
+        extra = sorted(set(streams) - set(NAMED_STREAMS))
+        if extra:
+            problems.append(
+                f"streams declare unknown sources (not in seeding.NAMED_STREAMS): "
+                f"{', '.join(extra)}"
+            )
     if vector.get("python") == vector.get("llm_seed"):
         problems.append("python and llm_seed are identical; sampling would be tied to the RNG")
     return problems
@@ -182,6 +247,71 @@ def apply_seed_vector(vector: dict[str, Any], seed_env_var: bool = True) -> None
     if seed_env_var:
         os.environ["ELICIT_SEED_VECTOR"] = repr(vector)
         os.environ["ELICIT_SEED"] = str(python_seed)
+
+
+def stream_seed(name: str) -> int:
+    """Seed for a named stochastic source, from the installed vector.
+
+    Falls back to deriving from the base seed when no vector is installed, so
+    that library code and tests remain usable; a real run always installs one
+    first, and ``validate_seed_vector`` refuses an incomplete vector.
+    """
+    if name not in NAMED_STREAMS:
+        raise SeedVectorError(
+            f"Unknown stochastic stream {name!r}. Add it to seeding.NAMED_STREAMS: "
+            "an unnamed draw cannot be reproduced from the manifest."
+        )
+    vector = getattr(parameters, "SEED_VECTOR", None) or {}
+    streams = vector.get("streams") or {}
+    if name in streams:
+        return int(streams[name])
+    return _derive(int(vector.get("base_seed", parameters.SEED)), f"stream:{name}")
+
+
+def active_rng(name: str) -> random.Random:
+    """The RNG for a named stochastic source.
+
+    Every draw in the simulation goes through here rather than the global
+    ``random`` module, so the manifest's stream list and the code's actual
+    randomness cannot diverge.
+    """
+    return random.Random(stream_seed(name))
+
+
+def agent_rng(agent_id: int) -> random.Random:
+    """The RNG for one agent's own stream, for draws that belong to that agent."""
+    vector = getattr(parameters, "SEED_VECTOR", None) or {}
+    streams = vector.get("python_streams") or {}
+    key = f"agent_{int(agent_id)}"
+    if key in streams:
+        return random.Random(int(streams[key]))
+    return random.Random(_derive(int(vector.get("base_seed", parameters.SEED)), key))
+
+
+def persona_rng(persona: str) -> random.Random:
+    """The RNG for one persona's sampling stream."""
+    vector = getattr(parameters, "SEED_VECTOR", None) or {}
+    streams = vector.get("persona_streams") or {}
+    key = str(persona).upper()
+    if key in streams:
+        return random.Random(int(streams[key]))
+    return random.Random(_derive(int(vector.get("base_seed", parameters.SEED)), f"persona:{key}"))
+
+
+def stream_usage_report() -> dict[str, Any]:
+    """Which declared streams the current configuration can actually reach."""
+    vector = getattr(parameters, "SEED_VECTOR", None) or {}
+    deterministic_shocks = bool(getattr(parameters, "CLIMATE_SHOCK_DETERMINISTIC", True))
+    reachable = set(NAMED_STREAMS)
+    if deterministic_shocks:
+        reachable -= {"climate_shock_roll", "climate_shock_severity"}
+    return {
+        "named_streams": list(NAMED_STREAMS),
+        "declared": sorted(vector.get("streams") or {}),
+        "reachable_under_config": sorted(reachable),
+        "declared_but_unused_under_config": sorted(set(NAMED_STREAMS) - reachable),
+        "chat_template_is_deterministic": True,
+    }
 
 
 def fingerprint(vector: dict[str, Any]) -> str:

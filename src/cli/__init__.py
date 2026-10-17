@@ -481,6 +481,20 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     problems = validate_seed_vector(parameters.SEED_VECTOR)
     check("seed_vector_complete", not problems, "; ".join(problems))
 
+    # 4b. Every named draw is declared, so the manifest describes the randomness
+    #     the run actually performs rather than an aspirational schema.
+    from core.seeding import NAMED_STREAMS
+
+    declared = set((parameters.SEED_VECTOR or {}).get("streams") or {})
+    missing = [name for name in NAMED_STREAMS if name not in declared]
+    check(
+        "every_draw_is_named",
+        not missing,
+        f"{len(NAMED_STREAMS)} named streams declared"
+        if not missing
+        else f"missing: {', '.join(missing)}",
+    )
+
     # 5. Sampling pinned and in range.
     check(
         "sampling_in_range",
