@@ -69,9 +69,10 @@ class TestPercentileCI:
         assert result["estimate"] == pytest.approx(2.0)
 
     def test_alpha_controls_interval_width(self):
+        """``alpha`` is the significance level, so a *smaller* alpha is the *wider* interval."""
         values = [0.1, 0.5, 0.9, 0.2, 0.8, 0.3, 0.7]
-        narrow = percentile_ci(values, n_boot=2000, alpha=0.02)
-        wide = percentile_ci(values, n_boot=2000, alpha=0.20)
+        wide = percentile_ci(values, n_boot=2000, alpha=0.02)  # 98% interval
+        narrow = percentile_ci(values, n_boot=2000, alpha=0.20)  # 80% interval
         assert (wide["upper"] - wide["lower"]) >= (narrow["upper"] - narrow["lower"])
 
     def test_matches_the_reported_participation_interval(self):
@@ -181,8 +182,10 @@ class TestCohenDz:
         assert cohen_dz([0.1, 0.12, 0.11, 0.13]) > 0
 
     def test_matches_known_value(self):
-        # mean 2, sd (ddof=1) 2/1.732... -> dz ~ 1.1547
-        assert cohen_dz([2.0, 4.0]) == pytest.approx(2.0 / np.std([2.0, 4.0], ddof=1))
+        # dz = mean(diff) / sd(diff, ddof=1) = 3 / 1.4142... ~ 2.1213
+        diffs = [2.0, 4.0]
+        assert cohen_dz(diffs) == pytest.approx(np.mean(diffs) / np.std(diffs, ddof=1))
+        assert cohen_dz(diffs) == pytest.approx(2.1213203435596424)
 
     def test_sign_follows_the_direction_of_change(self):
         assert cohen_dz([-0.1, -0.2, -0.15]) < 0
@@ -221,8 +224,14 @@ class TestGini:
 
 class TestTopShare:
     def test_top_decile_of_twenty(self):
+        # fraction=0.10 of n=20 rounds k up to 2, so the share is (100 + 1) / 119.
         values = [1] * 19 + [100]
-        assert top_share(values, fraction=0.10) == pytest.approx(100 / 119)
+        assert top_share(values, fraction=0.10) == pytest.approx(101 / 119)
+
+    def test_single_holding_the_top_decile(self):
+        # fraction=0.05 of n=20 gives k=1, i.e. the monopolist's share alone.
+        values = [1] * 19 + [100]
+        assert top_share(values, fraction=0.05) == pytest.approx(100 / 119)
 
     def test_uniform_distribution_is_one_over_n(self):
         assert top_share([1] * 10, fraction=0.10) == pytest.approx(0.1)
@@ -256,7 +265,10 @@ class TestHHI:
     def test_responds_to_the_reported_concentration_range(self):
         """Report Table 2 quotes target-allocation HHI between 0.092 and 0.321."""
         assert 0.09 <= hhi([1] * 11) <= 0.10  # very diffuse
-        assert 0.32 >= hhi([5, 5, 1])  # concentrated
+        # Four claimants: 1/4 = 0.25 is the floor for a uniform vector, so a
+        # three-claimant vector can never land inside the reported range.
+        assert 0.26 <= hhi([3, 3, 3, 1]) <= 0.32
+        assert hhi([3, 3, 3, 1]) > hhi([1] * 4)  # concentrated vs uniform
 
 
 class TestClusterBootstrap:
@@ -334,8 +346,16 @@ class TestPseudoReplicationGuard:
         run_level = cluster_bootstrap(frame, value="value", cluster="run", n_boot=3000)
         row_level = percentile_ci(frame["value"].tolist(), n_boot=3000)
 
-        assert run_level["lower"] > row_level["lower"]
-        assert run_level["upper"] < row_level["upper"]
+        # Resampling whole runs is the honest unit, and it is *wider* than the
+        # iid-over-rows interval. The near-duplicate within-run rows give the
+        # naive analysis 27 "replications" instead of 9 and therefore understate
+        # the standard error. This asymmetry is exactly the pseudo-replication
+        # error the analysis protocol refuses to make.
+        assert run_level["lower"] < row_level["lower"]
+        assert run_level["upper"] > row_level["upper"]
+        run_width = run_level["upper"] - run_level["lower"]
+        row_width = row_level["upper"] - row_level["lower"]
+        assert run_width > row_width
 
     def test_run_level_bootstrap_on_reported_gini_change_is_narrow(self):
         """Nine runs, paired per-run Gini change, must give the reported interval."""

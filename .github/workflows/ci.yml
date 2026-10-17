@@ -38,3 +38,21 @@ jobs:
 
       - name: Tests (pytest)
         run: python -m pytest -q
+
+      # The grid is 164 runs of real compute, so the manifests are validated on
+      # every push rather than discovered at launch. Parity is the property that
+      # makes "model effect" mean model, so it is a gate, not a warning.
+      - name: Grid manifests expand and hold parameter parity
+        run: |
+          for grid in configs/grid_*.yaml; do
+            echo "--- $grid"
+            python -m cli grid show --grid "$grid"
+          done
+
+      - name: No unread parameters
+        # `--json` so the exit-status check can be a real gate; the human-readable
+        # table is for humans and prints a header before the count.
+        run: |
+          unread=$(python -m cli params --unread-only --json)
+          echo "$unread"
+          test "$unread" = "[]"

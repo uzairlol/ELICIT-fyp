@@ -19,6 +19,7 @@ The winning proposal and vote tallies are returned so `environment.py` can
 log them in the round data / results JSON.
 """
 
+import concurrent.futures
 import logging
 import random
 
@@ -30,11 +31,11 @@ logger = logging.getLogger(__name__)
 
 # Only these parameters may be changed by democratic vote.
 # This prevents agents from corrupting SEED, NUM_AGENTS, NUM_ROUNDS, etc.
+# `MAX_PUNISHMENT_TOKENS` was removed with the parameter itself (§7 item 2).
 GENERAL_DEMOCRACY_PARAMS = {
     "PUNISHMENT_EFFECT",
     "REWARD_EFFECT",
     "ENDOWMENT_STAGE_2",
-    "MAX_PUNISHMENT_TOKENS",
     "SUBSIDY_FRACTION",
     "SUBSIDY_TOP_N",
 }
@@ -45,6 +46,35 @@ LDF_DEMOCRACY_PARAMS = {
     "LDF_EQUITY_WEIGHT",
 }
 
+#: Categorical rules the assembly may vote on. Present only when redistribution
+#: governance is switched on; under the default ``LDF_GOVERNANCE_MODE = "fixed"``
+#: it is absent from the whitelist and the whole code path stays unreachable.
+LDF_ALLOCATION_RULE_PARAM = "LDF_ALLOCATION_RULE"
+
+#: Governance levels, from the closed opening to full endogenous redistribution.
+GOVERNANCE_MODES = ("fixed", "election", "election+board", "full")
+
+
+def governance_mode() -> str:
+    """Validated governance mode, defaulting to the inert ``fixed`` path."""
+    mode = str(getattr(parameters, "LDF_GOVERNANCE_MODE", "fixed"))
+    return mode if mode in GOVERNANCE_MODES else "fixed"
+
+
+def governance_level() -> str:
+    """Map a governance mode onto its G-label for reporting."""
+    return {
+        "fixed": "G0",
+        "election": "G1",
+        "election+board": "G2",
+        "full": "G3",
+    }[governance_mode()]
+
+
+def categorical_params_enabled() -> bool:
+    """Whether agents may currently vote on the LDF allocation rule."""
+    return governance_mode() != "fixed"
+
 
 def get_allowed_democracy_params():
     allowed = set(GENERAL_DEMOCRACY_PARAMS)
@@ -53,7 +83,14 @@ def get_allowed_democracy_params():
         or getattr(parameters, "SCENARIO", "").lower() == "ldf"
     ):
         allowed.update(LDF_DEMOCRACY_PARAMS)
+        if categorical_params_enabled():
+            allowed.add(LDF_ALLOCATION_RULE_PARAM)
     return allowed
+
+
+def _democracy_workers(default: int) -> int:
+    configured = int(getattr(parameters, "DEMOCRACY_MAX_CONCURRENCY", 0) or default or 1)
+    return max(1, configured)
 
 
 class DemocracyModule:
@@ -129,13 +166,10 @@ class DemocracyModule:
 
     def _build_tuneable_str(self):
         """Show whitelisted numeric parameters with descriptions, randomized to prevent position bias."""
-        import random
-
         param_descriptions = {
             "PUNISHMENT_EFFECT": "Multiplier applied to target's payoff when punished (e.g., 3 means losing 3 tokens per 1 token spent).",
             "REWARD_EFFECT": "Multiplier applied to target's payoff when rewarded.",
             "ENDOWMENT_STAGE_2": "Number of tokens agents are given specifically for punishing/rewarding others.",
-            "MAX_PUNISHMENT_TOKENS": "Maximum number of punishment tokens one agent can assign to a single target.",
             "SUBSIDY_FRACTION": "Fraction of SI punishment costs pooled and redistributed to top SI contributors as a subsidy.",
             "SUBSIDY_TOP_N": "Number of top contributors in the SI who share the subsidy pool.",
             "LDF_PAYOUT_DAMAGE_WEIGHT": "How strongly direct damage affects LDF payouts after shocks.",
@@ -155,18 +189,48 @@ class DemocracyModule:
                 lines.append(f"  - {name}: current value = {val} | Effect: {desc}")
         return "\n".join(lines)
 
+    def _build_categorical_block(self) -> str:
+        """Render the electable allocation rules, with randomised option order.
+
+        The categorical branch costs zero extra LLM calls: it rides the
+        constitutional session that already runs every ``DEMOCRACY_INTERVAL``
+        rounds, and the tally logic is unchanged.
+        """
+        from core.allocation_rules import describe_registry
+
+        if not categorical_params_enabled():
+            return ""
+
+        current = str(getattr(parameters, LDF_ALLOCATION_RULE_PARAM, "damage_proportional"))
+        lines = [
+            "**Allocation rule (choose exactly one of the following):**",
+            "This rule decides how the Loss & Damage Fund pool is split after a climate shock.",
+        ]
+        for name, description in describe_registry(order_seed=parameters.SEED).items():
+            marker = " (currently in force)" if name == current else ""
+            lines.append(f"  - {name}{marker}: {description}")
+        return "\n".join(lines)
+
     def _collect_proposals(self, agents, round_number):
-        """Ask each agent to propose one rule change."""
+        """Ask each agent to propose one rule change.
+
+        Fan-out rather than a serial loop: democracy is 1.4% of all calls but
+        was 100% serial, so it consumed roughly a quarter of a run's wall-clock
+        for almost no work (§7 item 10, Appendix A §15.7).
+        """
         proposals = []
         seen_proposals = set()  # (rule, new_value) pairs to filter exact duplicates
 
         tuneable_str = self._build_tuneable_str()
 
-        # Shuffle agents to prevent priority bias
+        # Shuffle agents to prevent priority bias. The shuffle is drawn from the
+        # seeded global RNG, so it stays reproducible under the seed vector.
         agents_copy = list(agents)
         random.shuffle(agents_copy)
 
-        for agent in agents_copy:
+        workers = _democracy_workers(min(len(agents_copy), parameters.LLM_MAX_CONCURRENCY))
+
+        def ask(agent):
             # Phase 4 Curiosity: suggest a parameter they haven't explored yet
             curiosity_hint = ""
             if parameters.CURIOSITY_ENABLED and parameters.CURIOSITY_BONUS_PROMPT:
@@ -176,19 +240,22 @@ class DemocracyModule:
                     target = random.choice(unexplored)
                     curiosity_hint = f"\n**Note:** You haven't proposed a change to `{target}` in your history. Rule changes can provide data on different governance outcomes."
 
-            proposal = self._get_proposal(
+            return agent, self._get_proposal(
                 agent, round_number, tuneable_str, curiosity_hint=curiosity_hint
             )
 
-            # Phase 4: Dynamic Validation
-            validated = self._validate_proposal(proposal)
-            if validated:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+            for agent, proposal in executor.map(ask, agents_copy):
+                # Phase 4: Dynamic Validation
+                validated = self._validate_proposal(proposal)
+                if not validated:
+                    continue
                 rule = validated["rule"]
                 new_val = validated["new_value"]
                 validated["proposer"] = agent.agent_id
 
-                # Deduplicate: only skip if it's the EXACT same rule and value
-                # This allows different agents to suggest different values for the same rule.
+                # Dedup: only skip if it's the EXACT same rule and value. This
+                # allows different agents to suggest different values for one rule.
                 proposal_key = (rule, new_val)
                 if proposal_key not in seen_proposals:
                     proposals.append(validated)
@@ -211,11 +278,23 @@ class DemocracyModule:
         if not isinstance(rule, str) or rule not in get_allowed_democracy_params():
             return None
 
-        # Only numeric values (or numeric strings) may be proposed
-        if not isinstance(new_val, (int, float, str)) or isinstance(new_val, bool):
+        if not hasattr(parameters, rule):
             return None
 
-        if not hasattr(parameters, rule):
+        # --- Categorical branch: the allocation rule is a named rule, not a number ---
+        if rule == LDF_ALLOCATION_RULE_PARAM:
+            if not isinstance(new_val, str):
+                return None
+            from core.allocation_rules import normalise_rule_name
+
+            resolved = normalise_rule_name(new_val)
+            if resolved is None:
+                return None
+            proposal["new_value"] = resolved
+            return proposal
+
+        # Only numeric values (or numeric strings) may be proposed
+        if not isinstance(new_val, (int, float, str)) or isinstance(new_val, bool):
             return None
 
         current = getattr(parameters, rule)
@@ -241,23 +320,37 @@ class DemocracyModule:
 
     def _get_proposal(self, agent, round_number, tuneable_str, curiosity_hint=""):
         """LLM call: ask one agent to propose a rule change."""
+        categorical_block = self._build_categorical_block()
+        instruction = (
+            "Propose a single change to one of the numeric parameters listed above, "
+            "or one of the allocation rules listed below. You are not restricted to a "
+            "subset — chose what you believe will most improve trust and sustainability "
+            "based on what you have observed in past rounds."
+        )
+        if not categorical_block:
+            instruction = (
+                "Propose a single change to one of the numeric parameters listed above. "
+                "You are not restricted to a subset — chose what you believe will most "
+                "improve trust and sustainability based on what you have observed in past rounds."
+            )
+
         prompt = f"""You are Agent {agent.agent_id} in a public goods game after Round {round_number}.
 
 The community is holding a constitutional vote. You may propose ONE specific rule change to improve collective welfare.
 
 **Current Parameters of the Simulation:**
 {tuneable_str}
-{curiosity_hint}
+{curiosity_hint}{categorical_block}
 
 **Current cumulative payoff:** {agent.cumulative_payoff:.0f} tokens
 
 **Your task:**
-Propose a single change to one of the numeric parameters listed above. You are not restricted to a subset — chose what you believe will most improve trust and sustainability based on what you have observed in past rounds.
+{instruction}
 
 Respond ONLY with valid JSON in this exact format:
 {{
-  "rule": "<exact parameter name>",
-  "new_value": <new numeric value>,
+  "rule": "<exact parameter name or allocation rule name>",
+  "new_value": <new numeric value, or the allocation rule name as a string>,
   "reason": "<one sentence justification>"
 }}"""
 
@@ -265,7 +358,10 @@ Respond ONLY with valid JSON in this exact format:
             validated = self._validate_proposal(dict(parsed)) if isinstance(parsed, dict) else None
             if validated:
                 return ""
-            return "proposal must contain an allowed rule and valid numeric new_value"
+            return (
+                "proposal must contain an allowed rule and either a valid numeric new_value "
+                "or an exact allocation-rule name"
+            )
 
         _response, proposal = request_with_retries(
             self.api_client,
@@ -285,8 +381,8 @@ Respond ONLY with valid JSON in this exact format:
                 "Democracy Proposal",
                 error,
                 fix_guidance=(
-                    'Return {"rule": "<exact parameter name>", '
-                    '"new_value": <number>, "reason": "<one sentence>"}.'
+                    'Return {"rule": "<exact parameter or allocation-rule name>", '
+                    '"new_value": <number or rule name>, "reason": "<one sentence>"}.'
                 ),
             ),
             logger=logger,
@@ -315,12 +411,20 @@ Respond ONLY with valid JSON in this exact format:
 
         proposals_str = "\n".join(proposal_lines)
 
-        for agent in agents:
-            vote_info = self._get_vote(agent, proposals_str, len(proposals), round_number)
-            if vote_info is not None:
-                votes[agent.agent_id] = vote_info
+        workers = _democracy_workers(min(len(agents), parameters.LLM_MAX_CONCURRENCY))
+
+        def ask(agent):
+            return agent.agent_id, self._get_vote(
+                agent, proposals_str, len(proposals), round_number
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+            for agent_id, vote_info in executor.map(ask, list(agents)):
+                if vote_info is None:
+                    continue
+                votes[agent_id] = vote_info
                 logger.info(
-                    f"Agent {agent.agent_id} votes for proposal [{vote_info['vote']}] "
+                    f"Agent {agent_id} votes for proposal [{vote_info['vote']}] "
                     f"(reason: {vote_info.get('reason', '')[:60]})"
                 )
 

@@ -19,9 +19,17 @@ import threading
 from openai import OpenAI, OpenAIError
 
 from core import parameters
+from llm.chat_template import render_chat
 from llm.retry import run_with_retries
 
 logger = logging.getLogger(__name__)
+
+
+def _use_fixed_template() -> bool:
+    """Whether ELICIT renders the chat template itself for cross-model parity."""
+    from llm.chat_template import fixed_template_mode
+
+    return fixed_template_mode()
 
 
 class VLLMClient:
@@ -125,18 +133,39 @@ class VLLMClient:
         """Perform exactly one transport attempt."""
         with self._request_semaphore:
             try:
-                messages = [{"role": "user", "content": prompt}]
                 create_args = {
                     "model": self.model_name,
-                    "messages": messages,
                     # max_tokens is deliberately omitted: vLLM then derives the
                     # budget as min(max_model_len - prompt_len, ...) via
                     # get_max_tokens(), so reasoning is never truncated.
                     "temperature": temperature,
                     "top_p": top_p,
+                    "min_p": float(getattr(parameters, "LLM_MIN_P", 0.0)),
+                    "repetition_penalty": float(getattr(parameters, "LLM_REPETITION_PENALTY", 1.0)),
                     "n": 1,
-                    "seed": int(getattr(parameters, "SEED", 0)),
+                    # Seed the sampler explicitly. Historically this was
+                    # `parameters.SEED`, which tied sampling to the Python RNG
+                    # and made "nine seeds" indistinguishable from one draw.
+                    "seed": int(getattr(parameters, "LLM_SEED", parameters.SEED)),
                 }
+
+                if _use_fixed_template():
+                    # Cross-model prompt parity: ELICIT renders the chat string
+                    # and posts raw text, so the prompt is byte-identical across
+                    # model families instead of inheriting each family's own
+                    # default template.
+                    rendered = render_chat(prompt)
+                    create_args["prompt"] = rendered
+                    response = self.client.completions.create(**create_args)
+                    generated_text = (response.choices[0].text or "").strip()
+                    logger.debug(
+                        "Fixed-template raw completion (%d chars) for %s",
+                        len(rendered),
+                        self.model_name,
+                    )
+                    return generated_text
+
+                create_args["messages"] = [{"role": "user", "content": prompt}]
                 # vLLM supports guided JSON via the standard response_format.
                 if response_format:
                     create_args["response_format"] = response_format

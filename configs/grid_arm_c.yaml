@@ -1,0 +1,51 @@
+# Arm C: the MCPR sweep. This is the theory test, not a description.
+#
+# With a single institution of n agents, MCPR = beta / n. At the historical
+# setting (beta = 1.6, n = 12 or 14) MCPR is ~0.13, far below 1, so c = 0 is a
+# strict best response every round and the observed cooperation is a property of
+# the prompt and the model prior rather than of the payoff structure. The sweep
+# turns that from an aside into a prediction test.
+#
+#   PRE-COMMITTED: report whichever of these two happens.
+#     - a discontinuity in participation at MCPR = 1 -> agents respond to the
+#       payoff structure and the instrument has construct validity for incentive
+#       questions;
+#     - cooperation persists at MCPR << 1 -> cooperation is a prompt/alignment
+#       artefact, which is a strong finding about the genre rather than a null.
+#
+# Design: n = 14 (6 developed / 8 developing) so the quadratic term halves and the
+# sweep is cheap. MCPR = beta/14 runs 0.029 -> 0.171 below the threshold and 1.00 /
+# 1.43 at beta = 14 / 20, so the design brackets MCPR = 1 instead of only probing
+# the sub-threshold regime. beta = 14 is the exact crossing point; beta = 20 gives
+# the contrast above it.
+
+name: grid_arm_c
+results_dir: results
+
+include:
+  # Below threshold: MCPR 0.029 - 0.171
+  - arm: C
+    presets:
+      - c_beta0p4_qwen
+      - c_beta0p8_qwen
+      - c_beta1_qwen
+      - c_beta1p2_qwen
+      - c_beta1p6_qwen
+      - c_beta2p4_qwen
+
+  # At and above threshold: MCPR 1.000 and 1.429
+  - arm: C
+    presets:
+      - c_beta14_qwen
+      - c_beta20_qwen
+
+  - arm: C
+    presets:
+      - c_beta0p4_llama
+      - c_beta0p8_llama
+      - c_beta1_llama
+      - c_beta1p2_llama
+      - c_beta1p6_llama
+      - c_beta2p4_llama
+      - c_beta14_llama
+      - c_beta20_llama

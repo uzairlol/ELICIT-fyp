@@ -1,0 +1,114 @@
+# ELICIT robustness-audit grid.
+#
+# This file is the plan of record. `elicit grid run --grid configs/grid_full.yaml`
+# executes it, resumably; `elicit export --grid ... --out ...` turns it into
+# Kaggle-ready per-cell bundles.
+#
+# -----------------------------------------------------------------------
+# PRE-COMMITED DECISIONS (write these down once; do not relitigate)
+# -----------------------------------------------------------------------
+#
+# 1. Shock schedule moves to rounds 7 and 17 (was 5 and 10). Shocks at 5 and 10
+#    coincided EXACTLY with the constitutional sessions at DEMOCRACY_INTERVAL=5,
+#    so every "shock response" was also a "rule change response". We take the
+#    clean schedule. Consequence, accepted: the nine existing Qwen seeds are NOT
+#    reusable as canonical cells and are not counted in this budget. They remain
+#    valid legacy context for the analysis pipeline.
+#
+# 2. Chat template is rendered by ELICIT ("fixed"), not by the server. Each family
+#    ships a different default template, so server-side templating would make P0 a
+#    different string per model and silently re-introduce the prompt confound
+#    that P1 and P2 exist to measure.
+#
+# 3. ToM is OFF in the main grid. It is 89.7% of calls and the project's own
+#    report found no stable effect for it (intervals cross zero, sign flips across
+#    thresholds). Retained only as Arm E.
+#
+# 4. Governance level G0 is Arm A's P0 cell on the same three models, so the
+#    fixed-governance reference arm is already paid for. Arm D therefore costs
+#    only G1/G2/G3/G3c.
+#
+# 5. Cut order if behind (§14.2): Arm E first, then Arm D G3 + G3c together
+#    (never keep G3 without its accept-all control), then Arm C, then reduce Arm B
+#    to 3 seeds. Arm A, D3 (post-processing only) and D4/G1 are the floor: they
+#    are a complete paper.
+#
+# -----------------------------------------------------------------------
+# BUDGET
+# -----------------------------------------------------------------------
+# Arm A   36 cells  ~86 GPU-h   the paper
+# Arm B   32 cells  ~77 GPU-h   identification; reduce to 24 cells if behind
+# Arm C   64 cells  ~45 GPU-h   MCPR theory test (n=14, cheap)
+# Arm D   30 cells  ~73 GPU-h   endogenous redistribution, G1/G2/G3 + G3c
+# Arm E    4 cells  ~44 GPU-h   optional ToM confound control; cut first
+# Total  166 cells ~325 GPU-h   -> ~3.2 weeks at 3 Kaggle accounts
+
+name: elicit_revamp_grid
+results_dir: results
+
+include:
+  # --- Arm A: prompt x model robustness audit (the paper) -----------------
+  - arm: A
+    presets:
+      - a_qwen_p0
+      - a_qwen_p1
+      - a_qwen_p2
+      - a_llama_p0
+      - a_llama_p1
+      - a_llama_p2
+      - a_mistral_p0
+      - a_mistral_p1
+      - a_mistral_p2
+
+  # --- Arm B: control conditions (identification) --------------------------
+  # Two models only: control contrasts do not need cross-family replication.
+  - arm: B
+    presets:
+      - b_full_qwen
+      - b_noldf_qwen
+      - b_noshock_qwen
+      - b_noenf_qwen
+      - b_full_llama
+      - b_noldf_llama
+      - b_noshock_llama
+      - b_noenf_llama
+
+  # --- Arm D: endogenous redistribution, G1..G3 + G3c control -------------
+  - arm: D
+    presets:
+      - d_g1_qwen
+      - d_g1_llama
+      - d_g1_mistral
+      - d_g2_qwen
+      - d_g2_llama
+      - d_g2_mistral
+      - d_g3_qwen
+      - d_g3_llama
+      - d_g3_mistral
+      - d_g3c_qwen
+
+  # --- Arm C: MCPR sweep (theory test) -----------------------------------
+  # n=14 so the design crosses MCPR=1 at beta=14 and contains a real prediction.
+  - arm: C
+    presets:
+      - c_beta0p4_qwen
+      - c_beta0p8_qwen
+      - c_beta1_qwen
+      - c_beta1p2_qwen
+      - c_beta1p6_qwen
+      - c_beta2p4_qwen
+      - c_beta14_qwen
+      - c_beta20_qwen
+      - c_beta0p4_llama
+      - c_beta0p8_llama
+      - c_beta1_llama
+      - c_beta1p2_llama
+      - c_beta1p6_llama
+      - c_beta2p4_llama
+      - c_beta14_llama
+      - c_beta20_llama
+
+  # --- Arm E: ToM confound control (cut first) ---------------------------
+  - arm: E
+    presets:
+      - e_tom_qwen

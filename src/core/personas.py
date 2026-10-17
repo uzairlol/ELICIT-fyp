@@ -3,7 +3,16 @@
 
 def _get_persona_block(agent):
     """Return extra behavior constraints based on an agent's LLM persona."""
+    from prompts.prompt_variants import active_variant
+
     persona = getattr(agent, "llm_persona", "DEFAULT")
+
+    # P2 minimal-control replaces the DEFAULT persona outright rather than
+    # appending a caveat: the payoff-maximisation directive has to be absent
+    # from the prompt, not merely outweighed by it.
+    variant = active_variant()
+    if variant.neutral_persona is not None and persona == "DEFAULT":
+        return variant.neutral_persona
 
     if persona == "RANDOM":
         return """

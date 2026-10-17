@@ -757,12 +757,16 @@ def extract_results(results_dir: Path) -> dict[str, pd.DataFrame | list[dict[str
                 "initial_total_wealth": sum(initial_wealth.values()),
                 "initial_developed_wealth": sum(
                     value
-                    for role, value in zip(initial_role.values(), initial_wealth.values(), strict=True)
+                    for role, value in zip(
+                        initial_role.values(), initial_wealth.values(), strict=True
+                    )
                     if role == "developed"
                 ),
                 "initial_developing_wealth": sum(
                     value
-                    for role, value in zip(initial_role.values(), initial_wealth.values(), strict=True)
+                    for role, value in zip(
+                        initial_role.values(), initial_wealth.values(), strict=True
+                    )
                     if role == "developing"
                 ),
             }

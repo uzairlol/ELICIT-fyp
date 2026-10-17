@@ -36,15 +36,23 @@ def safe_int(value: Any, default: int = 0) -> int:
 
 
 def parse_filename(path: Path) -> dict[str, Any]:
+    """Recover the run's factors from its filename.
+
+    Model-agnostic: the condition comes from the token between the model alias and
+    the scenario tag, and the alias from the first token after ``simulation_``.
+    The previous ``8b_`` literal could not parse ``qwen2.5-14b`` filenames.
+    """
     name = path.stem
     scenario_match = re.search(r"_scn([a-zA-Z0-9]+)_sh", name)
-    condition_match = re.search(r"8b_(.+?)_scn", name)
+    condition_match = re.search(r"^simulation_[^_]+_(.+?)_scn", name)
     seed_match = re.search(r"_seed(\d+)_", name)
     agents_match = re.search(r"_(\d+)agents_", name)
     rounds_match = re.search(r"_(\d+)rounds_", name)
+    model_match = re.match(r"^simulation_([^_]+)_", name)
 
     return {
         "run_label": name,
+        "model": model_match.group(1) if model_match else "unknown",
         "scenario": scenario_match.group(1) if scenario_match else "unknown",
         "condition": condition_match.group(1) if condition_match else "unknown",
         "seed": safe_int(seed_match.group(1) if seed_match else None, default=-1),

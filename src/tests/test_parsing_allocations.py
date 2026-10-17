@@ -9,8 +9,8 @@ mechanics so that ratio cannot drift silently.
 from __future__ import annotations
 
 import pytest
-
 from conftest import FakeAgent
+
 from core import parameters
 from parsing.punishment_parser import _expected_target_labels, _parse_amount_map
 from parsing.response_parsing_utils import (
@@ -53,7 +53,9 @@ class TestLabelNormalisation:
         assert result == {"Agent 99": 3}
 
     def test_fill_missing_zeroes_absent_labels(self):
-        result = _normalize_allocation_map({"Agent 1": 5}, ["Agent 1", "Agent 2"], fill_missing=True)
+        result = _normalize_allocation_map(
+            {"Agent 1": 5}, ["Agent 1", "Agent 2"], fill_missing=True
+        )
         assert result == {"Agent 1": 5, "Agent 2": 0}
 
     def test_does_not_fill_when_not_requested(self):
@@ -189,14 +191,23 @@ class TestApplyStage2Allocations:
         )
         assert punishments == {}
 
-    def test_max_per_target_argument_is_accepted_but_not_enforced(self, monkeypatch):
-        """Regression lock on a known defect.
+    def test_no_per_target_cap_parameter_remains(self):
+        """The dead ``max_per_target`` argument was removed, not left inert.
 
-        ``_apply_stage2_allocations`` accepts ``max_per_target`` but never reads
-        it, so ``MAX_PUNISHMENT_TOKENS`` is not applied on the live code path
-        (the helper that does enforce it, ``_apply_allocations_helper``, is dead
-        code). Until that is fixed, a caller passing max_per_target=5 still gets
-        an uncapped 500-token sanction. See docs/planning/revamp_strategy.md 7.2.
+        It was accepted and never read; the only code that honoured a per-target
+        cap was an uncalled helper. Both are gone, so the shared Stage-2 budget
+        is the single binding constraint and the signature says so.
+        """
+        import inspect
+
+        assert "max_per_target" not in inspect.signature(_apply_stage2_allocations).parameters
+
+    def test_amounts_are_not_capped_per_target(self, monkeypatch):
+        """Without a per-target cap, a large single sanction survives parsing intact.
+
+        The total budget is enforced separately, at
+        ``_fit_allocations_to_budget``; this test pins that the *parser* no longer
+        pretends to enforce anything per target.
         """
         monkeypatch.setattr(parameters, "RULE_OF_LAW_ENABLED", False)
         members = [FakeAgent(0), FakeAgent(1)]
@@ -208,7 +219,6 @@ class TestApplyStage2Allocations:
             {},
             _group(members),
             budget=1000,
-            max_per_target=5,
         )
         assert punishments == {1: 500}
 
@@ -270,9 +280,7 @@ class TestFitAllocationsToBudget:
     def test_relative_weighting_is_preserved(self, monkeypatch):
         monkeypatch.setattr(parameters, "PUNISHMENT_COST", 1)
         # scale = 30 / 60 == 0.5 -> 3:1 ratio becomes 3:1
-        punishments, _ = _fit_allocations_to_budget(
-            {1: 30, 2: 10}, {}, budget=20, members=[]
-        )
+        punishments, _ = _fit_allocations_to_budget({1: 30, 2: 10}, {}, budget=20, members=[])
         assert punishments == {1: 15, 2: 5}
 
     def test_zero_budget_clears_everything(self):
@@ -280,24 +288,18 @@ class TestFitAllocationsToBudget:
 
     def test_truncation_drops_small_allocations_to_zero(self):
         """Documented side effect: int() truncation can zero out small entries."""
-        punishments, _ = _fit_allocations_to_budget(
-            {1: 100, 2: 1}, {}, budget=10, members=[]
-        )
+        punishments, _ = _fit_allocations_to_budget({1: 100, 2: 1}, {}, budget=10, members=[])
         # scale = 10/101 -> 100*scale == 9, 1*scale == 0
         assert 2 not in punishments
 
     def test_remainder_goes_to_the_largest_punishment_target(self):
         """Rounding leftovers are dumped on the biggest punishment, not spread."""
-        punishments, _ = _fit_allocations_to_budget(
-            {1: 100, 2: 1}, {}, budget=10, members=[]
-        )
+        punishments, _ = _fit_allocations_to_budget({1: 100, 2: 1}, {}, budget=10, members=[])
         assert punishments[1] == 10
         assert sum(punishments.values()) == 10
 
     def test_remainder_is_not_distributed_to_rewards(self):
-        punishments, rewards = _fit_allocations_to_budget(
-            {}, {1: 100}, budget=10, members=[]
-        )
+        punishments, rewards = _fit_allocations_to_budget({}, {1: 100}, budget=10, members=[])
         # Only reward requests: nothing to absorb the leftover, so it is dropped.
         assert rewards == {1: 10}
         assert punishments == {}
@@ -313,7 +315,7 @@ class TestFitAllocationsToBudget:
 
     def test_discard_ratio_matches_the_reported_magnitude(self):
         """The report's 0.387 requested-to-final discard ratio is reproducible here."""
-        requested = {i: 100 for i in range(1, 13)}
+        requested = dict.fromkeys(range(1, 13), 100)
         budget = 750  # ~38.7% of the 1200 requested tokens
         fitted, _ = _fit_allocations_to_budget(requested, {}, budget=budget, members=[])
         retained = sum(fitted.values()) / sum(requested.values())

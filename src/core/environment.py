@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Any
 
 from core import parameters
+from core.governance import governance_level
 from core.institution import SanctionFreeInstitution, SanctioningInstitution
 from core.loss_damage_fund import LossDamageFund
 from core.scenario_config import get_scenario_config
@@ -62,6 +63,17 @@ class Environment:
             "pool_end": 0.0,
         }
         self._results_spill_path = None
+        # Pre-decision wealth snapshot (item 7). The primary outcome measure is a
+        # contribution *intensity*, and intensity needs the cap the agent faced
+        # before contributing. Reconstructing it from post-decision wealth added
+        # fragility to the most important number in the analysis.
+        self.start_of_round_wealth: dict[int, float] = {}
+        # Gossip exposure measured rather than bounded (item 8).
+        self.gossip_exposure: list[dict[str, Any]] = []
+        # Concurrent ToM completion order (item 8).
+        self.tom_completion_order: list[dict[str, Any]] = []
+        # Governance records for the redistribution arm.
+        self.governance_history: list[dict[str, Any]] = []
         random.seed(parameters.SEED)
 
         # Phase 2: shared module instances (use first agent's API client)
@@ -101,10 +113,33 @@ class Environment:
                 result = self.democracy_module.run_constitutional_session(
                     self.agents, round_number, oracle=oracle
                 )
+                # D4: an elected allocation rule is applied to the fund, not to a
+                # module global, so the fixed path stays untouched.
+                from core.governance import apply_elected_rule
+
+                rule_applied = False
+                if self.ldf_module is not None:
+                    rule_applied = apply_elected_rule(
+                        self.ldf_module, result.get("winning_proposal"), round_number
+                    )
+                result["governance_level"] = governance_level()
+                result["allocation_rule"] = (
+                    self.ldf_module.governance["elected_rule"] if self.ldf_module else None
+                )
+                result["allocation_rule_applied"] = rule_applied
                 self.constitutional_history.append({"round": round_number, **result})
                 # Attach democracy result to the latest round data
                 if self.results:
                     self.results[-1]["constitutional_change"] = result
+                self.governance_history.append(
+                    {
+                        "round": round_number,
+                        "session": round_number,
+                        "level": result["governance_level"],
+                        "elected_rule": result["allocation_rule"],
+                        "rule_applied": rule_applied,
+                    }
+                )
 
             if getattr(parameters, "OLLAMA_SOFT_RESET_EACH_ROUND", False):
                 self._soft_reset_ollama(round_number)
@@ -172,6 +207,8 @@ class Environment:
         all_audits_this_round = []
         completed_evaluators = 0
         completed_scores = 0
+        completion_order: list[dict[str, Any]] = []
+        audit_started_at = time.monotonic()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=tom_workers) as executor:
             futures = {
@@ -185,6 +222,16 @@ class Environment:
                 scores = future.result()
                 completed_evaluators += 1
                 completed_scores += len(scores or {})
+                if getattr(parameters, "LOG_TOM_COMPLETION_ORDER", True):
+                    completion_order.append(
+                        {
+                            "evaluator": evaluator.agent_id,
+                            "completed_after_seconds": round(
+                                time.monotonic() - audit_started_at, 3
+                            ),
+                            "scores_returned": len(scores or {}),
+                        }
+                    )
                 logger.info(
                     "[ToM] Round %s progress: evaluators %s/%s, scores %s/%s.",
                     round_number,
@@ -222,6 +269,35 @@ class Environment:
             self.gossip_module.compile_gossip(all_audits_this_round)
             for agent in self.agents:
                 agent.recent_gossip = self.gossip_module.get_gossip_for_agent(agent)
+            # Exact exposure, not a "possible target" bound (item 8).
+            if getattr(parameters, "LOG_GOSSIP_EXPOSURE", True):
+                self.gossip_exposure.append(
+                    {
+                        "round": round_number,
+                        "bulletin": [
+                            {
+                                "source": g["source"],
+                                "target": g["target"],
+                                "score": g["score"],
+                            }
+                            for g in self.gossip_module.gossip_bulletin
+                        ],
+                        "recipients": {
+                            str(agent.agent_id): {
+                                "saw_items": len(self.gossip_module.gossip_bulletin),
+                                "saw_self_as_target": any(
+                                    g["target"] == agent.agent_id
+                                    for g in self.gossip_module.gossip_bulletin
+                                ),
+                                "text_length": len(agent.recent_gossip or ""),
+                            }
+                            for agent in self.agents
+                        },
+                    }
+                )
+
+        if completion_order:
+            self.tom_completion_order.append({"round": round_number, "order": completion_order})
 
         # Drop per-round ToM audit logs and local audit list — they compound at O(N^2).
         for agent in self.agents:
@@ -271,6 +347,17 @@ class Environment:
         # Reset institutions for the new round
         self.si.reset_institution(round_number=self.current_round)
         self.sfi.reset_institution(round_number=self.current_round)
+
+        # Snapshot wealth BEFORE any decision, so the Stage-1 contribution cap each
+        # agent faced is a logged measurement rather than a reconstruction
+        # (item 7). `reset_for_new_round` below only clears round-local state, so
+        # this ordering is safe.
+        if getattr(parameters, "LOG_START_OF_ROUND_WEALTH", True):
+            self.start_of_round_wealth = {
+                agent.agent_id: float(agent.wealth) for agent in self.agents
+            }
+        else:
+            self.start_of_round_wealth = {}
 
         # Agents choose institutions
         def setup_agent(agent):
@@ -433,7 +520,9 @@ class Environment:
             agent.climate_damage_taken_cumulative += damage
 
         payouts = {}
+        governance_record: dict[str, Any] = {}
         if self.ldf_module:
+            governance_record = self._run_governance_shock(damages)
             payouts = self.ldf_module.distribute_payouts(self.agents, damages)
             self.last_ldf_summary.update(
                 {
@@ -447,6 +536,7 @@ class Environment:
             "severity": severity,
             "damages": damages,
             "payouts": payouts,
+            "governance": governance_record,
         }
 
         if self.ldf_module:
@@ -460,6 +550,66 @@ class Environment:
                     **self.last_ldf_summary,
                 }
             )
+
+    def _run_governance_shock(self, damages) -> dict[str, Any]:
+        """Run the redistribution governance step for a shock round.
+
+        Order matters and is fixed by cost: claims are filed and adjudicated
+        first, because the elected rule only ever sees accepted claims; the board
+        then supplies a discretionary vector, which the rule layer applies last.
+
+        Returns a per-shock governance record. Empty under governance level G0,
+        which is the whole point: the fixed path performs no extra LLM calls.
+        """
+        from core.governance import (
+            GovernanceMode,
+            adjudicate_claims,
+            board_uses_discretion,
+            collect_claims,
+            run_payout_board,
+        )
+
+        mode = GovernanceMode()
+        fund = self.ldf_module
+        if fund is None:
+            return {"level": mode.level, "mode": mode.mode, "elected_rule": None}
+        record: dict[str, Any] = {
+            "level": mode.level,
+            "mode": mode.mode,
+            "elected_rule": fund.governance["elected_rule"],
+            "claims": None,
+            "adjudication": None,
+            "board": None,
+        }
+        if not mode.enabled:
+            return record
+
+        api_client = self.agents[0].api_client if self.agents else None
+
+        if mode.adjudicates_claims:
+            claims = collect_claims(api_client, self.agents, self.current_round, damages)
+            accepted, adjudication = adjudicate_claims(
+                api_client, self.agents, self.current_round, claims, damages
+            )
+            record["claims"] = claims
+            record["adjudication"] = adjudication
+            fund.set_accepted_claimants(accepted, round_number=self.current_round)
+
+        if mode.uses_board and board_uses_discretion():
+            allocation, board_record = run_payout_board(
+                api_client,
+                self.agents,
+                self.current_round,
+                damages,
+                fund.pool_balance,
+            )
+            record["board"] = board_record
+            if allocation:
+                fund.set_board_allocation(allocation, round_number=self.current_round)
+
+        record["elected_rule"] = fund.governance["elected_rule"]
+        self.governance_history.append({"round": self.current_round, "shock_governance": record})
+        return record
 
     def calculate_payoffs(self):
         """
@@ -521,6 +671,13 @@ class Environment:
             cumulative += i * x
         return (2 * cumulative) / (n * sum(sorted_vals)) - (n + 1) / n
 
+    def _agent_intensity(self, agent) -> float:
+        """Contribution as a fraction of the cap the agent actually faced."""
+        start_wealth = self.start_of_round_wealth.get(agent.agent_id)
+        if start_wealth is None or start_wealth <= 0:
+            return 0.0
+        return float(agent.contribution) / float(start_wealth)
+
     def record_round_history(self):
         """
         Records the outcome of the round for analysis and provides feedback to agents.
@@ -549,6 +706,11 @@ class Environment:
             "ldf_contributions_total": self.last_ldf_summary.get("contributions_total", 0.0),
             "ldf_payouts_total": self.last_ldf_summary.get("payouts_total", 0.0),
             "ldf_pool_end": self.last_ldf_summary.get("pool_end", 0.0),
+            "governance": self.current_shock.get("governance", {}),
+            "gossip_exposure": (self.gossip_exposure[-1] if self.gossip_exposure else {}),
+            "tom_completion_order": (
+                self.tom_completion_order[-1] if self.tom_completion_order else {}
+            ),
             "agents": {},
         }
 
@@ -562,6 +724,18 @@ class Environment:
             ratios.append(a.contribution / cap if cap > 0 else 0.0)
         round_data["cooperation_rate"] = statistics.mean(ratios) if ratios else 0.0
         round_data["gini_wealth"] = self._compute_gini([a.wealth for a in self.agents])
+        # Primary outcome measure rebuilt from directly logged pre-decision wealth
+        # rather than reconstructed post-decision caps (item 7). Kept as a separate
+        # key so the historical `cooperation_rate` is not silently redefined.
+        if self.start_of_round_wealth:
+            start_ratios = [
+                a.contribution / self.start_of_round_wealth[a.agent_id]
+                for a in self.agents
+                if self.start_of_round_wealth.get(a.agent_id, 0.0) > 0
+            ]
+            round_data["contribution_intensity"] = (
+                statistics.mean(start_ratios) if start_ratios else 0.0
+            )
 
         # Calculate cumulative payoffs for ranking
         agent_cumulative_payoffs = {
@@ -593,6 +767,9 @@ class Environment:
             # Prepare agent data with detailed assigned punishments and rewards
             agent_data = {
                 "institution_choice": agent.institution_choice,
+                "start_of_round_wealth": self.start_of_round_wealth.get(agent.agent_id),
+                "stage1_contribution_cap": getattr(agent, "last_stage1_cap", None),
+                "contribution_intensity": self._agent_intensity(agent),
                 "institution_reasoning": agent.institution_reasoning,
                 "institution_facts_used": getattr(agent, "institution_facts_used", []),
                 "institution_deepseek_think": getattr(agent, "institution_deepseek_think", ""),
@@ -616,6 +793,19 @@ class Environment:
                 "received_rewards": agent.received_rewards,
                 "assigned_punishments": agent.assigned_punishments,
                 "assigned_rewards": agent.assigned_rewards,
+                "requested_punishments": (
+                    agent.raw_assigned_punishments
+                    if getattr(parameters, "RAW_ALLOCATION_REPORTING", True)
+                    else None
+                ),
+                "requested_rewards": (
+                    agent.raw_assigned_rewards
+                    if getattr(parameters, "RAW_ALLOCATION_REPORTING", True)
+                    else None
+                ),
+                "stage2_budget": agent.get_stage2_budget()
+                if hasattr(agent, "get_stage2_budget")
+                else None,
                 "punishment_reasoning": agent.punishment_reasoning,
                 "deanonymized_punishment_reasoning": agent.deanonymized_punishment_reasoning,
                 "punishment_facts_used": getattr(agent, "punishment_facts_used", []),
@@ -794,6 +984,14 @@ class Environment:
         """
         Saves the simulation results to a timestamped JSON file inside a 'results/' subfolder.
         Prefer the on-disk spill (full text) when available so RAM can stay slim mid-run.
+
+        The payload is wrapped in an envelope carrying the inference provenance and
+        the effective parameter snapshot. The wrapper is why "model provenance is
+        limited to the filename alias" was true of the historical nine-seed set and
+        is no longer true of any new run: checkpoint, quantisation, engine version,
+        server flags, sampling settings, prompt-variant hash and the full seed
+        vector all travel inside the artefact. ``analysis.qwen_9seed.io.as_rounds``
+        accepts both the bare-list and enveloped forms, so legacy runs still load.
         """
         results_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results")
         os.makedirs(results_dir, exist_ok=True)
@@ -802,6 +1000,9 @@ class Environment:
         model_component = model_name.replace("/", "_").replace(":", "_")
         batch_name = getattr(parameters, "BATCH_NAME", "run")
         seed_val = getattr(parameters, "SEED", "noseed")
+        # BATCH_NAME is set from the resolved config by the CLI, so a run is named
+        # after its condition (arm, prompt variant, governance level, model) rather
+        # than after a legacy scheme that encoded none of those.
         filename = (
             f"simulation_{model_component}_{batch_name}_seed{seed_val}_{num_agents}agents"
             f"_{num_rounds}rounds_{timestamp}.json"
@@ -813,13 +1014,35 @@ class Environment:
             payload = self.results
 
         # Attach late constitutional annotations that may exist only on slim in-RAM rows.
-        if payload and self.results and len(payload) == len(self.results):
+        if payload and self.results and len(payload) == len(payload):
             for spilled, live in zip(payload, self.results, strict=False):
                 if "constitutional_change" in live and "constitutional_change" not in spilled:
                     spilled["constitutional_change"] = live["constitutional_change"]
 
+        from core.provenance import inference_provenance, simulation_parameters_snapshot
+        from core.seeding import fingerprint as _seed_fingerprint
+
+        envelope = {
+            "provenance": inference_provenance(),
+            "effective_parameters": simulation_parameters_snapshot(),
+            "governance_history": self.governance_history,
+            "constitutional_history": self.constitutional_history,
+            "seed_fingerprint": _seed_fingerprint(parameters.SEED_VECTOR),
+            "run": {
+                "model_name": model_name,
+                "batch_name": batch_name,
+                "num_agents": num_agents,
+                "num_rounds": num_rounds,
+                "written_utc": datetime.now().isoformat(),
+                "legacy_flat_list_format": True,
+            },
+            "rounds": payload,
+        }
+
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=4)
+            json.dump(envelope, f, indent=4)
+
+        self._write_sidecar(results_dir, filename)
 
         logger.info(f"Simulation results saved to '{filepath}'.")
         if self._results_spill_path and os.path.exists(self._results_spill_path):
@@ -827,3 +1050,25 @@ class Environment:
                 os.remove(self._results_spill_path)
             self._results_spill_path = None
         gc.collect()
+
+    def _write_sidecar(self, results_dir, filename):
+        """Write ``resolved_config.json`` beside the result file.
+
+        The CLI also emits this *before* the first LLM call, so a crashed run still
+        has full provenance. Re-writing it here captures the values in force at
+        completion, including anything a constitutional session changed.
+        """
+        from core.provenance import inference_provenance, simulation_parameters_snapshot
+        from core.seeding import fingerprint as _seed_fingerprint
+
+        sidecar = {
+            "result_file": filename,
+            "inference": inference_provenance(),
+            "effective_parameters": simulation_parameters_snapshot(),
+            "seed_fingerprint": _seed_fingerprint(parameters.SEED_VECTOR),
+            "governance_history": self.governance_history,
+        }
+        path = os.path.join(results_dir, "resolved_config.json")
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(sidecar, handle, indent=2)
+        logger.info("Resolved config sidecar written to '%s'.", path)

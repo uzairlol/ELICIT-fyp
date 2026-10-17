@@ -14,13 +14,17 @@ class _FakeMessage:
 
 
 class _FakeChoice:
-    def __init__(self, message):
+    def __init__(self, message=None, text=None):
         self.message = message
+        self.text = text
 
 
 class _FakeResponse:
-    def __init__(self, message):
-        self.choices = [_FakeChoice(message)]
+    def __init__(self, message=None, text=None):
+        if text is not None:
+            self.choices = [_FakeChoice(text=text)]
+        else:
+            self.choices = [_FakeChoice(message)]
 
 
 class _FakeCompletions:
@@ -44,6 +48,8 @@ class _FakeChat:
 class _FakeOpenAIClient:
     def __init__(self, completions):
         self.chat = _FakeChat(completions)
+        # The raw-completions transport used when CHAT_TEMPLATE_MODE == "fixed".
+        self.completions = completions
 
 
 @pytest.fixture
@@ -73,12 +79,62 @@ def test_send_request_uses_standard_openai_args(client):
     # so vLLM derives the budget as min(max_model_len - prompt_len, ...).
     assert "max_tokens" not in captured
     assert captured["temperature"] == 0.3
-    assert captured["seed"] == 7
+    # Sampling is pinned by LLM_SEED, not by the Python RNG seed. Tying them
+    # together meant the replication unit of the nine historical seeds could not
+    # be shown to be independent of the Python-side draw.
+    assert captured["seed"] == parameters.LLM_SEED
     assert captured["response_format"] == {"type": "json_object"}
     assert "extra_body" not in captured
     assert "options" not in captured
     assert "keep_alive" not in captured
     assert captured["messages"][0]["content"] == "Hello"
+
+
+def test_sampling_seed_follows_llm_seed_not_python_seed(client, monkeypatch):
+    """Changing the Python RNG seed must not change what is sent to the sampler."""
+    monkeypatch.setattr(parameters, "LLM_SEED", 1013, raising=False)
+    completions = _FakeCompletions(response=_FakeResponse(_FakeMessage("{}")))
+    client.client = _FakeOpenAIClient(completions)
+
+    client.send_request(model_name="qwen2.5-14b", prompt="p")
+    assert completions.captured["seed"] == 1013
+
+
+def test_fixed_template_mode_posts_raw_prompt(client, monkeypatch):
+    """Cross-model prompt parity: ELICIT renders the chat string and posts it raw."""
+    monkeypatch.setattr(parameters, "CHAT_TEMPLATE_MODE", "fixed", raising=False)
+    monkeypatch.setattr(parameters, "CHAT_TEMPLATE_NAME", "chatml", raising=False)
+    completions = _FakeCompletions(response=_FakeResponse(text="{}"))
+    client.client = _FakeOpenAIClient(completions)
+
+    client.send_request(model_name="mistral-7b", prompt="Hello")
+
+    # Compared against the renderer rather than against literal control tokens,
+    # so the assertion states the contract (ELICIT renders and posts raw) without
+    # hard-coding a family's template syntax into the test.
+    from llm.chat_template import render_chat
+
+    captured = completions.captured
+    assert "messages" not in captured
+    assert captured["prompt"] == render_chat("Hello", "chatml")
+    assert "Hello" in captured["prompt"]
+
+    # The same prompt under any registered template renders to one string that
+    # ELICIT owns, so the prompt is byte-identical across model families.
+    rendered = {name: render_chat("Hello", name) for name in ("chatml", "llama3", "mistral")}
+    assert all("Hello" in text for text in rendered.values())
+
+
+def test_server_template_mode_keeps_messages(client, monkeypatch):
+    monkeypatch.setattr(parameters, "CHAT_TEMPLATE_MODE", "server", raising=False)
+    completions = _FakeCompletions(response=_FakeResponse(_FakeMessage("{}")))
+    client.client = _FakeOpenAIClient(completions)
+
+    client.send_request(model_name="mistral-7b", prompt="Hello")
+
+    captured = completions.captured
+    assert captured["messages"][0]["content"] == "Hello"
+    assert "prompt" not in captured
 
 
 def test_send_request_falls_back_to_reasoning_content(client):

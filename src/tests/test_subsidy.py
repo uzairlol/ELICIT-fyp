@@ -8,6 +8,7 @@ central pool, so the total-money-supply implication is asserted explicitly.
 from __future__ import annotations
 
 from conftest import FakeAgent
+
 from core import parameters
 from core.subsidy import SubsidyModule
 
@@ -171,7 +172,6 @@ class TestEconomicInterpretation:
         Nothing in the SI's token holdings is reduced, so the sum of agent
         payoffs rises. This matters for the welfare interpretation in the paper.
         """
-        monkeypatch = None  # no parameter override needed
         agents = [_si(0, 10.0, assigned_punishments={1: 100})]
         before = agents[0].wealth
         SubsidyModule().compute_subsidies(agents, {0: 10.0})

@@ -10,7 +10,29 @@
 
 ## Executive Summary & Key Visual Insights
 
-Recent work assumes that social pressure and reputation systems automatically stabilize cooperation in LLM multi-agent societies. **ELICIT** empirical experiments challenge this default claim. Across repeated 30-round replications with 26 heterogeneous agents under climate shocks, democratic updating, and social monitoring (peer scoring, reputation badges, and gossip), we discover that **social monitoring without formal enforcement tools leads to cooperation decay rather than repair**.
+**Read this first: ELICIT is now framed as an audit of LLM-agent social simulation, not as a claim about cooperation.**
+
+The single-condition, nine-seed result pack this repository was built around cannot support a causal claim, and it does not pretend to. What it *can* support — and what the code now measures directly — is a set of validity checks on the instrument itself.
+
+Concretely, three findings from the pre-revamp analysis are stated here without overclaiming, because each is a measurement rather than an interpretation:
+
+- **Cooperation is high but not attributable.** Contribution intensity averages ~0.93 of the pre-decision cap across nine runs of one condition, yet at the design's own payoffs the marginal return to contributing (MCPR = β/n ≈ 0.13) is far below 1, so contributing zero is a strict best response in every round. The observed cooperation is therefore a property of the prompt and the model prior, not a payoff-equilibrium outcome. `analysis/best_response.py` turns this into a per-decision deviation rate.
+- **The gossip/intensity association is unstable.** Its interval crosses zero and its *sign flips across thresholds 3–7*. Our own claim-strength matrix grades it exploratory and non-causal and explicitly forbids using "backfires" as a headline. An earlier version of this README said exactly that and contradicted the analysis; it has been corrected.
+- **Heterogeneity across seeds is an order of magnitude.** The terminal developed/developing wealth ratio spans 0.674–8.176 across nine runs of the *same* configuration. A reliability problem about the instrument is a finding in its own right.
+
+The robustness grid in `configs/` exists to test that fragility directly: three model families × three prompt variants × four seeds, with parameter parity enforced in code, an explicit seed vector per run, and the pre-committed reporting rules written before the first cell executes.
+
+**What was fixed, and why it matters.** The pre-revamp code had defects that a referee would find, and fixing them raised credibility more than any amount of extra prose would have:
+
+| Defect | Consequence | Now |
+|---|---|---|
+| Oracle cooperation rate divided by an import-time constant | Every one of the 54 historical constitutional sessions was annotated with a statistic of order 10⁵ instead of 10⁻¹ | Wealth-scaled and clipped to `[0, 1]`; `tests/test_verification_gate.py` asserts the bound |
+| `MAX_PUNISHMENT_TOKENS` never enforced, its only enforcer dead code | A decorative flag a reviewer can trace | Deleted; grep returns zero hits |
+| `CONTRIBUTION_CAPACITY` and `HISTORICAL_EMISSIONS` logged and prompted but in no payoff | Two parameters that look causal and are not | Capacity now scales the Stage-1 cap; emissions are the `cbdr` payout weight |
+| Shocks at rounds 5 and 10, constitutional sessions every 5 rounds | Every "shock response" was also a "rule-change response" | Shocks moved to rounds 7 and 17; asserted by a test |
+| `SEED` seeded `random` only and never appeared in run filenames | Nine "replications" that may be one draw | Explicit, serialised seed vector covering Python, per-agent, per-persona and sampler seeds |
+| LDF allocation rule was a hardcoded constant | The institution's distributional core was exogenous | A registry of six named rules, electable by the assembly under four governance levels |
+| No best-response or equilibrium code anywhere | No yardstick for "cooperation" | `analysis/best_response.py` |
 
 ### 1. Institutional Cooperation Trajectories
 
@@ -103,16 +125,31 @@ ELICIT models a complex multi-agent climate micro-economy featuring multi-stage 
 
 ## Summary of Main Empirical Findings
 
-1. **Social Monitoring Without Enforcement Causes Withdrawal**:
-   - In non-enforcing institutions (SFI), receiving negative social marks (gossip or bad reputation scores) leads to significant reductions in subsequent contribution intensity ($\Delta\mathrm{prop} < 0$).
-   - Gossip associations are stronger in magnitude than bad-reputation associations.
-2. **Replication Sensitivity in Enforcing Institutions**:
-   - While SFI agents consistently reduce contributions following negative social marks, SI agents display cross-seed variability (slight drop in Run A, sharp positive increase in Run B).
-3. **Stock Accumulation vs. Equity Gaps**:
-   - LDF pools accumulate substantial unused reserves over 30 rounds.
-   - High coverage ratios (~75%) fail to bridge structural wealth inequality between North and South agents due to uneven initial endowments and risk exposure.
-4. **LLM Decision Rationales**:
-   - LLM agents operate primarily on short-term payoff maximization and incentive reasoning rather than moral reputation repair or long-term equity goals.
+Stated at the strength the evidence supports, with the evidence tier named. A referee or admissions reader who finds an overstated claim here will discount everything else in this repository.
+
+1. **Cooperation is high but is not payoff-optimal** *(measurement, not attribution)*.
+   Contribution intensity averages ≈ 0.93 of the pre-decision cap. At the design's own payoffs, MCPR = β/n ≈ 0.13, so contributing zero is a strict best response in every round and there is no continuation value. `analysis/best_response.py` reports the deviation rate from that best response, overall and by prompt variant.
+2. **Gossip targeting is associated with lower contribution, but the association is unstable** *(exploratory, non-causal)*.
+   The interval crosses zero and the sign flips across thresholds 3–7. This is **not** a claim that gossip backfires; a threshold was not selected, and the claim-strength matrix forbids that framing.
+3. **Institutional heterogeneity is enormous and under-explained** *(descriptive, robust)*.
+   The terminal developed/developing wealth ratio spans **0.674–8.176** across nine runs of one identical configuration. Reported transfers are 0.168–0.504% of deposits and payouts are exactly 0.900 × damage for eligible claimants whenever the pool suffices, so the 0.900 figure is a mechanical cap rather than a behavioural estimate.
+4. **Participation rose without substantive redistribution** *(descriptive, robust)*.
+   The wealth gap narrowed in every run, but the LDF is a tiny fraction of the flow; the gap is driven by the designed endowment profile, the vulnerability asymmetry and group size. Framing it as "the LDF fails" would be a category error — the LDF is doing what its arithmetic says.
+5. **The sanction map is substantially the safety net's, not the model's** *(measurement)*.
+   29.7% of SI agent-rounds carry `auto_fitted_to_budget` and the requested-to-final punishment token discard ratio is ≈ 0.387. Raw requested allocations are now logged alongside applied ones so the intervention is a measured quantity.
+6. **Long-horizon reasoning is an interpretation, not an observation** *(limitation)*.
+   Rationales average 8.45 words and only 41.2% are unique; 1 of 7,020 matched a fairness/equity codebook. Sampled deliberation traces (`TRACE_ENABLED`) now preserve prompt and raw completion so this section rests on transcripts rather than on summaries.
+
+### What the robustness grid will decide
+
+Pre-committed in `configs/grid_full.yaml`; report whichever occurs.
+
+| Question | Pre-registered reading |
+|---|---|
+| Does `σ²_prompt + σ²_model` exceed `σ²_seed`? | If yes, the outcome is a property of the instrument — a publishable, general finding about the genre |
+| Is there a discontinuity in participation at MCPR = 1? | If yes, agents respond to the payoff structure and the instrument has construct validity; if no, cooperation is a prompt/alignment artefact |
+| Does the deviation rate differ between P0 and P2? | Quantifies prompt steering with a game-theoretic yardstick rather than a lexical one |
+| Does one allocation rule win across model families? | A shared normative preference; if the winner differs by family, that is the reliability paper's second headline |
 
 ---
 
@@ -251,16 +288,56 @@ Launch an interactive visualizer in your browser to inspect agent decision chain
 
 ## Citation & Research Paper
 
-If you use ELICIT in your research, please refer to the pre-print document in `docs/paper/main.pdf` or cite:
+The manuscript is **not yet a citable claim**. A preprint DOI will replace this section on submission; until then, cite the repository and the pre-registered protocol, not a paper.
 
 ```bibtex
-@article{elicit2026,
-  title={Emergent LLM Institutions for Climate and International Treaties},
-  author={ELICIT Research Team},
-  year={2026},
-  journal={Working Paper}
+@misc{elicit2026,
+  title  = {{ELICIT}: An Audit of LLM-Agent Social Simulation in a Climate Burden-Sharing Institution},
+  author = {{ELICIT Research Team}},
+  year   = {2026},
+  note   = {Pre-registered robustness audit; protocol in docs/paper/ and configs/grid_full.yaml},
+  url    = {https://github.com/uzairlol/ELICIT-fyp}
 }
 ```
+
+> `assets/paper_v2.tex` is **superseded and retained only as an archive**. It reports a single run, a different MCPR and a different LDF total from `docs/paper/qwen_2_5_14b_9seed_results_report.md`. Do not cite it, and do not read its numbers as current.
+
+---
+
+## Running the robustness grid
+
+A run is defined by a versioned config, not by editing `parameters.py`. `elicit` is the entry point.
+
+```bash
+# What is registered?
+elicit preset list
+elicit params                      # every parameter, and whether anything reads it
+
+# What will a grid cost, and does it hold parity across models?
+elicit grid show --grid configs/grid_arm_a.yaml
+
+# Preflight before every compute session
+elicit doctor --model qwen2.5-14b
+
+# Execute one cell locally
+elicit run --preset a_qwen_p0 --seed-index 1
+
+# Execute a manifest, resumably
+elicit grid run --grid configs/grid_arm_a.yaml --resume
+
+# Export Kaggle-ready bundles: config + runner + serve script per cell
+elicit export --grid configs/grid_full.yaml --out kaggle_bundles --zip full
+```
+
+Then open `src/kaggle/fyp-grid-qwen2-5-14b.ipynb` on Kaggle, set `SERVED_MODEL`, and run all cells. One session loads one model, so run it once per alias per account.
+
+After the runs land in `results/`:
+
+```bash
+python -m analysis.revamp_run_all --results-dir results --out analysis_outputs/revamp
+```
+
+That produces the four pre-committed headline artefacts: the variance decomposition, the MCPR response curve, the best-response deviation rate, and the governance tables.
 
 ---
 

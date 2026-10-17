@@ -8,8 +8,8 @@ approximately.
 from __future__ import annotations
 
 import pytest
-
 from conftest import FakeAgent
+
 from core import parameters
 from core.loss_damage_fund import LossDamageFund
 
@@ -149,7 +149,7 @@ class TestDistributePayouts:
     def test_payouts_never_exceed_the_pool(self):
         fund = LossDamageFund()
         agents = [FakeAgent(i, agent_group="developing") for i in range(5)]
-        damages = {i: 10_000.0 for i in range(5)}
+        damages = dict.fromkeys(range(5), 10000.0)
         fund.pool_balance = 123.0
         payouts = fund.distribute_payouts(agents, damages)
         assert sum(payouts.values()) <= 123.0 + 1e-9

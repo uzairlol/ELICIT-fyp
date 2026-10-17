@@ -1,0 +1,50 @@
+# Arm A + Arm B: the audit and its controls. Launch these first.
+#
+# Arms A and B together are 68 cells / ~163 GPU-h, which is under two weeks at
+# three Kaggle accounts. The cut ladder (§14.2) puts Arm A at priority 2 and Arm B
+# at priority 7 for a reason: Arm B buys identification and is the most expensive
+# credibility gain, but reducing it to 3 seeds beats dropping it. A 3-seed control
+# contrast still identifies; no control contrast does not.
+
+name: grid_arm_ab
+results_dir: results
+
+include:
+  - arm: A
+    presets:
+      - a_qwen_p0
+      - a_qwen_p1
+      - a_qwen_p2
+      - a_llama_p0
+      - a_llama_p1
+      - a_llama_p2
+      - a_mistral_p0
+      - a_mistral_p1
+      - a_mistral_p2
+
+  # Four conditions x 2 models x 4 seeds = 32 cells.
+  #
+  #   Full           shocks on, LDF on, enforcement on   -> reference
+  #   No-LDF         shocks on, LDF off                  -> does the fund change
+  #                                                       behaviour, or only the
+  #                                                       observed distribution?
+  #   No-Shock       LDF on, no shocks                   -> is behaviour driven by
+  #                                                       risk, or by the mere
+  #                                                       existence of the fund?
+  #   No-Enforcement shocks + LDF, PUNISHMENT_EFFECT=0  -> is Stage-2 enforcement
+  #                                                       doing anything? Given
+  #                                                       that ~30% of observed
+  #                                                       sanctions were rewritten
+  #                                                       by the safety net, this
+  #                                                       is the most interesting
+  #                                                       of the four.
+  - arm: B
+    presets:
+      - b_full_qwen
+      - b_noldf_qwen
+      - b_noshock_qwen
+      - b_noenf_qwen
+      - b_full_llama
+      - b_noldf_llama
+      - b_noshock_llama
+      - b_noenf_llama

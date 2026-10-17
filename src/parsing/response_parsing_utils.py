@@ -137,7 +137,6 @@ def _apply_stage2_allocations(
     anonymized_id_mapping,
     group_state,
     budget,
-    max_per_target=None,
 ):
     """Resolve punishment/reward labels to agent ids without capping or trimming LLM amounts."""
     members = group_state.get("members", []) or []
@@ -235,68 +234,6 @@ def _fit_allocations_to_budget(punishment_requests, reward_requests, budget, mem
             fitted_punishments[top_target] += additional
 
     return fitted_punishments, fitted_rewards
-
-
-def _apply_allocations_helper(
-    source_map,
-    destination_map,
-    tokens_remaining,
-    cost_per_token,
-    is_punishment,
-    agent,
-    anonymized_id_mapping,
-    group_state,
-    max_per_target,
-):
-    """Apply allocations from a source mapping (e.g., punishments or rewards) to destination_map.
-
-    Returns (destination_map, tokens_remaining). This helper centralizes validation,
-    affordability, max-per-target, Rule-of-Law blocking, and anonymized id resolution.
-    """
-    # Calculate group average for rule-of-law validation
-    members = group_state.get("members", [])
-    if members:
-        group_avg = sum(getattr(m, "contribution", 0) for m in members) / len(members)
-    else:
-        group_avg = group_state.get("si_avg_contribution", parameters.ENDOWMENT_STAGE_1)
-
-    for key, raw_tokens in list(source_map.items()):
-        target_agent_id = _target_agent_id_from_key(key, anonymized_id_mapping)
-        if target_agent_id is None or target_agent_id == agent.agent_id:
-            continue
-
-        tokens = _parse_allocation_tokens(raw_tokens)
-        if not tokens:
-            continue
-
-        tokens = min(tokens, max_per_target)
-        max_affordable = tokens_remaining // cost_per_token if cost_per_token > 0 else tokens
-        tokens = min(tokens, max_affordable)
-        if tokens <= 0:
-            continue
-
-        if is_punishment:
-            target_contrib = None
-            for peer in group_state.get("members", []):
-                if getattr(peer, "agent_id", None) == target_agent_id:
-                    target_contrib = getattr(peer, "contribution", None)
-                    break
-            rol_enabled = bool(getattr(parameters, "RULE_OF_LAW_ENABLED", False))
-            if rol_enabled and target_contrib is not None and target_contrib >= group_avg:
-                logger.warning(
-                    f"RULE OF LAW BLOCKED: Agent {agent.agent_id} tried to punish Agent {target_agent_id}. "
-                    f"Target gave {target_contrib} (Group Avg {group_avg:.2f}). Hallucinated Free-riding."
-                )
-                if hasattr(agent, "rule_of_law_blocks"):
-                    agent.rule_of_law_blocks += 1
-                continue
-
-        destination_map[target_agent_id] = tokens
-        tokens_remaining -= tokens * cost_per_token
-        if tokens_remaining <= 0:
-            break
-
-    return destination_map, tokens_remaining
 
 
 def _detect_raw_shape(parsed):

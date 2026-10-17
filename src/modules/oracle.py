@@ -3,15 +3,15 @@
 
 # version 1
 
-
 """
+
 Oracle Module.
 
 The Oracle is a "Synthetic Heuristic Oracle", representing an environmental,
 rule-based welfare predictor used during democratic votes. It evaluates each
 proposed rule change and estimates its effect on group social welfare based on:
 
-  - Current observed cooperation rate (avg contribution / max contribution)
+  - Current observed cooperation rate (bounded to [0, 1])
   - Current free-rider proportion (agents below 50% of average)
   - Direction and magnitude of the proposed change
 
@@ -19,6 +19,16 @@ This gives agents data-grounded context when voting, replacing pure LLM
 speculation with calculated signal. Note for research applications: this is
 a synthetic environmental heuristic rather than an objective truth model or
 trained critic.
+
+Correctness note (was a material bug): the cooperation rate used to be
+``avg_contribution / parameters.MAX_CONTRIBUTION``. ``MAX_CONTRIBUTION`` is bound
+at import time to ``ENDOWMENT_STAGE_1`` (20) and is never re-derived from
+wealth, while climate-mode contributions run into the millions. The statistic was
+therefore of order 10^4-10^5, and it fed straight into the LDF annotation
+formula, so every constitutional session in the historical nine-seed set was
+decided with LDF rules annotated by a meaningless quantity. The rate is now
+computed against each agent's own pre-decision contribution cap and clipped to
+[0, 1]; ``tests/test_oracle.py`` asserts the bound.
 
 Usage:
     oracle = Oracle(round_history, agents, parameters)
@@ -73,16 +83,27 @@ class Oracle:
         recent = self.round_history[-3:] if len(self.round_history) >= 3 else self.round_history
 
         all_contribs = []
+        all_caps = []
         for rnd in recent:
             for agent_data in rnd.get("agents", {}).values():
                 all_contribs.append(agent_data.get("contribution", 0))
+                all_caps.append(self._contribution_cap(agent_data))
 
         n = len(all_contribs)
         avg_contrib = sum(all_contribs) / n if n > 0 else 0
-        max_c = parameters.MAX_CONTRIBUTION
 
-        # Cooperation rate: avg contribution as fraction of max
-        coop_rate = avg_contrib / max_c if max_c > 0 else 0
+        # Cooperation rate as a bounded [0, 1] intensity. The denominator is the
+        # agent's own pre-decision contribution cap (logged when
+        # LOG_START_OF_ROUND_WEALTH is on, reconstructed from wealth otherwise),
+        # NOT the import-time constant MAX_CONTRIBUTION. Using a cap of zero
+        # agents in the denominator would reintroduce the original bug, so they
+        # are excluded from the intensity average entirely.
+        intensities = [
+            max(0.0, float(c)) / cap
+            for c, cap in zip(all_contribs, all_caps, strict=False)
+            if cap and cap > 0
+        ]
+        coop_rate = min(1.0, max(0.0, sum(intensities) / len(intensities))) if intensities else 0.0
 
         # Free-rider rate: fraction of contributions below half the average
         threshold = avg_contrib * 0.5
@@ -102,7 +123,37 @@ class Oracle:
             "freerider_rate": round(freerider_rate, 3),
             "avg_payoff": round(avg_payoff, 1),
             "n_observations": n,
+            "n_intensity_observations": len(intensities),
         }
+
+    @staticmethod
+    def _contribution_cap(agent_data: dict) -> float:
+        """Pre-decision Stage-1 cap for one agent-round record.
+
+        Prefers the directly logged value; falls back to the reconstructed
+        start-of-round wealth, then to the abstract-mode endowment.
+        """
+        from core import parameters
+
+        logged = agent_data.get("start_of_round_wealth")
+        if logged is None:
+            logged = agent_data.get("wealth_before_decision")
+        if logged is not None:
+            try:
+                cap = float(logged)
+            except (TypeError, ValueError):
+                cap = 0.0
+            if cap > 0:
+                return cap
+
+        intensity = agent_data.get("contribution_intensity")
+        contribution = agent_data.get("contribution", 0)
+        try:
+            if intensity is not None and float(intensity) > 0:
+                return float(contribution) / float(intensity)
+        except (TypeError, ValueError, ZeroDivisionError):
+            pass
+        return float(getattr(parameters, "ENDOWMENT_STAGE_1", 20.0))
 
     # ------------------------------------------------------------------
     # Per-proposal annotation
@@ -156,15 +207,6 @@ class Oracle:
                 f"Current avg round payoff: {stats['avg_payoff']:.1f} tokens. "
                 f"Larger Stage 2 budget gives more sanctioning capacity. "
                 f"Predicted redistribution effect: {predicted_welfare_pct:+.1f}%."
-            )
-
-        elif rule == "MAX_PUNISHMENT_TOKENS":
-            # Cap on assignable tokens — mainly affects punishment intensity ceiling
-            predicted_welfare_pct = change_pct * fr * parameters.ORACLE_MAX_TOKENS_WEIGHT
-            rationale = (
-                f"Free-rider rate: {fr * 100:.0f}%. "
-                f"Raising the cap matters most when free-riding is high. "
-                f"Predicted effect on welfare: {predicted_welfare_pct:+.1f}%."
             )
 
         elif rule in {

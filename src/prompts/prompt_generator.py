@@ -17,6 +17,18 @@ from prompts.prompt_utils import (
 )
 
 
+def _finalize(prompt):
+    """Apply the active prompt variant and strip, in that order.
+
+    ``P0_canonical`` has no substitutions, so this is ``prompt.strip()`` — the
+    exact expression the historical code returned, which is what preserves the
+    byte-identity of the canonical audit cell.
+    """
+    from prompts.prompt_variants import active_variant
+
+    return active_variant().apply(prompt.strip())
+
+
 def _uses_climate_budget():
     return uses_climate_budget()
 
@@ -364,11 +376,11 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
         if hasattr(agent, "get_stage2_budget")
         else parameters.ENDOWMENT_STAGE_2
     )
-    max_punishment = (
-        agent.get_max_punishment_tokens()
-        if hasattr(agent, "get_max_punishment_tokens")
-        else parameters.MAX_PUNISHMENT_TOKENS
-    )
+    # `MAX_PUNISHMENT_TOKENS` was deleted as dead (§7 item 2). In abstract mode
+    # its value was 20, identical to ENDOWMENT_STAGE_2 and to the shared Stage-2
+    # budget that actually binds, so sourcing the number from the budget keeps
+    # both prompt strings byte-identical to the historical abstract-mode runs.
+    stage2_endowment = parameters.ENDOWMENT_STAGE_2
     currency = sc["currency_name"]
     climate_mode = _uses_climate_budget()
     funding_info = " (costs deducted from your wealth in climate/LDF mode)" if climate_mode else ""
@@ -399,9 +411,9 @@ def _build_stage2_card(agent, group_state, sc, ordered_others=None):
         )
     else:
         budget_line = f"- Sanction token budget: {s2_budget} tokens TOTAL for this round"
-        max_line = f"- Max sanction tokens per target: {max_punishment} tokens"
+        max_line = f"- Max sanction tokens per target: {stage2_endowment} tokens"
         amount_rule = (
-            f"Only list targets you are punishing or rewarding (amounts > 0, max {max_punishment} per target). "
+            f"Only list targets you are punishing or rewarding (amounts > 0, max {stage2_endowment} per target). "
             f"Omitted targets automatically default to 0."
         )
         avg_line = f"- Group average contribution this round: {avg_contrib:.2f} tokens — agents below this are free-riding"
@@ -706,7 +718,7 @@ def construct_institution_choice_prompt(agent, round_number):
 
     prompt += "\n\nDecide which institution to join using the decision card above."
     prompt += _json_response_block("Institution Choice")
-    return prompt.strip()
+    return _finalize(prompt)
 
 
 def construct_contribution_prompt(agent, group_state):
@@ -741,7 +753,7 @@ def construct_contribution_prompt(agent, group_state):
         if max(last_3) - min(last_3) <= 2:
             prompt += f"\n**Note:** Your contribution has been consistent at {last_3[-1]} {sc['currency_name']}. Experimenting with different values may provide insights into group dynamics.\n"
 
-    return prompt.strip()
+    return _finalize(prompt)
 
 
 def construct_punishment_prompt(agent, group_state):
@@ -792,11 +804,9 @@ def construct_punishment_prompt(agent, group_state):
     )
 
     label_block = ", ".join(target_labels) if target_labels else ""
-    max_punishment = (
-        agent.get_max_punishment_tokens()
-        if hasattr(agent, "get_max_punishment_tokens")
-        else parameters.MAX_PUNISHMENT_TOKENS
-    )
+    # See the note in _build_stage2_card: the deleted MAX_PUNISHMENT_TOKENS was
+    # 20 in abstract mode, i.e. exactly the Stage-2 endowment.
+    stage2_endowment = parameters.ENDOWMENT_STAGE_2
 
     if _uses_climate_budget():
         amount_contract = f"- Amounts must be integers in {sc['currency_name']} on the same scale as contributions and wealth (no arbitrary caps)."
@@ -819,7 +829,7 @@ def construct_punishment_prompt(agent, group_state):
             'Amounts MUST be in "punishments", not in reasoning.'
         )
     else:
-        amount_contract = f"- Amounts must be integers from 0 to {max_punishment} only."
+        amount_contract = f"- Amounts must be integers from 0 to {stage2_endowment} only."
         budget_contract = (
             f"- **BUDGET LIMIT:** Your total spend (punishment tokens x {parameters.PUNISHMENT_COST} + reward tokens x {parameters.REWARD_COST}) "
             f"MUST NOT exceed {s2_budget}. "
@@ -870,4 +880,4 @@ def construct_punishment_prompt(agent, group_state):
 - Keep facts_used to 2-3 items from the prompt above.
 {_LLM_FINAL_OUTPUT_RULES}
 """
-    return prompt.strip()
+    return _finalize(prompt)

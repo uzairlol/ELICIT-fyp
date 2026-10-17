@@ -1,6 +1,12 @@
 # loss_damage_fund.py
 
+from typing import Any
+
 from core import parameters
+from core.allocation_rules import (
+    allocate,
+    default_eligibility,
+)
 
 
 class LossDamageFund:
@@ -8,7 +14,21 @@ class LossDamageFund:
 
     def __init__(self):
         self.pool_balance = 0.0
-        self.round_history = []
+        self.round_history: list[dict[str, Any]] = []
+        # Governance state. Empty under LDF_GOVERNANCE_MODE == "fixed"; populated
+        # by the elected rule, the payout board and the claim ledger otherwise.
+        self.governance: dict[str, Any] = {
+            "mode": str(getattr(parameters, "LDF_GOVERNANCE_MODE", "fixed")),
+            "elected_rule": str(getattr(parameters, "LDF_ALLOCATION_RULE", "damage_proportional")),
+            "rule_change_history": [],
+            "board_allocations": [],
+            "claims": [],
+        }
+        # Per-round payables supplied by the governance layer (D5 board / D6
+        # adjudication). Both default to None, which routes the fixed path
+        # straight through the formula.
+        self._board_allocation: dict[int, float] | None = None
+        self._accepted_claimants: set[int] | None = None
 
     def _safe_div(self, num, den):
         return num / den if den else 0.0
@@ -23,7 +43,7 @@ class LossDamageFund:
         interval = max(1, int(getattr(parameters, "LDF_REPLENISHMENT_INTERVAL", 1)))
         return (int(round_number) % interval) == 1
 
-    def _contribution_amount(self, agent):
+    def _contribution_amount(self, agent: Any) -> float:
         """
         Voluntary contribution amount.
 
@@ -31,7 +51,7 @@ class LossDamageFund:
         """
         return max(0.0, float(getattr(agent, "contribution", 0.0)))
 
-    def collect_contributions(self, agents):
+    def collect_contributions(self, agents: list[Any]) -> dict[int, float]:
         """Collect one-round contributions and return mapping {agent_id: amount}."""
         contributions = {}
         for agent in agents:
@@ -41,70 +61,101 @@ class LossDamageFund:
             self.pool_balance += amount
         return contributions
 
-    def distribute_payouts(self, agents, damages):
+    # ------------------------------------------------------------------
+    # Governance plumbing
+    # ------------------------------------------------------------------
+
+    def set_elected_rule(self, rule_name: str, round_number: int | None = None) -> bool:
+        """Record and apply an elected allocation rule. No-op when fixed."""
+        if str(getattr(parameters, "LDF_GOVERNANCE_MODE", "fixed")) == "fixed":
+            return False
+        previous = self.governance["elected_rule"]
+        self.governance["elected_rule"] = rule_name
+        self.governance["rule_change_history"].append(
+            {"round": round_number, "from": previous, "to": rule_name}
+        )
+        return True
+
+    def set_board_allocation(
+        self, allocation: dict[int, float], round_number: int | None = None
+    ) -> None:
+        """Install a board-supplied allocation vector for the next payout."""
+        self._board_allocation = dict(allocation or {})
+        self.governance["board_allocations"].append(
+            {"round": round_number, "allocation": dict(self._board_allocation)}
+        )
+
+    def set_accepted_claimants(self, agent_ids, round_number: int | None = None) -> None:
+        """Restrict payout to adjudicated claims (D6). ``None`` disables the filter."""
+        self._accepted_claimants = None if agent_ids is None else {int(a) for a in agent_ids}
+        if self._accepted_claimants is not None:
+            self.governance["claims"].append(
+                {"round": round_number, "accepted": sorted(self._accepted_claimants)}
+            )
+
+    def _eligible_ids(self, agents: list[Any]) -> list[int]:
+        """Claimants admitted for this payout."""
+        return default_eligibility(agents)
+
+    def _is_admissible(self, claimant_id: int) -> bool:
+        """Whether a claimant survives this round's adjudication filter."""
+        if self._accepted_claimants is None:
+            return True
+        return int(claimant_id) in self._accepted_claimants
+
+    # ------------------------------------------------------------------
+    # Payout
+    # ------------------------------------------------------------------
+
+    def distribute_payouts(self, agents: list[Any], damages: dict[int, float]) -> dict[int, float]:
         """
-        Distribute payouts to developing agents only, weighted by damage.
-        Returns mapping {agent_id: payout}.
+        Distribute payouts to eligible claimants under the elected allocation rule.
+
+        Under the default ``LDF_GOVERNANCE_MODE == "fixed"`` the elected rule is
+        ``damage_proportional`` with no board override and no claim filter, which
+        reproduces the historical arithmetic exactly.
         """
         if self.pool_balance <= 0.0:
             return {}
 
-        eligible_agents = [
-            agent for agent in agents if getattr(agent, "agent_group", "developing") == "developing"
-        ]
+        agents_by_id = {agent.agent_id: agent for agent in agents}
+        # Structural eligibility stays stable; the claim filter narrows who is
+        # *payable* this round. Rejected claimants keep a zero key so the payout
+        # map has the same shape in every round and the rejection stays visible in
+        # the claim ledger rather than showing up as a missing agent.
+        claimants = self._eligible_ids(agents)
+        payable = [cid for cid in claimants if self._is_admissible(cid)]
 
-        developing_wealths = [max(1.0, a.wealth) for a in eligible_agents]
-        avg_developing_wealth = (
-            sum(developing_wealths) / len(developing_wealths) if eligible_agents else 1.0
+        rule_name = self.governance["elected_rule"]
+        board_allocation = self._board_allocation if rule_name == "board_discretion" else None
+
+        payouts = allocate(
+            rule_name,
+            payable,
+            damages,
+            self.pool_balance,
+            agents_by_id=agents_by_id,
+            board_allocation=board_allocation,
         )
-
-        # Determine if pool can fully cover all eligible damages at max coverage
-        max_for_agents = {}
-        total_max_payout = 0.0
-        for agent in eligible_agents:
-            aid = agent.agent_id
-            max_for_agents[aid] = damages.get(aid, 0.0) * max(0.0, parameters.LDF_MAX_COVERAGE)
-            total_max_payout += max_for_agents[aid]
-
-        # If pool balance is sufficient, set equity multiplier to 1 (no scaling)
-        if self.pool_balance >= total_max_payout:
-            equity_multiplier_global = 1.0
-        else:
-            equity_multiplier_global = None  # will be computed per agent below
-
-        # Compute weighted need per agent
-        weighted_need = {}
-        for agent in eligible_agents:
-            aid = agent.agent_id
-            dmg = max(0.0, damages.get(aid, 0.0))
-            if equity_multiplier_global is not None:
-                equity_multiplier = equity_multiplier_global
-            else:
-                wealth_ratio = avg_developing_wealth / max(1.0, agent.wealth)
-                equity_multiplier = max(
-                    0.0, 1.0 + (wealth_ratio - 1.0) * getattr(parameters, "LDF_EQUITY_WEIGHT", 0.0)
-                )
-            need = parameters.LDF_PAYOUT_DAMAGE_WEIGHT * dmg * equity_multiplier
-            weighted_need[aid] = max(0.0, need)
-        total_need = sum(weighted_need.values())
-        if total_need <= 0.0:
-            return {}
-
-        payouts = {}
-        total_pool = self.pool_balance
-        remaining = self.pool_balance
-
-        for agent in eligible_agents:
-            aid = agent.agent_id
-            share = self._safe_div(weighted_need[aid], total_need)
-            target = total_pool * share
-            max_for_agent = max_for_agents[aid]
-            payout = max(0.0, min(target, max_for_agent, remaining))
-            payouts[aid] = payout
-            remaining -= payout
 
         paid_total = sum(payouts.values())
         self.pool_balance = max(0.0, self.pool_balance - paid_total)
+
+        if not payouts:
+            # Total need was zero: the historical code returned no keys at all,
+            # which is different from paying every claimant zero.
+            self._board_allocation = None
+            self._accepted_claimants = None
+            for agent in agents:
+                agent.ldf_payout_round = 0.0
+            return {}
+
+        for cid in claimants:
+            payouts.setdefault(cid, 0.0)
+
+        # Reset the per-round governance overrides so they cannot leak forward.
+        self._board_allocation = None
+        self._accepted_claimants = None
 
         for agent in agents:
             payout = payouts.get(agent.agent_id, 0.0)
@@ -112,5 +163,5 @@ class LossDamageFund:
 
         return payouts
 
-    def append_round_log(self, log_row):
+    def append_round_log(self, log_row: dict[str, Any]) -> None:
         self.round_history.append(log_row)

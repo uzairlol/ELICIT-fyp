@@ -64,9 +64,7 @@ class FakeAgent:
 
     def get_stage1_payoff(self, group_size, total_group_contribution):
         if group_size > 0:
-            earnings = (
-                parameters.PUBLIC_GOOD_MULTIPLIER * total_group_contribution
-            ) / group_size
+            earnings = (parameters.PUBLIC_GOOD_MULTIPLIER * total_group_contribution) / group_size
         else:
             earnings = 0
         if self._uses_climate_budget():
@@ -123,6 +121,35 @@ class FakeClient:
 # Parameter-mode fixtures. Monkeypatch rather than mutate so tests that touch
 # the same constants cannot leak state into each other.
 # --------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def isolate_parameters():
+    """Snapshot and restore every module-level global on ``core.parameters``.
+
+    ``parameters`` is a mutable module of globals by design — the democracy
+    module writes into it, and the CLI writes whole configs into it. That is
+    convenient in production and hazardous in a test suite: one test that runs a
+    cell would otherwise leave ``NUM_AGENTS=26``, ``PROMPT_VARIANT=P2`` and
+    ``CHAT_TEMPLATE_MODE=fixed`` behind for every test that runs after it.
+
+    The symptom is not subtle flakiness, it is *wrong* results: a later test that
+    believes it is in abstract mode is silently running in climate mode. So the
+    snapshot is unconditional and automatic rather than left to each test.
+    """
+    snapshot = {
+        name: getattr(parameters, name)
+        for name in dir(parameters)
+        if name.isupper() and not name.startswith("_")
+    }
+    try:
+        yield parameters
+    finally:
+        for name, value in snapshot.items():
+            setattr(parameters, name, value)
+        for name in dir(parameters):
+            if name.isupper() and not name.startswith("_") and name not in snapshot:
+                delattr(parameters, name)
 
 
 @pytest.fixture

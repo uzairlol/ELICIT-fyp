@@ -21,6 +21,13 @@ src/debug_logs/
 debug.log
 results/_spill/
 
+# Per-cell preflight manifests written by `elicit run` (resolved_config.json
+# and its per-cell variants). They are provenance for a run, not results: the
+# config travels with the cell bundle in `kaggle_bundles/` and the authoritative
+# copy is re-emitted next to the result file on completion.
+results/resolved_*.json
+results/resolved_config.json
+
 # Generated analysis outputs (plots, metrics CSVs, test runs)
 analysis_outputs/
 

@@ -8,8 +8,8 @@ role-comparison section depends on.
 from __future__ import annotations
 
 import pytest
-
 from conftest import FakeAgent
+
 from core import parameters
 from core.institution import (
     Institution,
@@ -87,9 +87,7 @@ class TestPublicGoodDistribution:
         for group_size in (2, 7, 12, 14, 26):
             assert 1.6 / group_size < 1.0
 
-    def test_diluting_a_fixed_pool_across_more_agents_lowers_the_share(
-        self, abstract_mode
-    ):
+    def test_diluting_a_fixed_pool_across_more_agents_lowers_the_share(self, abstract_mode):
         abstract_mode.PUBLIC_GOOD_MULTIPLIER = 1.6
         total = 100.0
         small = _populated(SanctionFreeInstitution, [total / 2, total / 2])
@@ -102,7 +100,6 @@ class TestPublicGoodDistribution:
 
     def test_climate_mode_payoff_excludes_the_endowment_refund(self, climate_mode):
         climate_mode.PUBLIC_GOOD_MULTIPLIER = 1.6
-        agents = [FakeAgent(0, wealth=1000.0, contribution=100.0)]
         inst = _populated(SanctionFreeInstitution, [100.0])
         inst.distribute_public_goods()
         # climate mode: 1.6*100/1 - 100 == 60, with no (cap - contribution) term.
@@ -113,7 +110,7 @@ class TestPublicGoodDistribution:
         climate_mode = parameters
         climate_mode.PUBLIC_GOOD_MULTIPLIER = 1.6
         # Manually flip the mode flag without leaving the fixture scope.
-        import pytest as _pytest  # noqa: PLC0415
+        import pytest as _pytest
 
         with _pytest.MonkeyPatch.context() as mp:
             mp.setattr(parameters, "SCENARIO", "abstract")
@@ -130,9 +127,7 @@ class TestPublicGoodDistribution:
             climate_inst.distribute_public_goods()
             climate_value = climate_inst.stage1_payoffs[0]
 
-        assert climate_value == pytest.approx(
-            abstract_value - parameters.ENDOWMENT_STAGE_1
-        )
+        assert climate_value == pytest.approx(abstract_value - parameters.ENDOWMENT_STAGE_1)
 
 
 class TestAverageContribution:

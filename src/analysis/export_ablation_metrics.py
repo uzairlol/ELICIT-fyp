@@ -110,21 +110,40 @@ def parse_rank(rank_text: Any) -> tuple[int, str]:
 
 
 def parse_filename(path: Path) -> dict[str, Any]:
+    """Recover the run's factors from its filename.
+
+    The condition is taken from the token between the model alias and the
+    scenario tag. Hard-coding ``8b_`` here meant the parser silently returned
+    ``"unknown"`` for every ``qwen2.5-14b`` file, so the Qwen run pack had no
+    usable condition label and the baselines notebook carried its own duplicate
+    parser to work around it.
+    """
     name = path.stem
     scenario_match = re.search(r"_scn([a-zA-Z0-9]+)_sh", name)
-    condition_match = re.search(r"8b_(.+?)_scn", name)
+    condition_match = re.search(r"^simulation_[^_]+_(.+?)_scn", name)
     seed_match = re.search(r"_seed(\d+)_", name)
     agents_match = re.search(r"_(\d+)agents_", name)
     rounds_match = re.search(r"_(\d+)rounds_", name)
 
     return {
         "run_label": name,
+        "model": _parse_model(name),
         "scenario": scenario_match.group(1) if scenario_match else "unknown",
         "condition": condition_match.group(1) if condition_match else "unknown",
         "seed": safe_int(seed_match.group(1) if seed_match else None, default=-1),
         "num_agents": safe_int(agents_match.group(1) if agents_match else None, default=0),
         "num_rounds": safe_int(rounds_match.group(1) if rounds_match else None, default=0),
     }
+
+
+def _parse_model(name: str) -> str:
+    """Model alias from ``simulation_{model}_...``, model-agnostic.
+
+    Aliases contain dots and hyphens but never underscores, so the first
+    underscore-delimited token after ``simulation_`` is the whole alias.
+    """
+    match = re.match(r"^simulation_([^_]+)_", name)
+    return match.group(1) if match else "unknown"
 
 
 def iter_result_files(results_dir: Path) -> list[Path]:

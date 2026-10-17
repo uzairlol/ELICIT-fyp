@@ -1,0 +1,29 @@
+# Arm A, priority tier 2 — the paper.
+#
+# 3 model families x 3 prompt variants x 4 seeds = 36 cells, ~86 GPU-h with ToM
+# off. Run this arm first: on its own it is a publishable methods paper, and it is
+# the only arm whose result every other arm is interpreted against.
+#
+# Parameter parity is not tidiness. It is the difference between a variance
+# decomposition and a lookup table. Everything below is identical across all three
+# models; only `model` and `prompt_variant` change. `elicit doctor` refuses to
+# start a session whose manifest disagrees with this file.
+
+name: grid_arm_a
+results_dir: results
+
+include:
+  # --- Qwen2.5-14B-Instruct: your existing family, the reference lineage -----
+  - arm: A
+    presets: [a_qwen_p0, a_qwen_p1, a_qwen_p2]
+
+  # --- Llama-3.1-8B-Instruct: large behavioural delta expected ---------------
+  - arm: A
+    presets: [a_llama_p0, a_llama_p1, a_llama_p2]
+
+  # --- Mistral-7B-Instruct: a genuinely different training lineage -----------
+  # TRAILS reports the *same* perturbation moving cooperation by 76 pp in one
+  # family, 36 pp in another and 1 pp in a third. A single-family check cannot
+  # detect fragility, so three is the minimum, not a convenience.
+  - arm: A
+    presets: [a_mistral_p0, a_mistral_p1, a_mistral_p2]

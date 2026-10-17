@@ -7,13 +7,23 @@ All constants and configuration settings for the ELICIT (Emergent LLM Institutio
 # --- Simulation Settings ---
 NUM_AGENTS = 7  # Total number of participants
 NUM_ROUNDS = 30  # Total number of rounds per simulation
-SEED = 42  # Random seed for reproducibility
+SEED = 42  # Python RNG seed for reproducibility
 SCENARIO = "abstract"  # Formatting scenario for prompts (abstract, ldf, tax)
 AGENT_TYPE = "LLM"  # Control baseline (LLM, Random, Greedy)
 BATCH_NAME = "Control"  # Current experiment batch name
 MIXED_AGENT_COUNTS = None  # Optional composition dict, e.g. {"LLM": 5, "Random": 1, "Greedy": 1}
 CURRENT_RUN = 0  # Progress counter for multi-run experiment scripts
 TOTAL_RUNS = 0  # Total planned runs for progress reporting
+
+# --- Explicit, serialised seed vector (§8.8 of the revamp strategy) ---
+# `SEED` above is kept for backwards compatibility but is NOT sufficient: it only
+# seeds `random.seed()` and never reached the LLM sampler in the historical runs.
+# A run is only a replication if every stochastic source is pinned, so every run
+# must carry a complete vector. Populated by `core.seeding.build_seed_vector()`
+# and written verbatim into `resolved_config.json` beside the results.
+SEED_VECTOR: dict = {}
+# Hard guard: refuse to start a run whose vector is incomplete.
+SEED_VECTOR_REQUIRED = True
 
 # --- LLM Configuration (vLLM backend) ---
 LLM_MODEL = "qwen2.5-14b"  # Must match the --served-model-name used to launch vLLM
@@ -35,9 +45,33 @@ BELIEF_UPDATE_MAX_TOKENS = 256  # Compact belief-state JSON; keep well under slo
 # The pairwise ToM audit is ~90% of all LLM calls, so it gets the most slots.
 LLM_MAX_CONCURRENCY = 8  # Thread-pool workers for institution/contribution/punishment/beliefs
 TOM_MAX_CONCURRENCY = 24  # Thread-pool workers for pairwise ToM audits only
+# Democracy is 1.4% of calls but was 100% serial, so it consumed ~30% of a run's
+# wall-clock. Fan it out on the same budget as the other decision stages.
+DEMOCRACY_MAX_CONCURRENCY = 8
 # Client semaphore ceiling shared by every backend. Must be >= the two above
 # and should equal the server max-num-seqs (never exceed it).
 VLLM_MAX_CONCURRENCY = 24
+
+# --- Sampling / generation settings ---
+# These are the knobs that must be IDENTICAL across every model family in the
+# robustness audit, otherwise "model effect" is a composite of model x sampling.
+# Persona overrides live in `Agent._persona_sampling_profile`; the values below
+# are the DEFAULT persona baseline and the reported per-persona settings.
+LLM_TEMPERATURE = 0.7
+LLM_TOP_P = 0.9
+LLM_MIN_P = 0.0
+LLM_REPETITION_PENALTY = 1.0
+# Seed handed to the inference backend for reproducible sampling. Historical
+# runs reused `SEED`, which made "nine seeds" indistinguishable from one draw.
+LLM_SEED = 42
+
+# --- Chat template (parameter parity across model families, §8.2.1) ---
+# "server"  -> send messages=[...]; the serving stack applies each family's own
+#              default template, so the rendered string differs per model.
+# "fixed"   -> ELICIT renders one template in Python and posts raw text to
+#              /v1/completions, making the prompt byte-identical across models.
+CHAT_TEMPLATE_MODE = "server"
+CHAT_TEMPLATE_NAME = "chatml"
 
 # Legacy Ollama options; only used when LLM_BACKEND == "ollama".
 OLLAMA_REQUEST_TIMEOUT_SECONDS = LLM_REQUEST_TIMEOUT_SECONDS
@@ -56,6 +90,41 @@ OLLAMA_FORCE_KILL_RUNNER = False
 DEBUG_LLM_IO = False
 # Keep full round JSON on disk and only slim numeric/text summaries in RAM.
 RESULTS_SPILL_TO_DISK = True
+# --- Deliberation traces (high-value qualitative artefact, §7 item 11) ---
+# Rationale fields average ~8.45 words of post-hoc justification, so the
+# qualitative section is an interpretation of summaries. This writes the full
+# prompt + raw completion per decision to a gitignored sidecar. Sampling keeps
+# the volume bounded; `random.Random(seed)`-driven so it is reproducible.
+TRACE_ENABLED = False
+TRACE_SAMPLING_RATE = 0.05
+TRACE_MAX_RECORDS = 20_000
+
+# --- Inference provenance (§7 item 6) ---
+# "Model provenance is limited to the filename alias" was unrecoverable, which
+# blocks the per-model robustness measurement the audit requires. The CLI writes
+# these from the resolved config; they are serialised into every result JSON.
+MODEL_CHECKPOINT = ""  # e.g. Qwen/Qwen2.5-14B-Instruct-GPTQ-Int4
+MODEL_QUANTIZATION = ""  # e.g. gptq-int4 / awq / bf16 / none
+MODEL_PARAM_COUNT_B = 0.0  # nominal parameter count in billions, for reporting
+VLLM_VERSION = ""
+VLLM_SERVE_FLAGS = ""  # verbatim --served-model-name / --max-model-len / tensor-parallel
+VLLM_MAX_MODEL_LEN = 8192
+
+# --- Prompt variant registry (§7 item 5, prerequisite for the audit arm) ---
+# P0_canonical  = current prompt_generator.py, byte-identical (reference arm)
+# P1_lexical    = 5-word lexical perturbations, payoff information unchanged
+# P2_minimal_control = strips "maximize cumulative payoff" and evaluative framing
+PROMPT_VARIANT = "P0_canonical"
+# SHA-256 over the rendered template registry, filled in at run time.
+PROMPT_VARIANT_HASH = ""
+
+# --- Measurement instrumentation (§7 items 7-9) ---
+LOG_START_OF_ROUND_WEALTH = True  # pre-decision contribution cap without reconstruction
+LOG_GOSSIP_EXPOSURE = True  # bulletin + exact recipient list (was a "possible" bound)
+LOG_TOM_COMPLETION_ORDER = True  # concurrent completion order for audit timing
+# The Stage-2 safety net rewrites ~30% of sanctions. Reporting only the applied
+# matrix hides that. Keep the raw requested allocations first-class in the schema.
+RAW_ALLOCATION_REPORTING = True
 
 # --- Initial Endowments ---
 INITIAL_TOKENS = 1000  # Starting tokens per agent
@@ -73,7 +142,10 @@ MIN_CONTRIBUTION = 0
 MAX_CONTRIBUTION = ENDOWMENT_STAGE_1
 
 # --- Punishment & Reward Settings (SI only) ---
-MAX_PUNISHMENT_TOKENS = 20  # Max tokens an agent can assign in Stage 2
+# NOTE: `MAX_PUNISHMENT_TOKENS` was removed deliberately (§7 item 2). It was
+# never enforced on the live parse path (`_apply_stage2_allocations` passes no
+# per-target cap), its only enforcer was dead code, and in climate mode it never
+# reached a prompt. The binding constraint is the shared Stage-2 budget.
 PUNISHMENT_EFFECT = 3  # Negative token reduces target payoff by 3
 PUNISHMENT_COST = 1  # Each negative token costs 1 from sender
 REWARD_EFFECT = 1  # Positive token increases target payoff by 1
@@ -104,7 +176,6 @@ MAX_GOSSIP_ITEMS = 5  # Prevent prompt bloat
 ORACLE_PUNISHMENT_WEIGHT = 1.5
 ORACLE_REWARD_WEIGHT = 1.2
 ORACLE_ENDOWMENT_SCALING = 50.0
-ORACLE_MAX_TOKENS_WEIGHT = 60.0
 
 # --- Phase 4: Subsidy & Curiosity ---
 SUBSIDY_ENABLED = True  # Toggle subsidy redistribution
@@ -184,6 +255,13 @@ DEVELOPING_HISTORICAL_EMISSIONS = 0.30
 
 DEVELOPED_CONTRIBUTION_CAPACITY = 1.00
 DEVELOPING_CONTRIBUTION_CAPACITY = 0.10
+# Contribution capacity used to be stored, logged and shown in prompts without
+# entering any payoff. It now multiplies the Stage-1 contribution cap, so the
+# developed/developing asymmetry in giving is visible rather than asserted.
+CONTRIBUTION_CAPACITY_ENABLED = True
+# Floor applied to the capacity-scaled cap so a 0.10 multiplier cannot collapse
+# developing contributions to zero by construction.
+CONTRIBUTION_CAPACITY_FLOOR = 0.0
 
 # --- Phase 5a: Climate Shock Dynamics ---
 CLIMATE_SHOCK_ENABLED = False
@@ -198,10 +276,13 @@ CLIMATE_DAMAGE_BASE = 150000.0
 # Schedule entries are (round_number, severity) tuples where severity is a
 # scalar in the same range as the stochastic severity (e.g. 0.10 = 10%).
 CLIMATE_SHOCK_DETERMINISTIC = True
-# Schedule: shocks at round 5 (10%) and round 10 (20%).
+# Schedule: shocks at round 7 (10%) and round 17 (20%).
+# These were rounds 5 and 10, which coincided EXACTLY with the constitutional
+# sessions (DEMOCRACY_INTERVAL = 5) and made every "shock response" also a "rule
+# change response". Moving the shocks decouples the two (§7 item 4).
 CLIMATE_SHOCK_SCHEDULE = [
-    (5, 0.10),
-    (10, 0.20),
+    (7, 0.10),
+    (17, 0.20),
 ]
 
 # --- Phase 5b: Loss & Damage Fund (LDF) ---
@@ -215,3 +296,23 @@ LDF_REPLENISHMENT_INTERVAL = 5
 LDF_PAYOUT_DAMAGE_WEIGHT = 1.0
 LDF_MAX_COVERAGE = 0.90
 LDF_EQUITY_WEIGHT = 0.0
+
+# --- Phase 5c: endogenous redistribution governance (§8.5) ---
+# Under "fixed" (the default) every line below is inert and the LDF reproduces
+# the original hardcoded arithmetic byte-for-byte. Only when the mode is raised
+# do agents acquire authority over the allocation rule, the payouts themselves,
+# and eligibility. `LDF_ALLOCATION_RULE` is also the rule used when a mode
+# elects "damage_proportional", so the fixed path needs no branching at all.
+LDF_GOVERNANCE_MODE = "fixed"
+# One of core.allocation_rules.ALLOCATION_RULE_NAMES. Only agents may choose it.
+LDF_ALLOCATION_RULE = "damage_proportional"
+# --- Payout board (D5, governance level G2) ---
+LDF_BOARD_DEVELOPED_SEATS = 3
+LDF_BOARD_DEVELOPING_SEATS = 3
+# --- Peer-adjudicated claims (D6, governance level G3) ---
+# Two-thirds of adjudicators must accept for a claim to enter the elected rule.
+LDF_CLAIM_ACCEPT_FRACTION = 2.0 / 3.0
+# Control level G3c: claim machinery on, adjudication forced to accept all.
+# Without it, "the board rejected genuine free-riders" cannot be separated from
+# "the board is biased against developing agents".
+LDF_BOARD_ALWAYS_ACCEPTS = False

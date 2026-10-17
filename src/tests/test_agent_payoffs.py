@@ -8,9 +8,8 @@ attractive over SFI when behaviour is held fixed.
 from __future__ import annotations
 
 import pytest
-
 from conftest import FakeAgent
-from core import parameters
+
 from core.agent import Agent
 
 
@@ -94,25 +93,33 @@ class TestStage2Budget:
         assert poor == rich
 
 
-class TestMaxPunishmentTokens:
-    def test_abstract_returns_the_constant(self, abstract_mode):
-        agent = Agent(0, api_client=None)
-        agent.wealth = 1_000_000.0
-        assert agent.get_max_punishment_tokens() == abstract_mode.MAX_PUNISHMENT_TOKENS
+class TestMaxPunishmentTokensRemoved:
+    """The per-target sanction cap was deleted as dead code (§7 item 2).
 
-    def test_climate_scales_with_wealth(self, climate_mode):
-        agent = Agent(0, api_client=None)
-        agent.wealth = 20_000.0
-        expected = max(
-            climate_mode.MAX_PUNISHMENT_TOKENS,
+    It was never enforced on the live parse path, its only enforcer was an
+    uncalled helper, and in climate mode it never reached a prompt. These tests
+    pin the *absence*, so a future re-introduction has to be deliberate.
+    """
+
+    def test_parameter_no_longer_exists(self, abstract_mode):
+        assert not hasattr(abstract_mode, "MAX_PUNISHMENT_TOKENS")
+
+    def test_agent_helper_no_longer_exists(self, abstract_mode):
+        assert not hasattr(Agent, "get_max_punishment_tokens")
+
+    def test_dead_enforcement_helper_is_gone(self):
+        from parsing import response_parsing_utils
+
+        assert not hasattr(response_parsing_utils, "_apply_allocations_helper")
+
+    def test_stage2_budget_is_the_only_binding_constraint(self, climate_mode):
+        """One shared pool, not a per-target cap — the constraint that actually binds."""
+        agent = FakeAgent(0, wealth=20_000.0)
+        budget = agent.get_stage2_budget()
+        assert budget == max(
+            climate_mode.ENDOWMENT_STAGE_2,
             int(20_000.0 * climate_mode.STAGE_2_WEALTH_FRACTION),
         )
-        assert agent.get_max_punishment_tokens() == expected
-
-    def test_climate_respects_the_floor_for_small_wealth(self, climate_mode):
-        agent = Agent(0, api_client=None)
-        agent.wealth = 50.0
-        assert agent.get_max_punishment_tokens() == climate_mode.MAX_PUNISHMENT_TOKENS
 
 
 class TestStage2Payoff:
@@ -154,9 +161,7 @@ class TestStage2Payoff:
 
     def test_punishment_and_reward_costs_are_summed(self, climate_mode):
         agent = FakeAgent(0, assigned_punishments={9: 10}, assigned_rewards={8: 7})
-        expected = -(
-            10 * climate_mode.PUNISHMENT_COST + 7 * climate_mode.REWARD_COST
-        )
+        expected = -(10 * climate_mode.PUNISHMENT_COST + 7 * climate_mode.REWARD_COST)
         assert agent.get_stage2_payoff() == pytest.approx(expected)
 
     def test_received_punishment_and_reward_enter_with_their_effect(self, climate_mode):

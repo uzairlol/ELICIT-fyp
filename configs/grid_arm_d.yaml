@@ -1,0 +1,42 @@
+# Arm D: endogenous redistribution. Run alongside A/B/C.
+#
+# This is the arm that makes the repository's name true. In climate mode the LDF's
+# allocation rule was a hardcoded constant — eligibility, payout weight and
+# coverage cap all fixed — so agents could nudge three scalars but could never
+# choose the mechanism. These four governance levels make the distributional core
+# of the institution endogenous at escalating cost.
+#
+#   G0  fixed           today's arithmetic                        0 extra calls
+#   G1  election        the assembly elects the rule (D4)        0 extra calls
+#   G2  election+board  plus an elected payout board (D5)        12 calls/run
+#   G3  full            plus peer-adjudicated claims (D6)        52 calls/run
+#   G3c control         claim machinery, adjudication forced to accept all  40
+#
+# G0 is NOT listed: it is Arm A's P0 cell on the same three models, already
+# budgeted, which makes G0 the free reference arm and is why this arm is cheap.
+#
+# G3c is deliberately not crossed with model. It answers one referee question —
+# "is the board rejecting claimants because they are bad claimants, or because the
+# board is biased?" — and one model answers it. Without it, G3's headline rejection
+# rate is uninterpretable, so G3 and G3c are cut together or not at all.
+#
+# 3 seeds is not thin here. The replication unit for "which rule do agents adopt"
+# is the constitutional session, not the run: 3 models x 3 seeds x 6 sessions =
+# 54 governance decisions per level, 162 across the three levels. That is a
+# categorical outcome counted 54 times, not a mean estimated from 3 points.
+
+name: grid_arm_d
+results_dir: results
+
+include:
+  - arm: D
+    presets: [d_g1_qwen, d_g1_llama, d_g1_mistral]
+
+  - arm: D
+    presets: [d_g2_qwen, d_g2_llama, d_g2_mistral]
+
+  - arm: D
+    presets: [d_g3_qwen, d_g3_llama, d_g3_mistral]
+
+  - arm: D
+    presets: [d_g3c_qwen]

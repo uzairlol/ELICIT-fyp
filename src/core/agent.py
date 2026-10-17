@@ -193,6 +193,12 @@ class Agent:
         # --- Reliability tracking ---
         self.parsing_failures = 0
         self.rule_of_law_blocks = 0
+        # Raw requested vs applied Stage-2 allocations. The safety net rewrote
+        # ~30% of sanctions, so reporting only the applied matrix hides a third of
+        # the "LLM punishment behaviour" (item 9).
+        self.raw_assigned_punishments = {}
+        self.raw_assigned_rewards = {}
+        self.last_stage1_cap = None
         self.institution_parser_meta = {}
         self.contribution_parser_meta = {}
         self.punishment_parser_meta = {}
@@ -218,9 +224,27 @@ class Agent:
         return uses_climate_budget()
 
     def get_stage1_contribution_cap(self):
+        """Pre-decision Stage-1 contribution cap.
+
+        In climate mode the cap is the agent's whole wealth. Contribution
+        capacity now scales it, so the developed/developing asymmetry in giving
+        is a modelled parameter rather than an asserted one. With capacity
+        disabled (or at its default developed value of 1.0) the cap is unchanged,
+        which keeps the historical head-count arithmetic intact.
+        """
         if self._uses_climate_budget():
-            return max(parameters.MIN_CONTRIBUTION, int(self.wealth))
+            base = max(parameters.MIN_CONTRIBUTION, int(self.wealth))
+            return self._apply_contribution_capacity(base)
         return parameters.ENDOWMENT_STAGE_1
+
+    def _apply_contribution_capacity(self, base_cap):
+        """Scale a wealth-derived cap by this agent's contribution capacity."""
+        if not getattr(parameters, "CONTRIBUTION_CAPACITY_ENABLED", True):
+            return base_cap
+        capacity = max(0.0, float(getattr(self, "contribution_capacity", 1.0)))
+        floor = max(0.0, float(getattr(parameters, "CONTRIBUTION_CAPACITY_FLOOR", 0.0)))
+        effective = max(capacity, floor)
+        return int(base_cap * effective)
 
     def choose_institution(self, round_number):
         """
@@ -287,6 +311,7 @@ class Agent:
 
         if response is not None:
             self.log_debug(round_number, "stage_0_institution", prompt, response)
+            self.record_trace(round_number, "stage_0_institution", prompt, response)
 
     def _ensure_pseudonyms_initialized(self):
         """
@@ -360,10 +385,11 @@ class Agent:
                 "fallback_reason": f"retries exhausted: {last_err}",
             }
 
-        # Enforce bounds
-        contribution = max(
-            parameters.MIN_CONTRIBUTION, min(contribution, self.get_stage1_contribution_cap())
-        )
+        # Enforce bounds. The cap the agent actually faced is recorded so the primary
+        # intensity measure never has to be reconstructed.
+        cap = self.get_stage1_contribution_cap()
+        self.last_stage1_cap = cap
+        contribution = max(parameters.MIN_CONTRIBUTION, min(contribution, cap))
 
         self.contribution = contribution
         self.contribution_reasoning = llm_reasoning
@@ -373,6 +399,7 @@ class Agent:
 
         if response is not None:
             self.log_debug(self.round_number, "stage_1_contribution", prompt, response)
+            self.record_trace(self.round_number, "stage_1_contribution", prompt, response)
 
     def assign_punishment(self, group_state):
         """
@@ -517,6 +544,7 @@ class Agent:
 
         if response is not None:
             self.log_debug(self.round_number, "stage_2_punishment", prompt, response)
+            self.record_trace(self.round_number, "stage_2_punishment", prompt, response)
 
         self.punishment_reasoning = reasoning
         self.deanonymized_punishment_reasoning = deanonymized
@@ -524,12 +552,29 @@ class Agent:
         self.punishment_facts_used = facts_used
         self.punishment_deepseek_think = deepseek_think
         self.punishment_parser_meta = parser_meta
+        # Keep what the model actually asked for beside what the safety net paid.
+        # `parser_meta["raw_punishment_allocations"]` is the pre-budget-fit
+        # vector; the applied matrix may be a proportional rescale of it, and
+        # reporting only the applied matrix hides that behind a third of the
+        # observed sanction map (item 9).
+        self.raw_assigned_punishments = dict(
+            parser_meta.get("raw_punishment_allocations") or punishment_allocations or {}
+        )
+        self.raw_assigned_rewards = dict(
+            parser_meta.get("raw_reward_allocations") or reward_allocations or {}
+        )
         self.assigned_punishments = punishment_allocations
         self.assigned_rewards = reward_allocations
         return punishment_allocations, reward_allocations
 
     def _persona_sampling_profile(self, stage_name):
-        """Return sampling settings tuned to the current persona."""
+        """Return sampling settings tuned to the current persona.
+
+        The DEFAULT persona reads its settings from ``parameters`` so temperature
+        and top_p are config-driven and therefore identical across every model
+        family in the robustness grid. RANDOM and GREEDY are fixed control
+        personas and keep their historical values.
+        """
         if self.llm_persona == "RANDOM":
             if stage_name == "punishment":
                 return 1.0, 1.0
@@ -538,7 +583,7 @@ class Agent:
         if self.llm_persona == "GREEDY":
             return 0.15, 0.8
 
-        return 0.5, 0.95
+        return float(parameters.LLM_TEMPERATURE), float(parameters.LLM_TOP_P)
 
     def update_payoff(self, amount, is_subsidy=False):
         """
@@ -851,13 +896,6 @@ Required JSON:
             return max(parameters.ENDOWMENT_STAGE_2, scaled)
         return parameters.ENDOWMENT_STAGE_2
 
-    def get_max_punishment_tokens(self):
-        """Max sanction amount assignable to a single peer in stage 2."""
-        if self._uses_climate_budget():
-            scaled = int(self.wealth * parameters.STAGE_2_WEALTH_FRACTION)
-            return max(parameters.MAX_PUNISHMENT_TOKENS, scaled)
-        return parameters.MAX_PUNISHMENT_TOKENS
-
     def get_stage2_payoff(self):
         """
         Calculate the net payoff from Stage 2, after considering assigned punishments and rewards.
@@ -896,3 +934,24 @@ Required JSON:
         filename = f"agent_{self.agent_id}_round_{round_num}_{stage_name}.json"
         with open(os.path.join(log_dir, filename), "w", encoding="utf-8") as f:
             json.dump({"prompt": prompt, "response": response}, f, indent=2)
+
+    def record_trace(self, round_num, stage_name, prompt, response):
+        """Sample this decision into the deliberation-trace sidecar.
+
+        The 8.45-word rationale in the results is a post-hoc summary. The trace
+        sidecar keeps the prompt the model actually saw and the raw completion it
+        actually produced, which is what turns the qualitative section from an
+        interpretation into a measurement.
+        """
+        from core.trace import get_writer
+
+        writer = get_writer()
+        if writer is None:
+            return
+        writer.record(
+            agent_id=self.agent_id,
+            round_number=round_num,
+            stage=stage_name,
+            prompt=prompt,
+            response=response,
+        )

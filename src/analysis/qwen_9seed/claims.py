@@ -274,7 +274,24 @@ def build_claims(
 
     reasoning_claims = []
     for _, row in reasoning_profile.iterrows():
-        reasoning_claims.append({key: _f(row[key]) if key not in {"field", "stratum"} else row[key] for key in ["field", "stratum", "n_documents", "n_unique_texts", "unique_text_share", "most_common_text_count", "most_common_text_share", "mean_words", "sd_words", "median_words", "p90_words"]})
+        reasoning_claims.append(
+            {
+                key: _f(row[key]) if key not in {"field", "stratum"} else row[key]
+                for key in [
+                    "field",
+                    "stratum",
+                    "n_documents",
+                    "n_unique_texts",
+                    "unique_text_share",
+                    "most_common_text_count",
+                    "most_common_text_share",
+                    "mean_words",
+                    "sd_words",
+                    "median_words",
+                    "p90_words",
+                ]
+            }
+        )
 
     transition_claims = [
         {
