@@ -150,3 +150,165 @@ class TestConstitutionalSession:
         monkeypatch.setattr(module, "_collect_proposals", lambda agents, rn: [])
         result = module.run_constitutional_session(agents=[], round_number=5)
         assert result == {"proposals": [], "votes": {}, "winning_proposal": None, "applied": False}
+
+
+class _StubAgent:
+    def __init__(self, agent_id):
+        self.agent_id = agent_id
+        self.cumulative_payoff = 1000.0
+        self.explored_params = set()
+
+
+class _ExhaustingClient:
+    """Replays scripted responses, then fails the way a dead backend would."""
+
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.deployment_name = "stub-model"
+        self.prompts = []
+
+    def send_request(self, prompt=None, max_attempts=1, request_label="", **kwargs):
+        self.prompts.append(prompt)
+        value = self.responses.pop(0)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+
+class _SelectiveClient:
+    """Serves scripted responses per agent, one thread per agent id."""
+
+    def __init__(self, by_label):
+        self.by_label = dict(by_label)
+        self.deployment_name = "stub-model"
+        self.prompts = []
+        self._lock = __import__("threading").Lock()
+
+    def send_request(self, prompt=None, max_attempts=1, request_label="", **kwargs):
+        with self._lock:
+            self.prompts.append((request_label, prompt))
+        scripted = self.by_label[request_label]
+        value = scripted.pop(0)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+
+class TestRetryExhaustionIsNotFatal:
+    """One unrepairable agent must not end the constitutional moment.
+
+    This is the regression that took down a six-arm run: ``_collect_proposals``
+    fans out through ``executor.map``, so a single ``RetryExhaustedError``
+    propagated out of the session and out of the whole simulation.
+    """
+
+    INVALID = '{"rule": "NOT_A_REAL_PARAM", "new_value": 4, "reason": "nope"}'
+
+    def test_get_proposal_returns_none_when_retries_exhausted(self, monkeypatch):
+        monkeypatch.setattr("llm.retry.time.sleep", lambda *a, **k: None)
+        client = _ExhaustingClient([self.INVALID, self.INVALID])
+        module = DemocracyModule(api_client=client)
+
+        assert module._get_proposal(_StubAgent(21), 5, "  - PUNISHMENT_EFFECT: 3") is None
+        assert len(client.prompts) == 2
+
+    def test_collect_proposals_keeps_the_agents_that_did_answer(self, monkeypatch):
+        monkeypatch.setattr("llm.retry.time.sleep", lambda *a, **k: None)
+        monkeypatch.setattr(parameters, "CURIOSITY_ENABLED", False, raising=False)
+        monkeypatch.setattr(parameters, "DEMOCRACY_MAX_CONCURRENCY", 1, raising=False)
+        good = '{"rule": "REWARD_EFFECT", "new_value": 7, "reason": "bribe harder"}'
+        client = _SelectiveClient(
+            {
+                "Agent 21 democracy proposal": [self.INVALID, self.INVALID],
+                "Agent 3 democracy proposal": [good],
+            }
+        )
+        module = DemocracyModule(api_client=client)
+
+        proposals = module._collect_proposals([_StubAgent(21), _StubAgent(3)], 5)
+
+        assert [p["rule"] for p in proposals] == ["REWARD_EFFECT"]
+        assert proposals[0]["proposer"] == 3
+
+    def test_whole_session_survives_an_exhausted_proposer(self, monkeypatch):
+        monkeypatch.setattr("llm.retry.time.sleep", lambda *a, **k: None)
+        monkeypatch.setattr(parameters, "CURIOSITY_ENABLED", False, raising=False)
+        monkeypatch.setattr(parameters, "DEMOCRACY_MAX_CONCURRENCY", 1, raising=False)
+        good = '{"rule": "REWARD_EFFECT", "new_value": 7, "reason": "bribe harder"}'
+        vote = '{"vote": 0, "reason": "trust rises"}'
+        client = _SelectiveClient(
+            {
+                "Agent 21 democracy proposal": [self.INVALID, self.INVALID],
+                "Agent 3 democracy proposal": [good],
+                "Agent 21 democracy vote": [vote],
+                "Agent 3 democracy vote": [vote],
+            }
+        )
+        module = DemocracyModule(api_client=client)
+
+        result = module.run_constitutional_session([_StubAgent(21), _StubAgent(3)], 5)
+
+        assert result["applied"] is True
+        assert parameters.REWARD_EFFECT == 7
+        assert result["tally"] == {0: 2}
+
+    def test_get_vote_returns_none_when_retries_exhausted(self, monkeypatch):
+        monkeypatch.setattr("llm.retry.time.sleep", lambda *a, **k: None)
+        client = _ExhaustingClient(['{"vote": 9}', '{"vote": 9}'])
+        module = DemocracyModule(api_client=client)
+
+        assert module._get_vote(_StubAgent(4), "  [0] A -> 1", 1, 5) is None
+
+    def test_collect_votes_keeps_the_agents_that_did_answer(self, monkeypatch):
+        monkeypatch.setattr("llm.retry.time.sleep", lambda *a, **k: None)
+        monkeypatch.setattr(parameters, "DEMOCRACY_MAX_CONCURRENCY", 1, raising=False)
+        good = '{"vote": 1, "reason": "equity first"}'
+        client = _SelectiveClient(
+            {
+                "Agent 21 democracy vote": ['{"vote": 7}'],
+                "Agent 3 democracy vote": [good],
+            }
+        )
+        module = DemocracyModule(api_client=client)
+        proposals = [
+            {"rule": "REWARD_EFFECT", "new_value": 7},
+            {"rule": "PUNISHMENT_EFFECT", "new_value": 2},
+        ]
+
+        votes = module._collect_votes([_StubAgent(21), _StubAgent(3)], proposals, 5)
+
+        assert votes == {3: {"vote": 1, "reason": "equity first"}}
+
+
+class TestProposalRepairPrompt:
+    def test_repair_prompt_names_the_whitelist(self, monkeypatch):
+        monkeypatch.setattr("llm.retry.time.sleep", lambda *a, **k: None)
+        monkeypatch.setattr(parameters, "LDF_ENABLED", False, raising=False)
+        monkeypatch.setattr(parameters, "SCENARIO", "abstract", raising=False)
+        client = _ExhaustingClient([TestRetryExhaustionIsNotFatal.INVALID] * 2)
+        module = DemocracyModule(api_client=client)
+
+        module._get_proposal(_StubAgent(21), 5, "  - PUNISHMENT_EFFECT: 3")
+
+        retry_prompt = client.prompts[1]
+        assert "IMPORTANT RETRY (Democracy Proposal)" in retry_prompt
+        assert "Allowed 'rule' values (copy one EXACTLY)" in retry_prompt
+        for name in get_allowed_democracy_params():
+            assert name in retry_prompt
+
+    def test_repair_prompt_names_allocation_rules_when_enabled(self, monkeypatch):
+        monkeypatch.setattr("llm.retry.time.sleep", lambda *a, **k: None)
+        monkeypatch.setattr(parameters, "LDF_ENABLED", True, raising=False)
+        monkeypatch.setattr(parameters, "SCENARIO", "ldf", raising=False)
+        monkeypatch.setattr(parameters, "LDF_GOVERNANCE_MODE", "full", raising=False)
+        from core.allocation_rules import ALLOCATION_RULE_NAMES
+
+        client = _ExhaustingClient([TestRetryExhaustionIsNotFatal.INVALID] * 2)
+        module = DemocracyModule(api_client=client)
+
+        module._get_proposal(_StubAgent(21), 5, "  - LDF_MAX_COVERAGE: 0.9")
+
+        retry_prompt = client.prompts[1]
+        assert "LDF_ALLOCATION_RULE" in retry_prompt
+        for name in ALLOCATION_RULE_NAMES:
+            assert name in retry_prompt

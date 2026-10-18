@@ -25,7 +25,11 @@ import logging
 from core import parameters
 from core.seeding import active_rng, agent_rng
 from core.utils import robust_json_loads
-from llm.retry import build_failure_retry_prompt, request_with_retries
+from llm.retry import (
+    RetryExhaustedError,
+    build_failure_retry_prompt,
+    request_with_retries,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -366,30 +370,56 @@ Respond ONLY with valid JSON in this exact format:
                 "or an exact allocation-rule name"
             )
 
-        _response, proposal = request_with_retries(
-            self.api_client,
-            base_prompt=prompt,
-            parse_response=self._parse_json_response,
-            validate_result=validate_proposal,
-            request_kwargs={
-                "model_name": self.api_client.deployment_name,
-                "max_tokens": 512,
-                "temperature": 0.5,
-                "response_format": {"type": "json_object"},
-            },
-            max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
-            label=f"Agent {agent.agent_id} democracy proposal",
-            retry_prompt_factory=lambda base, _attempt, error: build_failure_retry_prompt(
-                base,
-                "Democracy Proposal",
-                error,
-                fix_guidance=(
-                    'Return {"rule": "<exact parameter or allocation-rule name>", '
-                    '"new_value": <number or rule name>, "reason": "<one sentence>"}.'
+        # The repair prompt has to name the whitelist: the model picks the rule name
+        # itself, so "return valid JSON" cannot fix a response that named a
+        # non-whitelisted parameter. This is what agent-level retries buy.
+        allowed_rules = ", ".join(sorted(get_allowed_democracy_params()))
+        repair_options = f"Allowed 'rule' values (copy one EXACTLY): {allowed_rules}."
+        if categorical_block:
+            from core.allocation_rules import ALLOCATION_RULE_NAMES
+
+            repair_options += (
+                " For 'LDF_ALLOCATION_RULE', 'new_value' must be exactly one of: "
+                f"{', '.join(ALLOCATION_RULE_NAMES)}; for every other rule it must be a number."
+            )
+
+        try:
+            _response, proposal = request_with_retries(
+                self.api_client,
+                base_prompt=prompt,
+                parse_response=self._parse_json_response,
+                validate_result=validate_proposal,
+                request_kwargs={
+                    "model_name": self.api_client.deployment_name,
+                    "max_tokens": 512,
+                    "temperature": 0.5,
+                    "response_format": {"type": "json_object"},
+                },
+                max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
+                label=f"Agent {agent.agent_id} democracy proposal",
+                retry_prompt_factory=lambda base, _attempt, error: build_failure_retry_prompt(
+                    base,
+                    "Democracy Proposal",
+                    error,
+                    fix_guidance=(
+                        'Return {"rule": "<exact parameter or allocation-rule name>", '
+                        '"new_value": <number or rule name>, "reason": "<one sentence>"}. '
+                        + repair_options
+                    ),
                 ),
-            ),
-            logger=logger,
-        )
+                logger=logger,
+            )
+        except RetryExhaustedError as exc:
+            # One unrepairable agent must not end the constitutional moment, and
+            # must certainly not end the run: this fan-out used to take all 25
+            # proposals down with it. The agent abstains; every other proposal
+            # still reaches the vote.
+            logger.warning(
+                "Agent %s democracy proposal retries exhausted: %s. Agent abstains this session.",
+                agent.agent_id,
+                exc.last_error,
+            )
+            return None
         return proposal
 
     # ------------------------------------------------------------------
@@ -462,27 +492,37 @@ Respond ONLY with valid JSON:
                 return "vote reason is required"
             return ""
 
-        _response, parsed = request_with_retries(
-            self.api_client,
-            base_prompt=prompt,
-            parse_response=self._parse_json_response,
-            validate_result=validate_vote,
-            request_kwargs={
-                "model_name": self.api_client.deployment_name,
-                "max_tokens": 768,
-                "temperature": 0.3,
-                "response_format": {"type": "json_object"},
-            },
-            max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
-            label=f"Agent {agent.agent_id} democracy vote",
-            retry_prompt_factory=lambda base, _attempt, error: build_failure_retry_prompt(
-                base,
-                "Democracy Vote",
-                error,
-                fix_guidance=('Return {"vote": <integer index>, "reason": "<one sentence>"}.'),
-            ),
-            logger=logger,
-        )
+        try:
+            _response, parsed = request_with_retries(
+                self.api_client,
+                base_prompt=prompt,
+                parse_response=self._parse_json_response,
+                validate_result=validate_vote,
+                request_kwargs={
+                    "model_name": self.api_client.deployment_name,
+                    "max_tokens": 768,
+                    "temperature": 0.3,
+                    "response_format": {"type": "json_object"},
+                },
+                max_attempts=getattr(parameters, "LLM_DECISION_MAX_ATTEMPTS", 2),
+                label=f"Agent {agent.agent_id} democracy vote",
+                retry_prompt_factory=lambda base, _attempt, error: build_failure_retry_prompt(
+                    base,
+                    "Democracy Vote",
+                    error,
+                    fix_guidance=('Return {"vote": <integer index>, "reason": "<one sentence>"}.'),
+                ),
+                logger=logger,
+            )
+        except RetryExhaustedError as exc:
+            # Abstain rather than abort. The tally only needs a majority, and a
+            # missing ballot is an unbiased loss where an exception is a fatal one.
+            logger.warning(
+                "Agent %s democracy vote retries exhausted: %s. Vote discarded.",
+                agent.agent_id,
+                exc.last_error,
+            )
+            return None
         return {
             "vote": int(parsed["vote"]),
             "reason": str(parsed["reason"]).strip(),
